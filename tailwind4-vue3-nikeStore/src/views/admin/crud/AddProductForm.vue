@@ -18,7 +18,7 @@
       <!-- ✅ Form Content - Có scroll -->
       <div class="overflow-y-auto flex-1 p-6">
         <form @submit.prevent="submitProduct">
-          <!-- Step Indicator -->
+          <!-- Step Indicator --> 
           <div class="mb-8">
             <div class="flex items-center justify-between mb-2">
               <button

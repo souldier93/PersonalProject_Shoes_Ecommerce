@@ -2,37 +2,47 @@
     <div v-if="product" class="max-w-6xl mx-auto px-8 justify-center">
         <div class="flex gap-6">
             <!-- LEFT - Thumbnails -->
-<div class="flex flex-col items-start">
-    <div class="flex flex-col gap-3 max-h-[680px] overflow-y-auto scrollbar-hide">
-        <div v-for="(img, i) in currentImages" :key="i"
-            class="aspect-square w-16 bg-gray-100 rounded-md flex items-center justify-center cursor-pointer border-2 transition-all hover:border-gray-400"
-            :class="selectedImgIndex === i ? 'border-black' : 'border-transparent'"
-            @click="selectedImgIndex = i">
-            
-            <!-- Video Thumbnail -->
-            <video v-if="isVideo(img)" 
-                   :src="img" 
-                   class="w-full h-full object-contain"
-                   muted
-                   preload="metadata">
-            </video>
-            
-            <!-- Image Thumbnail -->
-            <img v-else 
-                 :src="img" 
-                 class="w-full h-full object-contain" />
-        </div>
+            <div class="flex flex-col items-start">
+                <div class="flex flex-col gap-3 max-h-[680px] overflow-y-auto scrollbar-hide">
+                    <div v-for="(img, i) in currentImages" :key="i"
+                        class="aspect-square w-16 bg-gray-100 rounded-md flex items-center justify-center cursor-pointer border-2 transition-all hover:border-gray-400"
+                        :class="selectedImgIndex === i ? 'border-black' : 'border-transparent'"
+                        @click="selectedImgIndex = i">
+
+                        <!-- Video Thumbnail -->
+                        <video v-if="isVideo(img)" :src="img" class="w-full h-full object-contain" muted
+                            preload="metadata">
+                        </video>
+
+                        <!-- Image Thumbnail -->
+                        <img v-else :src="img" class="w-full h-full object-contain" />
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- CENTER - Main Image/Video -->
+<div class="flex items-start">
+    <div class="max-w-full max-h-full bg-[#f5f5f5] rounded-lg inline-flex">
+        <!-- Video Player - Thu nhỏ hơn -->
+        <video v-if="isVideo(currentImages[selectedImgIndex])" 
+               :src="currentImages[selectedImgIndex]"
+               class="max-w-[680px] max-h-[680px] object-contain rounded-lg"
+               controls
+               autoplay
+               muted
+               loop
+               playsinline>
+            Your browser does not support the video tag.
+        </video>
+
+        <!-- Image Display - Giữ nguyên hoặc cũng thu nhỏ -->
+        <img v-else-if="currentImages[selectedImgIndex]" 
+             :src="currentImages[selectedImgIndex]"
+             class="max-w-[680px] max-h-[680px] object-contain" />
     </div>
 </div>
 
-
-            <!-- CENTER - Main Image -->
-            <div class="flex items-start">
-                <div class="max-w-full max-h-full bg-[#f5f5f5] rounded-lg inline-flex">
-                    <img v-if="currentImages[selectedImgIndex]" :src="currentImages[selectedImgIndex]"
-                        class="max-w-full max-h-[800px] object-contain" />
-                </div>
-            </div>
 
             <!-- RIGHT - Product Info -->
             <div class="w-1/3 space-y-6">
@@ -255,11 +265,11 @@ export default {
 
     methods: {
 
-isVideo(url) {
-        if (!url) return false;
-        const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
-        return videoExtensions.some(ext => url.toLowerCase().includes(ext));
-    },
+        isVideo(url) {
+            if (!url) return false;
+            const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+            return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+        },
 
         selectColor(index) {
             this.selectedColorIndex = index;
