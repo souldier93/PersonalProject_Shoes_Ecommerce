@@ -11,7 +11,7 @@ export class R2Controller {
     return this.r2Service.listFolders();
   }
 
-  // ✅ THÊM MỚI: GET /r2/subfolders?folder=Air Jordan 1 Mid
+  // GET /r2/subfolders?folder=Air Jordan 1 Mid - GIỮ NGUYÊN
   @Get('subfolders')
   async getSubfolders(@Query('folder') folder: string) {
     if (!folder) {
@@ -20,7 +20,19 @@ export class R2Controller {
     return this.r2Service.listSubfolders(folder);
   }
 
-  // ✅ SỬA LẠI: GET /r2/images?folder=Air Jordan 1 Mid&subfolder=DV0991-101
+  // ✅ THÊM MỚI: GET /r2/media - Lấy cả images VÀ videos
+  @Get('media')
+  async getMedia(
+    @Query('folder') folder: string,
+    @Query('subfolder') subfolder?: string
+  ) {
+    if (!folder) {
+      return { error: 'Folder parameter is required' };
+    }
+    return this.r2Service.listMedia(folder, subfolder);
+  }
+
+  // GIỮ NGUYÊN endpoint images cũ (để backward compatibility)
   @Get('images')
   async getImages(
     @Query('folder') folder: string,

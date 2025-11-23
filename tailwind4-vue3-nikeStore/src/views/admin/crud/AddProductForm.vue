@@ -1,8 +1,7 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <!-- ✅ THAY ĐỔI: Tách modal thành 2 phần - header và body -->
     <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
-      <!-- ✅ Header - Không scroll -->
+      <!-- Header -->
       <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
         <div>
           <h2 class="text-2xl font-bold">Add New Product</h2>
@@ -15,10 +14,10 @@
         </button>
       </div>
 
-      <!-- ✅ Form Content - Có scroll -->
+      <!-- Form Content -->
       <div class="overflow-y-auto flex-1 p-6">
         <form @submit.prevent="submitProduct">
-          <!-- Step Indicator --> 
+          <!-- Step Indicator -->
           <div class="mb-8">
             <div class="flex items-center justify-between mb-2">
               <button
@@ -103,7 +102,7 @@
 
                 <h4 class="font-semibold text-lg mb-4">Color {{ index + 1 }}</h4>
 
-                <!-- Color Basic Info - GIỮ NGUYÊN TẤT CẢ FIELDS -->
+                <!-- Color Basic Info -->
                 <div class="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -201,9 +200,11 @@
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
                 </div>
 
-                <!-- ✅ Images Section - ĐÃ CẢI TIẾN -->
+                <!-- ✅ Media Section (Images & Videos) -->
                 <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Images</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    📸 Images & Videos
+                  </label>
 
                   <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-3">
                     <h5 class="font-medium text-sm mb-2">📁 Browse R2 Folders</h5>
@@ -235,7 +236,7 @@
                       <label class="block text-xs text-gray-600 mb-1">2. Select Color Variant</label>
                       <select
                         v-model="selectedSubFolder"
-                        @change="loadImagesFromSubfolder(index)"
+                        @change="loadMediaFromSubfolder(index)"
                         class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black">
                         <option value="">-- Choose color variant --</option>
                         <option v-for="subfolder in subFolders" :key="subfolder" :value="subfolder">
@@ -244,27 +245,27 @@
                       </select>
                     </div>
 
-                    <!-- Image Preview Grid -->
-                    <div v-if="availableImages.length > 0" class="mt-3">
-                      <!-- ✅ THÊM: Select/Deselect All Buttons -->
+                    <!-- Media Preview Grid -->
+                    <div v-if="availableMedia.length > 0" class="mt-3">
+                      <!-- Select/Deselect All Buttons -->
                       <div class="flex items-center justify-between mb-2">
                         <div class="flex gap-2">
                           <button
                             type="button"
-                            @click="selectAllImages"
+                            @click="selectAllMedia"
                             class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors">
                             ✓ Select All
                           </button>
                           <button
                             type="button"
-                            @click="deselectAllImages"
-                            :disabled="selectedImagesSet.size === 0"
+                            @click="deselectAllMedia"
+                            :disabled="selectedMediaSet.size === 0"
                             class="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                             ✗ Deselect All
                           </button>
                         </div>
                         <p class="text-xs text-gray-600">
-                          <strong>{{ selectedImagesSet.size }}</strong> / {{ availableImages.length }}
+                          <strong>{{ selectedMediaSet.size }}</strong> / {{ availableMedia.length }}
                         </p>
                       </div>
 
@@ -272,16 +273,17 @@
                         Page {{ currentPage }}/{{ totalPages }}
                       </p>
 
-                      <!-- Optimized Grid -->
+                      <!-- Media Grid -->
                       <div
                         class="grid grid-cols-6 gap-2 border border-gray-200 rounded p-2 bg-gray-50"
                         style="height: 240px; overflow-y: auto">
-                        <ImageGridItem
-                          v-for="img in paginatedImages"
-                          :key="img"
-                          :image-url="img"
-                          :is-selected="selectedImagesSet.has(img)"
-                          @toggle="toggleImageSelection(img)" />
+                        <MediaGridItem
+                          v-for="media in paginatedMedia"
+                          :key="media"
+                          :media-url="media"
+                          :is-video="isVideo(media)"
+                          :is-selected="selectedMediaSet.has(media)"
+                          @toggle="toggleMediaSelection(media)" />
                       </div>
 
                       <!-- Pagination Controls -->
@@ -322,10 +324,10 @@
                       <!-- Apply Button -->
                       <button
                         type="button"
-                        @click="applySelectedImages(index)"
-                        :disabled="selectedImagesSet.size === 0"
+                        @click="applySelectedMedia(index)"
+                        :disabled="selectedMediaSet.size === 0"
                         class="mt-2 w-full px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                        ✅ Apply {{ selectedImagesSet.size }} Images
+                        ✅ Apply {{ selectedMediaSet.size }} Files
                       </button>
                     </div>
 
@@ -337,17 +339,32 @@
                     </div>
                   </div>
 
-                  <!-- Current Images Preview -->
+                  <!-- Current Media Preview -->
                   <div v-if="color.images.length > 0 && color.images[0]" class="mt-3">
                     <p class="text-xs text-gray-600 mb-2">
-                      <strong>Current images:</strong> {{ color.images.length }}
+                      <strong>Current files:</strong> {{ color.images.length }}
                     </p>
                     <div class="grid grid-cols-6 gap-2">
-                      <div v-for="(img, idx) in color.images.filter((i) => i)" :key="idx" class="relative group">
-                        <img :src="img" loading="lazy" class="w-full h-20 object-cover rounded border" />
+                      <div v-for="(media, idx) in color.images.filter((i) => i)" :key="idx" class="relative group">
+                        <!-- Video Preview -->
+                        <video
+                          v-if="isVideo(media)"
+                          :src="media"
+                          class="w-full h-20 object-cover rounded border"
+                          muted
+                          @mouseenter="(e) => e.target.play()"
+                          @mouseleave="(e) => { e.target.pause(); e.target.currentTime = 0; }">
+                        </video>
+                        <!-- Image Preview -->
+                        <img
+                          v-else
+                          :src="media"
+                          loading="lazy"
+                          class="w-full h-20 object-cover rounded border" />
+                        
                         <button
                           type="button"
-                          @click="removeAppliedImage(index, idx)"
+                          @click="removeAppliedMedia(index, idx)"
                           class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs">
                           ×
                         </button>
@@ -356,7 +373,7 @@
                   </div>
                 </div>
 
-                <!-- Sizes - GIỮ NGUYÊN -->
+                <!-- Sizes -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Sizes & Stock</label>
                   <div class="grid grid-cols-2 gap-3">
@@ -441,7 +458,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import axios from 'axios'
-import ImageGridItem from './ImageGridItem.vue'
+import MediaGridItem from './MediaGridItem.vue'
 
 const props = defineProps({
   isOpen: Boolean
@@ -453,23 +470,23 @@ const currentStep = ref(1)
 const isSubmitting = ref(false)
 const steps = ['Basic Info', 'Add Colors']
 
-// 2-Level Folder Selection
+// ✅ R2 Media Selection
 const r2Folders = ref([])
 const subFolders = ref([])
 const selectedProductFolder = ref('')
 const selectedSubFolder = ref('')
-const availableImages = ref([])
-const selectedImagesSet = ref(new Set())
+const availableMedia = ref([])
+const selectedMediaSet = ref(new Set())
 
 // Pagination
 const currentPage = ref(1)
-const imagesPerPage = 24
+const mediaPerPage = 24
 
-const totalPages = computed(() => Math.ceil(availableImages.value.length / imagesPerPage))
+const totalPages = computed(() => Math.ceil(availableMedia.value.length / mediaPerPage))
 
-const paginatedImages = computed(() => {
-  const start = (currentPage.value - 1) * imagesPerPage
-  return availableImages.value.slice(start, start + imagesPerPage)
+const paginatedMedia = computed(() => {
+  const start = (currentPage.value - 1) * mediaPerPage
+  return availableMedia.value.slice(start, start + mediaPerPage)
 })
 
 const visiblePages = computed(() => {
@@ -527,7 +544,7 @@ const loadR2Folders = async () => {
     selectedProductFolder.value = ''
     selectedSubFolder.value = ''
     subFolders.value = []
-    availableImages.value = []
+    availableMedia.value = []
   } catch (error) {
     console.error('Error loading R2 folders:', error)
     alert('Failed to load folders')
@@ -546,8 +563,8 @@ const loadSubFolders = async () => {
     })
     subFolders.value = response.data
     selectedSubFolder.value = ''
-    availableImages.value = []
-    selectedImagesSet.value.clear()
+    availableMedia.value = []
+    selectedMediaSet.value.clear()
     currentPage.value = 1
   } catch (error) {
     console.error('Error loading subfolders:', error)
@@ -555,45 +572,51 @@ const loadSubFolders = async () => {
   }
 }
 
-const loadImagesFromSubfolder = async (colorIndex) => {
+// ✅ Load cả Images và Videos
+const loadMediaFromSubfolder = async (colorIndex) => {
   if (!selectedSubFolder.value) return
 
   try {
-    const response = await axios.get('http://localhost:3000/r2/images', {
+    const response = await axios.get('http://localhost:3000/r2/media', {
       params: {
         folder: selectedProductFolder.value,
         subfolder: selectedSubFolder.value
       }
     })
-    availableImages.value = response.data
-    selectedImagesSet.value.clear()
+    availableMedia.value = response.data
+    selectedMediaSet.value.clear()
     currentPage.value = 1
   } catch (error) {
-    console.error('Error loading images:', error)
-    alert('Failed to load images from subfolder')
+    console.error('Error loading media:', error)
+    alert('Failed to load media from subfolder')
   }
 }
 
-// ✅ THÊM MỚI: Select/Deselect All
-const selectAllImages = () => {
-  availableImages.value.forEach(img => {
-    selectedImagesSet.value.add(img)
+// ✅ Helper: Check if file is video
+const isVideo = (url) => {
+  return /\.(mp4|webm|mov|avi|mkv|m4v)$/i.test(url)
+}
+
+// ✅ Select/Deselect All
+const selectAllMedia = () => {
+  availableMedia.value.forEach(media => {
+    selectedMediaSet.value.add(media)
   })
-  selectedImagesSet.value = new Set(selectedImagesSet.value)
+  selectedMediaSet.value = new Set(selectedMediaSet.value)
 }
 
-const deselectAllImages = () => {
-  selectedImagesSet.value.clear()
-  selectedImagesSet.value = new Set(selectedImagesSet.value)
+const deselectAllMedia = () => {
+  selectedMediaSet.value.clear()
+  selectedMediaSet.value = new Set(selectedMediaSet.value)
 }
 
-const toggleImageSelection = (imageUrl) => {
-  if (selectedImagesSet.value.has(imageUrl)) {
-    selectedImagesSet.value.delete(imageUrl)
+const toggleMediaSelection = (mediaUrl) => {
+  if (selectedMediaSet.value.has(mediaUrl)) {
+    selectedMediaSet.value.delete(mediaUrl)
   } else {
-    selectedImagesSet.value.add(imageUrl)
+    selectedMediaSet.value.add(mediaUrl)
   }
-  selectedImagesSet.value = new Set(selectedImagesSet.value)
+  selectedMediaSet.value = new Set(selectedMediaSet.value)
 }
 
 const goToPage = (page) => {
@@ -602,23 +625,23 @@ const goToPage = (page) => {
   }
 }
 
-const applySelectedImages = (colorIndex) => {
-  const newImages = Array.from(selectedImagesSet.value)
-  const existingImages = formData.colors[colorIndex].images.filter((i) => i)
-  formData.colors[colorIndex].images = [...existingImages, ...newImages]
+const applySelectedMedia = (colorIndex) => {
+  const newMedia = Array.from(selectedMediaSet.value)
+  const existingMedia = formData.colors[colorIndex].images.filter((i) => i)
+  formData.colors[colorIndex].images = [...existingMedia, ...newMedia]
 
-  selectedImagesSet.value.clear()
-  availableImages.value = []
+  selectedMediaSet.value.clear()
+  availableMedia.value = []
   selectedProductFolder.value = ''
   selectedSubFolder.value = ''
   subFolders.value = []
   currentPage.value = 1
 
-  alert(`✅ Added ${newImages.length} images`)
+  alert(`✅ Added ${newMedia.length} files`)
 }
 
-const removeAppliedImage = (colorIndex, imageIndex) => {
-  formData.colors[colorIndex].images.splice(imageIndex, 1)
+const removeAppliedMedia = (colorIndex, mediaIndex) => {
+  formData.colors[colorIndex].images.splice(mediaIndex, 1)
 }
 
 // ============ Color & Size ============

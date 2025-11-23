@@ -93,6 +93,33 @@ export class R2Service {
     );
   }
 
+    // ✅ THÊM MỚI: List cả images VÀ videos
+  async listMedia(folder: string, subfolder?: string): Promise<string[]> {
+    const prefix = subfolder ? `${folder}/${subfolder}/` : `${folder}/`;
+    
+    const command = new ListObjectsV2Command({
+      Bucket: this.bucketName,
+      Prefix: prefix,
+    });
+
+    const response = await this.s3Client.send(command);
+
+    return (
+      response.Contents?.filter((item) => {
+        if (!item.Key) return false;
+        const ext = item.Key.split('.').pop()?.toLowerCase();
+        
+        // ✅ Hỗ trợ cả image VÀ video formats
+        return [
+          // Images
+          'png', 'jpg', 'jpeg', 'webp', 'gif', 'avif', 'bmp',
+          // Videos
+          'mp4', 'webm', 'mov', 'avi', 'mkv', 'm4v'
+        ].includes(ext || '');
+      }).map((item) => `${this.publicUrl}/${item.Key}`) || []
+    );
+  }
+
   // Generate URLs cho một color cụ thể
   generateColorImageUrls(
     productSlug: string,
