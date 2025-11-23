@@ -162,36 +162,167 @@ export class ShoesService {
     };
   }
 
-  // ==================== UPDATE & DELETE ====================
+ // ==================== UPDATE & DELETE ====================
 
-  async updateShoe(productId: string, updateData: any) {
+async updateShoe(productId: string, updateData: any) {
+  // 1️⃣ Update bảng shoes (listing) - CHỈ update những field user explicitly thay đổi
+  const shoeUpdateData: any = {};
+  
+  if (updateData.name) shoeUpdateData.name = updateData.name;
+  if (updateData.category) shoeUpdateData.category = updateData.category;
+  
+  // ⭐ CHỈ update shoes.thumbnail khi có field thumbnail EXPLICIT (từ tab Basic Info)
+  // KHÔNG update khi chỉ có colors[] array
+  if (updateData.thumbnail !== undefined) {
+    shoeUpdateData.thumbnail = updateData.thumbnail;
+  }
+
+  // Nếu có dữ liệu cần update trong shoes table
+  if (Object.keys(shoeUpdateData).length > 0) {
     const updatedShoe = await this.shoeModel
-      .findOneAndUpdate({ productId }, { $set: updateData }, { new: true })
+      .findOneAndUpdate({ productId }, { $set: shoeUpdateData }, { new: true })
       .exec();
 
     if (!updatedShoe) {
       throw new NotFoundException(`Shoe with productId "${productId}" not found`);
     }
-
-    return updatedShoe;
   }
 
-  async deleteShoe(productId: string) {
-    const result = await this.shoeModel.deleteOne({ productId }).exec();
+  // 2️⃣ Update bảng shoesDetail
+  const detailUpdateData: any = {};
+  
+  if (updateData.name) detailUpdateData.name = updateData.name;
+  if (updateData.category) detailUpdateData.category = updateData.category;
 
-    if (result.deletedCount === 0) {
-      throw new NotFoundException(`Shoe with productId "${productId}" not found`);
+  // 3️⃣ Nếu có colors[] → REPLACE TOÀN BỘ colors array (bao gồm thumbnail của từng màu)
+  if (updateData.colors && Array.isArray(updateData.colors)) {
+    detailUpdateData.colors = updateData.colors.map(color => ({
+      colorName: color.colorName || '',
+      hex: color.hex || '',
+      thumbnail: color.thumbnail || '', // ⭐ Thumbnail từng màu - CHỈ update trong shoesDetail
+      images: Array.isArray(color.images) ? color.images : [],
+      sizes: Array.isArray(color.sizes) ? color.sizes : [],
+      styleCode: color.styleCode || '',
+      category: color.category || updateData.category || 'men',
+      createdAt: color.createdAt || new Date().toISOString(),
+      description: color.description || '',
+      materialNote: color.materialNote || '',
+      origin: color.origin || '',
+      rating: Number(color.rating) || 0,
+      reviewCount: Number(color.reviewCount) || 0,
+      updatedAt: new Date().toISOString(),
+      price: Number(color.price) || 0
+    }));
+  }
+  // 4️⃣ Nếu KHÔNG có colors nhưng có category → sync category cho colors hiện có
+  else if (!updateData.colors && updateData.category) {
+    const existingDetail = await this.shoeDetailModel.findOne({ productId }).exec();
+    if (existingDetail && existingDetail.colors) {
+      detailUpdateData.colors = existingDetail.colors.map(color => ({
+        ...color,
+        category: updateData.category,
+        updatedAt: new Date().toISOString()
+      }));
     }
-
-    return { message: 'Deleted successfully' };
   }
 
-  async deleteByProductId(productId: string) {
-    const resultShoe = await this.shoeModel.deleteOne({ productId }).exec();
-    const resultDetail = await this.shoeDetailModel.deleteOne({ productId }).exec();
+  // 5️⃣ Execute update shoesDetail
+  const updatedDetail = await this.shoeDetailModel
+    .findOneAndUpdate(
+      { productId }, 
+      { $set: detailUpdateData }, 
+      { new: true }
+    )
+    .exec();
 
-    return {
-      message: `Deleted ${resultShoe.deletedCount} shoe and ${resultDetail.deletedCount} detail`
-    };
+  if (!updatedDetail) {
+    throw new NotFoundException(`Shoe detail with productId "${productId}" not found`);
   }
+
+  return {
+    detail: updatedDetail,
+    message: '✅ Updated successfully'
+  };
+}
+
+async deleteShoe(productId: string) {
+  const result = await this.shoeModel.deleteOne({ productId }).exec();
+  if (result.deletedCount === 0) {
+    throw new NotFoundException(`Shoe with productId "${productId}" not found`);
+  }
+  return { message: 'Deleted successfully' };
+}
+
+async deleteByProductId(productId: string) {
+  const resultShoe = await this.shoeModel.deleteOne({ productId }).exec();
+  const resultDetail = await this.shoeDetailModel.deleteOne({ productId }).exec();
+  return {
+    message: `Deleted ${resultShoe.deletedCount} shoe and ${resultDetail.deletedCount} detail`
+  };
+}
+
+// ==================== SOFT DELETE - SET STOCK TO ZERO ====================
+
+// ==================== SOFT DELETE - SET STOCK TO ZERO ====================
+
+async softDeleteProduct(productId: string) {
+  // 1️⃣ Lấy chi tiết sản phẩm hiện tại
+  const detail = await this.shoeDetailModel.findOne({ productId }).exec();
+  
+  if (!detail) {
+    throw new NotFoundException(`Product with productId "${productId}" not found`);
+  }
+
+  // 2️⃣ Set tất cả stock về 0 cho TẤT CẢ màu và TẤT CẢ sizes
+  const updatedColors = detail.colors.map(color => ({
+    colorName: color.colorName || '',
+    hex: color.hex || '',
+    thumbnail: color.thumbnail || '',
+    images: color.images || [],
+    sizes: (color.sizes || []).map(size => ({
+      size: size.size || '',
+      stock: 0  // ⭐ SET STOCK = 0
+    })),
+    styleCode: color.styleCode || '',
+    category: color.category || '',
+    createdAt: color.createdAt || new Date().toISOString(),
+    description: color.description || '',
+    materialNote: color.materialNote || '',
+    origin: color.origin || '',
+    rating: color.rating || 0,
+    reviewCount: color.reviewCount || 0,
+    updatedAt: new Date().toISOString(),
+    price: color.price || 0
+  }));
+
+  // 3️⃣ Update shoesDetail với colors đã set stock = 0
+  const updatedDetail = await this.shoeDetailModel
+    .findOneAndUpdate(
+      { productId },
+      { $set: { colors: updatedColors } },
+      { new: true }
+    )
+    .exec();
+
+  if (!updatedDetail) {
+    throw new NotFoundException(`Failed to update product with productId "${productId}"`);
+  }
+
+  // 4️⃣ Tính tổng số sizes đã set về 0
+  const totalSizes = updatedColors.reduce((sum, color) => 
+    sum + (color.sizes?.length || 0), 0
+  );
+
+  return {
+    success: true,
+    message: '🗑️ Product soft deleted (all stock set to 0)',
+    productId: productId,
+    affectedColors: updatedColors.length,
+    affectedSizes: totalSizes
+  };
+}
+
+
+
+
 }

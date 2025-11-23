@@ -59,9 +59,7 @@
                     </p>
                 </div>
 
-                <!-- ✅ Display price if available -->
-                <p v-if="product.price" class="text-xl font-semibold">{{ formatPrice(product.price) }}</p>
-
+               
                 <!-- Color Selector -->
                 <div v-if="product.colors?.length > 0">
                     <h3 class="font-semibold mb-3">Select Color</h3>
