@@ -656,16 +656,25 @@ const formatPrice = (price) => {
   }).format(price)
 }
 
+// Trong <script setup>
+
+// Trong <script setup>
+
 const fetchProducts = async () => {
   try {
     const response = await axios.get('http://localhost:3000/shoes')
-    console.log('Fetched Products:', response.data) // Debug
+    console.log('Fetched Products:', response.data)
+    
+    // ⭐ KHÔNG CẦN tính toán - API đã trả về stock
     products.value = response.data
+    
   } catch (error) {
     console.error('Error fetching products:', error)
     alert('❌ Không thể tải danh sách sản phẩm!')
   }
 }
+
+
 
 
 const selectProduct = async (product) => {
