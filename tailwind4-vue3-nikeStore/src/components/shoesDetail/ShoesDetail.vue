@@ -20,46 +20,36 @@
                 </div>
             </div>
 
-
             <!-- CENTER - Main Image/Video -->
-<div class="flex items-start">
-    <div class="max-w-full max-h-full bg-[#f5f5f5] rounded-lg inline-flex">
-        <!-- Video Player - Thu nhỏ hơn -->
-        <video v-if="isVideo(currentImages[selectedImgIndex])" 
-               :src="currentImages[selectedImgIndex]"
-               class="max-w-[680px] max-h-[680px] object-contain rounded-lg"
-               controls
-               autoplay
-               muted
-               loop
-               playsinline>
-            Your browser does not support the video tag.
-        </video>
+            <div class="flex items-start">
+                <div class="max-w-full max-h-full bg-[#f5f5f5] rounded-lg inline-flex">
+                    <!-- Video Player -->
+                    <video v-if="isVideo(currentImages[selectedImgIndex])" :src="currentImages[selectedImgIndex]"
+                        class="max-w-[680px] max-h-[680px] object-contain rounded-lg" controls autoplay muted loop
+                        playsinline>
+                        Your browser does not support the video tag.
+                    </video>
 
-        <!-- Image Display - Giữ nguyên hoặc cũng thu nhỏ -->
-        <img v-else-if="currentImages[selectedImgIndex]" 
-             :src="currentImages[selectedImgIndex]"
-             class="max-w-[680px] max-h-[680px] object-contain" />
-    </div>
-</div>
-
+                    <!-- Image Display -->
+                    <img v-else-if="currentImages[selectedImgIndex]" :src="currentImages[selectedImgIndex]"
+                        class="max-w-[680px] max-h-[680px] object-contain" />
+                </div>
+            </div>
 
             <!-- RIGHT - Product Info -->
             <div class="w-1/3 space-y-6">
                 <div class="text-orange-600 text-sm font-semibold -mb-1">
                     Recycled Materials
                 </div>
-                <!-- ✅ Tên, Category và Giá theo màu -->
+
                 <div class="space-y-2">
                     <h1 class="text-2xl font-bold">{{ productName }}</h1>
                     <p class="text-gray-600 text-sm">{{ currentColor?.category || 'Men\'s Shoes' }}</p>
-                    <!-- ✅ Dùng currentColor.price thay vì product.price -->
                     <p v-if="currentColor?.price" class="text-2xl font-bold">
                         {{ formatPrice(currentColor.price) }}
                     </p>
                 </div>
 
-               
                 <!-- Color Selector -->
                 <div v-if="product.colors?.length > 0">
                     <h3 class="font-semibold mb-3">Select Color</h3>
@@ -183,11 +173,26 @@
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
         <p class="mt-4">Loading...</p>
     </div>
+
+    <!-- Success Toast -->
+    <div v-if="showToast"
+        class="fixed bottom-6 right-6 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-up">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <div>
+            <p class="font-semibold">Added to bag!</p>
+            <p class="text-sm opacity-90">{{ selectedColorName }} - Size {{ selectedSize }}</p>
+        </div>
+        <button @click="goToBag" class="ml-4 underline text-sm hover:text-gray-200">
+            View Bag
+        </button>
+    </div>
 </template>
 
 <script>
 import axios from "axios";
-
+import { addToBag as addToBagHelper } from '../../utils/bagHelper'
 export default {
     data() {
         return {
@@ -195,16 +200,15 @@ export default {
             selectedImgIndex: 0,
             selectedColorIndex: 0,
             selectedSize: null,
+            showToast: false,
         };
     },
 
     computed: {
-        // ✅ Get current color object
         currentColor() {
             return this.product?.colors?.[this.selectedColorIndex] || null;
         },
 
-        // ✅ Get product name (use productId as fallback if name doesn't exist)
         productName() {
             return this.product?.name || `Nike Pegasus Trail 5 - ${this.product?.productId || ''}`;
         },
@@ -221,14 +225,12 @@ export default {
             return this.currentColor?.colorName || null;
         },
 
-        // ✅ Check if a color has any stock available
         isColorAvailable() {
             return (color) => {
                 return color?.sizes?.some(size => size.stock > 0) || false;
             };
         },
 
-        // ✅ Check if current color is completely sold out
         isCurrentColorSoldOut() {
             if (!this.currentSizes.length) return true;
             return this.currentSizes.every(size => size.stock === 0);
@@ -239,15 +241,7 @@ export default {
         try {
             const id = this.$route.params.id;
             const res = await axios.get(`http://localhost:3000/shoes/detail/${id}`);
-
-            // ✅ Store the API response directly
             this.product = res.data;
-
-            // ✅ Optional: Fetch product name and price from list API
-            // You can uncomment this if you have a list endpoint
-            // const listRes = await axios.get(`http://localhost:3000/shoes/${this.product.productId}`);
-            // this.product.name = listRes.data.name;
-            // this.product.price = listRes.data.price;
 
             console.log('✅ Product loaded:', {
                 id: this.product._id,
@@ -262,7 +256,6 @@ export default {
     },
 
     methods: {
-
         isVideo(url) {
             if (!url) return false;
             const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
@@ -292,23 +285,33 @@ export default {
 
             const selectedSizeObj = this.currentSizes.find(s => s.size === this.selectedSize);
 
-            const cartItem = {
+            const bagItem = {
                 productId: this.product.productId,
-                colorName: this.selectedColorName,
-                colorHex: this.currentColor.hex,
-                size: this.selectedSize,
-                stock: selectedSizeObj.stock,
+                name: this.productName,
                 styleCode: this.currentColor.styleCode,
-                thumbnail: this.currentColor.thumbnail,
-                price: this.product.price || 0, // Add price if available
-                quantity: 1
+                colorName: this.selectedColorName,
+                size: this.selectedSize,
+                price: this.currentColor.price || this.product.price || 0,
+                quantity: 1,
+                thumbnail: this.currentColor.thumbnail || this.currentImages[0],
+                image: this.currentImages[this.selectedImgIndex] || this.currentColor.thumbnail,
+                stock: selectedSizeObj.stock
             };
 
-            console.log('Adding to cart:', cartItem);
-            alert(`Added to bag!\n\nColor: ${this.selectedColorName}\nSize: ${this.selectedSize}\nStock: ${selectedSizeObj.stock}`);
+            // ✅ Dùng helper function
+            addToBagHelper(bagItem);
 
-            // TODO: Implement actual cart logic
-            // this.$store.dispatch('addToCart', cartItem);
+            console.log('✅ Added to bag:', bagItem);
+
+            this.showToast = true;
+            setTimeout(() => {
+                this.showToast = false;
+            }, 5000);
+        },
+
+
+        goToBag() {
+            this.$router.push('/bag');
         },
 
         formatPrice(v) {
@@ -323,4 +326,20 @@ export default {
 };
 </script>
 
-<style src="./ShoesDetail.css" scoped></style>
+<style src="./ShoesDetail.css" scoped>
+@keyframes slide-up {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+}
+</style>

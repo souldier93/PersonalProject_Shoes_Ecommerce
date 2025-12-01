@@ -1,114 +1,138 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from "vue-router";
 
-// ✅ Import theo cấu trúc thực tế của bạn
-import Home from '../components/home/Home.vue'
-import Login from '../components/header/Login/Login.vue'
-import ShoesDetail from '../components/shoesDetail/ShoesDetail.vue'
-
-// ✅ Import HeaderAdmin nếu cần sử dụng trong route
-// import HeaderAdmin from '../components/HeaderAdmin.vue'
+// ✅ Import components
+import Home from "../components/home/Home.vue";
+import Login from "../components/header/Login/Login.vue";
+import ShoesDetail from "../components/shoesDetail/ShoesDetail.vue";
+import Bag from "../components/header/bag/Bag.vue";
+import GuestCheckout from "../components/header/bag/GuestCheckout.vue";
+import Payment from "../components/header/bag/Payment.vue";
 
 const routes = [
   // ✅ Public Routes
   {
-    path: '/',
-    name: 'Home',
-    component: Home
+    path: "/",
+    name: "Home",
+    component: Home,
   },
   {
-    path: '/login',
-    name: 'Login',
-    component: Login
+    path: "/login",
+    name: "Login",
+    component: Login,
   },
   {
-    path: '/shoes/:id',
-    name: 'ShoesDetail',
-    component: ShoesDetail
+    path: "/shoes/:id",
+    name: "ShoesDetail",
+    component: ShoesDetail,
   },
   
-  // ✅ Admin Routes - Sử dụng lazy loading để tối ưu
+  // ✅ Shopping Cart & Checkout Routes
   {
-    path: '/admin',
-    redirect: '/admin/dashboard',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    path: "/bag",
+    name: "Bag",
+    component: Bag,
   },
   {
-    path: '/admin/dashboard',
-    name: 'AdminDashboard',
-    component: () => import('../views/admin/Dashboard.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
+    path: "/checkout",
+    name: "GuestCheckout",
+    component: GuestCheckout,
+  },
+  // Redirect cho phòng trường hợp user vào /bag/checkout
+  {
+    path: "/bag/checkout",
+    redirect: "/checkout",
   },
   {
-    path: '/admin/products',
-    name: 'AdminProducts',
-    component: () => import('../views/admin/Products.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
+    path: "/payment",        // ✅ THÊM route này
+    name: "Payment",
+    component: Payment,
+  },
+
+  // ✅ Admin Routes - Lazy loading
+  {
+    path: "/admin",
+    redirect: "/admin/dashboard",
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
-    path: '/admin/purchases',
-    name: 'AdminPurchases',
-    component: () => import('../views/admin/Purchases.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
+    path: "/admin/dashboard",
+    name: "AdminDashboard",
+    component: () => import("../views/admin/Dashboard.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
-    path: '/admin/customers',
-    name: 'AdminCustomers',
-    component: () => import('../views/admin/Customers.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
+    path: "/admin/products",
+    name: "AdminProducts",
+    component: () => import("../views/admin/Products.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
-    path: '/admin/analytics',
-    name: 'AdminAnalytics',
-    component: () => import('../views/admin/Analytics.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
+    path: "/admin/purchases",
+    name: "AdminPurchases",
+    component: () => import("../views/admin/Purchases.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
-    path: '/admin/settings',
-    name: 'AdminSettings',
-    component: () => import('../views/admin/Settings.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
+    path: "/admin/customers",
+    name: "AdminCustomers",
+    component: () => import("../views/admin/Customers.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
-  
+  {
+    path: "/admin/analytics",
+    name: "AdminAnalytics",
+    component: () => import("../views/admin/Analytics.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: "/admin/settings",
+    name: "AdminSettings",
+    component: () => import("../views/admin/Settings.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+
   // ✅ Error Pages
   {
-    path: '/unauthorized',
-    name: 'Unauthorized',
-    component: () => import('../views/Unauthorized.vue')
+    path: "/unauthorized",
+    name: "Unauthorized",
+    component: () => import("../views/Unauthorized.vue"),
   },
   {
-    path: '/:pathMatch(.*)*',
-    name: 'NotFound',
-    component: () => import('../views/NotFound.vue')
-  }
-]
+    path: "/:pathMatch(.*)*",
+    name: "NotFound",
+    component: () => import("../views/NotFound.vue"),
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
-})
+  routes,
+  // ✅ Scroll to top khi chuyển trang
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition;
+    } else {
+      return { top: 0 };
+    }
+  },
+});
 
-// ✅ Navigation Guard - Bảo vệ admin routes
+// ✅ Navigation Guard
 router.beforeEach((to, from, next) => {
-  // Lấy thông tin user từ localStorage
-  const userStr = localStorage.getItem('user')
-  const user = userStr ? JSON.parse(userStr) : null
+  const userStr = localStorage.getItem("user");
+  const user = userStr ? JSON.parse(userStr) : null;
 
-  // Kiểm tra nếu route yêu cầu admin
   if (to.meta.requiresAdmin) {
     if (!user) {
-      // Chưa đăng nhập → redirect về login
-      next('/login')
-    } else if (user.role !== 'admin') {
-      // Không phải admin → redirect về unauthorized
-      next('/unauthorized')
+      next("/login");
+    } else if (user.role !== "admin") {
+      next("/unauthorized");
     } else {
-      // Là admin → cho phép truy cập
-      next()
+      next();
     }
   } else {
-    // Route không yêu cầu admin → cho phép truy cập
-    next()
+    next();
   }
-})
+});
 
-export default router
+export default router;

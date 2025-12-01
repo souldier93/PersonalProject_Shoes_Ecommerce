@@ -388,4 +388,81 @@ async findAll() {
       affectedSizes: totalSizes,
     };
   }
+
+  // ✅ Check stock cho 1 item
+async checkStock(productId: string, colorName: string, size: string) {
+  const detail = await this.shoeDetailModel.findOne({ productId }).exec();
+  
+  if (!detail) {
+    return {
+      success: false,
+      message: 'Product not found',
+      stock: 0
+    };
+  }
+
+  const color = detail.colors.find(c => c.colorName === colorName);
+  if (!color) {
+    return {
+      success: false,
+      message: 'Color not found',
+      stock: 0
+    };
+  }
+
+  const sizeObj = color.sizes.find(s => s.size === size);
+  if (!sizeObj) {
+    return {
+      success: false,
+      message: 'Size not found',
+      stock: 0
+    };
+  }
+
+  return {
+    success: true,
+    productId,
+    colorName,
+    size,
+    stock: sizeObj.stock || 0,
+    available: (sizeObj.stock || 0) > 0
+  };
+}
+
+// ✅ Check stock cho nhiều items
+async checkStockBatch(items: Array<{
+  productId: string;
+  colorName: string;
+  size: string;
+  quantity: number;
+}>) {
+  const results = await Promise.all(
+    items.map(async (item) => {
+      const stockInfo = await this.checkStock(
+        item.productId,
+        item.colorName,
+        item.size
+      );
+      
+      return {
+        ...item,
+        availableStock: stockInfo.stock,
+        isAvailable: stockInfo.stock >= item.quantity,
+        stockShortage: Math.max(0, item.quantity - stockInfo.stock)
+      };
+    })
+  );
+
+  const allAvailable = results.every(r => r.isAvailable);
+  const outOfStockItems = results.filter(r => !r.isAvailable);
+
+  return {
+    success: allAvailable,
+    items: results,
+    outOfStockItems,
+    message: allAvailable 
+      ? 'All items available' 
+      : `${outOfStockItems.length} item(s) out of stock`
+  };
+}
 }

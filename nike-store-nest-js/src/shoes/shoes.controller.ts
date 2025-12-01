@@ -60,4 +60,26 @@ async softDeleteProduct(@Param('productId') productId: string) {
   return this.shoesService.softDeleteProduct(productId);
 }
 
+ // ✅ NEW: Check stock for specific color and size
+  @Get(':productId/stock/:colorName/:size')
+  async checkStock(
+    @Param('productId') productId: string,
+    @Param('colorName') colorName: string,
+    @Param('size') size: string,
+  ) {
+    return this.shoesService.checkStock(productId, colorName, size);
+  }
+
+  // ✅ NEW: Batch check stock for multiple items
+  @Post('check-stock-batch')
+  async checkStockBatch(@Body() items: Array<{
+    productId: string;
+    colorName: string;
+    size: string;
+    quantity: number;
+  }>) {
+    return this.shoesService.checkStockBatch(items);
+  }
+
+
 }
