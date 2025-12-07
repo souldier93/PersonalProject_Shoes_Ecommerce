@@ -33,8 +33,8 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
 
-            <!-- Customers Icon -->
-            <svg v-else-if="item.name === 'Customers'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <!-- Users Icon -->
+            <svg v-else-if="item.name === 'Users'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -66,8 +66,7 @@
         <!-- User Profile -->
         <div class="relative" ref="profileRef">
           <button @click="toggleProfileMenu" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-            <img :src="currentUser.avatar" :alt="currentUser.name" class="w-9 h-9 rounded-full object-cover" />
-            <span class="text-sm font-medium">{{ currentUser.name }}</span>
+            <span class="text-sm font-medium">{{ currentUser.username }}</span>
             <svg class="w-4 h-4 transition-transform" :class="showProfileMenu ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
@@ -77,7 +76,7 @@
           <transition name="dropdown">
             <div v-if="showProfileMenu" class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2">
               <div class="px-4 py-3 border-b border-gray-100">
-                <p class="text-sm font-medium text-gray-900">{{ currentUser.name }}</p>
+                <p class="text-sm font-medium text-gray-900">{{ currentUser.username }}</p>
                 <p class="text-xs text-gray-500">{{ currentUser.email }}</p>
               </div>
 
@@ -142,7 +141,7 @@ const menuItems = [
   { name: "Dashboard", label: "Dashboard", path: "/admin/dashboard" },
   { name: "Products", label: "Products", path: "/admin/products" },
   { name: "Purchases", label: "Purchases", path: "/admin/purchases" },
-  { name: "Customers", label: "Customers", path: "/admin/customers" },
+  { name: "Users", label: "Users", path: "/admin/users" },
   { name: "Analytics", label: "Analytics", path: "/admin/analytics" },
   { name: "Settings", label: "Settings", path: "/admin/settings" },
 ];

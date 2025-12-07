@@ -1,4 +1,5 @@
 // payment.service.ts
+
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -11,9 +12,7 @@ import { generateSignature } from './payos-utils';
 import { PayosWebhookBodyPayload } from './dto/payos-webhook-body.payload';
 import { Bill } from './bill.schema';
 import { ShoeDetail } from '../shoes/shoe-detail.schema';
-import { StockCheckResult, WebhookResponse } from './payment.interface'; // ✅ Import interface
-
-const paymentStore = new Map();
+import { StockCheckResult, WebhookResponse } from './payment.interface';
 
 @Injectable()
 export class PaymentService {
@@ -24,14 +23,27 @@ export class PaymentService {
     @InjectModel('ShoeDetail') private shoeDetailModel: Model<ShoeDetail>,
   ) {}
 
+  // ✅ CREATE PAYMENT - Hỗ trợ cả guest và logged-in user
   async createPayment(body: CreatePaymentDto): Promise<any> {
-    // ✅ Validation items
+    // ✅ Validation
     if (!body.items || body.items.length === 0) {
       throw new Error('❌ Items are required! Cannot create payment without items.');
     }
 
-    console.log('📦 Creating payment with items:', JSON.stringify(body.items, null, 2));
+    if (!body.customerEmail) {
+      throw new Error('❌ Customer email is required!');
+    }
 
+    if (!body.customerInfo) {
+      throw new Error('❌ Customer info is required!');
+    }
+
+    const isGuest = !body.userId;
+    console.log('📦 Creating payment for:', isGuest ? 'GUEST' : `USER ${body.userId}`);
+    console.log('📧 Email:', body.customerEmail);
+    console.log('📦 Items:', JSON.stringify(body.items, null, 2));
+
+    // ✅ Call PayOS API
     const url = `https://api-merchant.payos.vn/v2/payment-requests`;
     const config = {
       headers: {
@@ -64,52 +76,50 @@ export class PaymentService {
 
     const paymentData = response.data.data;
 
-    // ✅ Tạo Bill document với items
+    // ✅ Tạo Bill document với user info
     const bill = await this.billModel.create({
       orderId: body.orderId,
       orderCode: paymentData.orderCode,
       paymentLinkId: paymentData.paymentLinkId,
       amount: paymentData.amount,
       description: paymentData.description,
+      
+      // ✅ User & Customer data
+      userId: body.userId || null,           // null = guest
+      customerEmail: body.customerEmail,
+      customerInfo: body.customerInfo,
+      
       items: body.items,
       status: 'PENDING',
       createdAt: new Date(),
     });
 
-    console.log('✅ Bill created in MongoDB:', bill._id);
-
-    // Lưu vào in-memory store
-    paymentStore.set(paymentData.orderCode, {
-      orderCode: paymentData.orderCode,
-      paymentLinkId: paymentData.paymentLinkId,
-      amount: paymentData.amount,
-      description: paymentData.description,
-      items: body.items,
-      status: 'PENDING',
-      createdAt: new Date(),
-    });
+    console.log('✅ Bill created:', bill._id);
+    console.log('👤 Customer type:', isGuest ? 'Guest' : 'Registered User');
 
     return response.data;
   }
 
-  // ✅ Xử lý webhook: Cập nhật Bill và trừ stock
+  // ✅ WEBHOOK HANDLER - Xử lý thanh toán và trừ stock
   async handleWebhook(body: PayosWebhookBodyPayload): Promise<WebhookResponse> {
     console.log('🔔 Webhook received:', body);
+
     const { orderCode, paymentLinkId, ...transactionData } = body.data;
 
     try {
       // ✅ Tìm Bill trong MongoDB
       const bill = await this.billModel.findOne({ orderCode });
-      
+
       if (!bill) {
-        console.warn('⚠️ Bill not found in MongoDB for orderCode:', orderCode);
+        console.warn('⚠️ Bill not found for orderCode:', orderCode);
         return { received: true, updated: false };
       }
 
       console.log('📦 Bill found:', bill._id);
-      console.log('📦 Bill items:', JSON.stringify(bill.items, null, 2));
+      console.log('👤 Customer:', bill.userId ? `User ${bill.userId}` : 'Guest');
+      console.log('📧 Email:', bill.customerEmail);
 
-      // ✅ Kiểm tra items có tồn tại không
+      // ✅ Kiểm tra items
       if (!bill.items || bill.items.length === 0) {
         console.error('❌ Bill has no items!');
         bill.status = 'FAILED';
@@ -117,18 +127,16 @@ export class PaymentService {
         bill.transactionData = {
           ...transactionData,
           failureReason: 'NO_ITEMS',
-          errorMessage: 'Bill has no items'
         };
         await bill.save();
         return { received: true, updated: true, status: 'FAILED', reason: 'No items in bill' };
       }
 
-      // ✅ Kiểm tra stock trước khi trừ
+      // ✅ Check stock cho tất cả items
       console.log('🔍 Checking stock for all items...');
       const stockCheckResults: StockCheckResult[] = [];
-      
+
       for (const item of bill.items) {
-        console.log('🔄 Checking item:', item);
         const stockInfo = await this.checkStockBeforeDecrease(
           item.productId,
           item.colorName,
@@ -140,9 +148,9 @@ export class PaymentService {
 
       console.log('📊 Stock check results:', stockCheckResults);
 
-      // ✅ Nếu có item nào thiếu stock → Update bill status = FAILED
+      // ✅ Nếu thiếu stock → FAILED
       const hasInsufficientStock = stockCheckResults.some(result => !result.isAvailable);
-      
+
       if (hasInsufficientStock) {
         bill.status = 'FAILED';
         bill.paidAt = new Date();
@@ -153,20 +161,18 @@ export class PaymentService {
         };
         await bill.save();
 
-        console.error('❌ Payment failed due to insufficient stock');
-        console.error('❌ Failed items:', stockCheckResults.filter(r => !r.isAvailable));
-
-        return { 
-          received: true, 
-          updated: true, 
+        console.error('❌ Payment failed - insufficient stock');
+        return {
+          received: true,
+          updated: true,
           status: 'FAILED',
           reason: 'Insufficient stock',
           details: stockCheckResults.filter(r => !r.isAvailable)
         };
       }
 
-      // ✅ Trừ stock cho từng item trong đơn hàng
-      console.log('✅ All items have sufficient stock. Proceeding to decrease...');
+      // ✅ Trừ stock
+      console.log('✅ Stock sufficient. Decreasing stock...');
       for (const item of bill.items) {
         await this.decreaseStock(
           item.productId,
@@ -176,29 +182,21 @@ export class PaymentService {
         );
       }
 
-      // ✅ Cập nhật Bill status thành PAID
+      // ✅ Update Bill → PAID
       bill.status = 'PAID';
       bill.paidAt = new Date();
       bill.transactionData = transactionData;
       await bill.save();
 
-      console.log('✅ Bill updated to PAID and stock decreased:', bill._id);
-
-      // Cập nhật in-memory store
-      const payment = paymentStore.get(orderCode);
-      if (payment) {
-        payment.status = 'PAID';
-        payment.paidAt = new Date();
-        payment.webhookData = body.data;
-        paymentStore.set(orderCode, payment);
-      }
+      console.log('✅ Payment successful!');
+      console.log('✅ Bill updated:', bill._id);
+      console.log('👤 Order by:', bill.userId ? 'Registered User' : 'Guest');
 
       return { received: true, updated: true, status: 'PAID' };
+
     } catch (error) {
-      console.error('❌ Error in handleWebhook:', error);
-      console.error('❌ Error stack:', error.stack);
-      
-      // ✅ Cập nhật Bill status = FAILED nếu có lỗi
+      console.error('❌ Error in webhook:', error);
+
       try {
         const bill = await this.billModel.findOne({ orderCode });
         if (bill && bill.status === 'PENDING') {
@@ -208,24 +206,18 @@ export class PaymentService {
             ...transactionData,
             failureReason: 'WEBHOOK_ERROR',
             errorMessage: error.message,
-            errorStack: error.stack
           };
           await bill.save();
-          console.log('⚠️ Bill marked as FAILED due to webhook error');
         }
       } catch (updateError) {
-        console.error('❌ Failed to update bill status:', updateError);
+        console.error('❌ Failed to update bill:', updateError);
       }
 
-      return { 
-        received: true, 
-        updated: false,
-        error: error.message 
-      };
+      return { received: true, updated: false, error: error.message };
     }
   }
 
-  // ✅ Helper method để check stock trước khi trừ
+  // ✅ Check stock trước khi trừ
   private async checkStockBeforeDecrease(
     productId: string,
     colorName: string,
@@ -283,12 +275,11 @@ export class PaymentService {
         quantity,
         availableStock: currentStock,
         isAvailable,
-        message: isAvailable 
-          ? 'Stock available' 
+        message: isAvailable
+          ? 'Stock available'
           : `Insufficient stock. Available: ${currentStock}, Requested: ${quantity}`
       };
     } catch (error) {
-      console.error(`❌ Error checking stock for ${productId}:`, error);
       return {
         productId,
         colorName,
@@ -296,12 +287,12 @@ export class PaymentService {
         quantity,
         availableStock: 0,
         isAvailable: false,
-        message: `Error checking stock: ${error.message}`
+        message: `Error: ${error.message}`
       };
     }
   }
 
-  // ✅ Method để trừ stock
+  // ✅ Trừ stock
   private async decreaseStock(
     productId: string,
     colorName: string,
@@ -311,45 +302,29 @@ export class PaymentService {
     console.log(`🔻 Decreasing stock: ${productId} - ${colorName} - ${size} - ${quantity}`);
 
     const shoeDetail = await this.shoeDetailModel.findOne({ productId });
+    if (!shoeDetail) throw new Error(`Product ${productId} not found`);
 
-    if (!shoeDetail) {
-      throw new Error(`Product ${productId} not found`);
-    }
-
-    // Tìm màu
     const color = shoeDetail.colors.find(c => c.colorName === colorName);
-    if (!color) {
-      throw new Error(`Color ${colorName} not found for product ${productId}`);
-    }
+    if (!color) throw new Error(`Color ${colorName} not found`);
 
-    // Tìm size
     const sizeObj = color.sizes.find(s => s.size === size);
-    if (!sizeObj) {
-      throw new Error(`Size ${size} not found for color ${colorName} of product ${productId}`);
-    }
+    if (!sizeObj) throw new Error(`Size ${size} not found`);
 
-    // ✅ Trừ stock
     const currentStock = sizeObj.stock || 0;
     if (currentStock < quantity) {
-      throw new Error(
-        `Insufficient stock for ${productId} - ${colorName} - ${size}. Available: ${currentStock}, Requested: ${quantity}`
-      );
+      throw new Error(`Insufficient stock: Available ${currentStock}, Requested ${quantity}`);
     }
 
     sizeObj.stock = currentStock - quantity;
-
-    // ✅ Lưu lại vào MongoDB
     await shoeDetail.save();
 
     console.log(`✅ Stock updated: ${productId} - ${colorName} - ${size} → ${sizeObj.stock}`);
   }
 
-  // ✅ API check payment status
+  // ✅ Check payment status by paymentLinkId
   async checkPaymentStatus(paymentLinkId: string) {
-    console.log('🔍 Checking payment status:', paymentLinkId);
-    
     const bill = await this.billModel.findOne({ paymentLinkId });
-    
+
     if (!bill) {
       return {
         success: false,
@@ -364,15 +339,17 @@ export class PaymentService {
       orderCode: bill.orderCode,
       amount: bill.amount,
       items: bill.items,
+      customerEmail: bill.customerEmail,
+      isGuest: !bill.userId,
       paidAt: bill.paidAt,
       transactionData: bill.transactionData
     };
   }
 
-  // ✅ Alternative: Check by orderCode
+  // ✅ Check payment by orderCode
   async checkPaymentByOrderCode(orderCode: number) {
     const bill = await this.billModel.findOne({ orderCode });
-    
+
     if (!bill) {
       return {
         success: false,
@@ -388,8 +365,31 @@ export class PaymentService {
       paymentLinkId: bill.paymentLinkId,
       amount: bill.amount,
       items: bill.items,
+      customerEmail: bill.customerEmail,
+      customerInfo: bill.customerInfo,
+      isGuest: !bill.userId,
+      userId: bill.userId,
       paidAt: bill.paidAt,
       transactionData: bill.transactionData
     };
+  }
+
+  // ✅ Get user orders (for logged-in users)
+  async getUserOrders(userId: string) {
+    return this.billModel
+      .find({ userId })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  // ✅ Get guest orders (by email)
+  async getGuestOrders(email: string) {
+    return this.billModel
+      .find({ 
+        userId: null, 
+        customerEmail: email 
+      })
+      .sort({ createdAt: -1 })
+      .exec();
   }
 }

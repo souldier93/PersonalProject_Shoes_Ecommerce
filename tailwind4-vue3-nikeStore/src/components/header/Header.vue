@@ -7,9 +7,38 @@ const router = useRouter()
 const bagCount = ref(0)
 const showMiniCart = ref(false)
 const lastAddedItem = ref(null)
+const showProfileMenu = ref(false)
+const profileRef = ref(null)
+
+// Check if user is logged in
+const isLoggedIn = computed(() => {
+  return !!localStorage.getItem('user')
+})
+
+// Get current user info
+const currentUser = computed(() => {
+  const userStr = localStorage.getItem('user')
+  if (userStr) {
+    return JSON.parse(userStr)
+  }
+  return null
+})
 
 const goToLogin = () => {
   router.push('/login')
+}
+
+const toggleProfileMenu = () => {
+  showProfileMenu.value = !showProfileMenu.value
+}
+
+const handleLogout = () => {
+  localStorage.removeItem('user')
+  localStorage.removeItem('token')
+  showProfileMenu.value = false
+  router.push('/')
+  // Reload trang để cập nhật UI
+  window.location.reload()
 }
 
 // Tính tổng số sản phẩm trong bag
@@ -52,6 +81,13 @@ const formatPrice = (price) => {
   }).format(price).replace('₫', 'đ')
 }
 
+// Close dropdown when clicking outside
+const handleClickOutside = (event) => {
+  if (profileRef.value && !profileRef.value.contains(event.target)) {
+    showProfileMenu.value = false
+  }
+}
+
 // Cập nhật khi component mount
 onMounted(() => {
   updateBagCount()
@@ -59,12 +95,14 @@ onMounted(() => {
   // Lắng nghe sự kiện storage để cập nhật real-time
   window.addEventListener('storage', updateBagCount)
   window.addEventListener('bagUpdated', handleBagAdded)
+  document.addEventListener('click', handleClickOutside)
 })
 
 // Cleanup khi component bị destroy
 onBeforeUnmount(() => {
   window.removeEventListener('storage', updateBagCount)
   window.removeEventListener('bagUpdated', handleBagAdded)
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -171,8 +209,77 @@ onBeforeUnmount(() => {
         </transition>
       </div>
 
-      <!-- Nút Login -->
-      <button @click="goToLogin" class="bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition">
+      <!-- User Profile / Login Button -->
+      <div v-if="isLoggedIn" class="relative" ref="profileRef">
+        <button @click="toggleProfileMenu" 
+                class="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-gray-100 transition">
+          <span class="text-sm font-medium">{{ currentUser.username || currentUser.email }}</span>
+          <svg class="w-4 h-4 transition-transform" :class="showProfileMenu ? 'rotate-180' : ''" 
+               fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <transition
+          enter-active-class="transition ease-out duration-200"
+          enter-from-class="opacity-0 translate-y-1"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition ease-in duration-150"
+          leave-from-class="opacity-100 translate-y-0"
+          leave-to-class="opacity-0 translate-y-1"
+        >
+          <div v-if="showProfileMenu" 
+               class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2">
+            <div class="px-4 py-3 border-b border-gray-100">
+              <p class="text-sm font-medium text-gray-900">{{ currentUser.username }}</p>
+              <p class="text-xs text-gray-500">{{ currentUser.email }}</p>
+            </div>
+
+            <div class="py-2">
+              <button class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span>My Profile</span>
+              </button>
+
+              <button class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span>My Orders</span>
+              </button>
+
+              <button class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Settings</span>
+              </button>
+            </div>
+
+            <div class="border-t border-gray-100 py-2">
+              <button @click="handleLogout" 
+                      class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </transition>
+      </div>
+
+      <!-- Nút Login (chỉ hiện khi chưa đăng nhập) -->
+      <button v-else @click="goToLogin" 
+              class="bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition">
         Login
       </button>
     </div>

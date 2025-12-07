@@ -11,6 +11,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.17",
     "axios": "^1.13.2",
+    "pinia": "^3.0.4",
     "qrcode": "^1.5.4",
     "qrcode.vue": "^3.6.0",
     "tailwindcss": "^4.1.17",

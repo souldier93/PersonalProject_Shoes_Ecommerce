@@ -82,4 +82,10 @@ async softDeleteProduct(@Param('productId') productId: string) {
   }
 
 
+ // ✅ DASHBOARD STATS - GỌI SERVICE THAY VÌ TRUY CẬP MODEL
+  @Get('stats/dashboard')
+  async getDashboardStats() {
+    return this.shoesService.getDashboardStats();
+  }
+
 }

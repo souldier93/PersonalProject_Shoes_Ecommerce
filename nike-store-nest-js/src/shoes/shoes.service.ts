@@ -4,15 +4,15 @@ import { Model } from 'mongoose';
 import { Shoe, ShoeDocument } from './shoes.schema';
 import { ShoeDetail, ShoeDetailDocument } from './shoe-detail.schema';
 import { Counter, CounterDocument } from './counter.schema';
-
+import { Bill } from '../payment/bill.schema';
 @Injectable()
 export class ShoesService {
   constructor(
-    @InjectModel(Shoe.name) private shoeModel: Model<ShoeDocument>,
-    @InjectModel(ShoeDetail.name)
-    private shoeDetailModel: Model<ShoeDetailDocument>,
-    @InjectModel(Counter.name) private counterModel: Model<CounterDocument>,
-  ) {}
+  @InjectModel(Shoe.name) private shoeModel: Model<ShoeDocument>,
+  @InjectModel(ShoeDetail.name) private shoeDetailModel: Model<ShoeDetailDocument>,
+  @InjectModel(Counter.name) private counterModel: Model<CounterDocument>,
+  @InjectModel('Bill') private billModel: Model<Bill>, // ✅ Thêm Bill model
+) {}
 
   // ==================== COLLECTION shoes (LISTING) ====================
 
@@ -465,4 +465,73 @@ async checkStockBatch(items: Array<{
       : `${outOfStockItems.length} item(s) out of stock`
   };
 }
+
+// shoes.service.ts (ĐÃ CÓ - CHỈ CẦN KIỂM TRA LẠI)
+
+async getDashboardStats() {
+  // 1. Tổng số sản phẩm
+  const totalProducts = await this.shoeModel.countDocuments().exec();
+
+  // 2. Tổng số orders
+  const totalOrders = await this.billModel.countDocuments().exec();
+
+  // 3. Số orders PAID
+  const paidOrders = await this.billModel.countDocuments({ status: 'PAID' }).exec();
+
+  // 4. Tổng doanh thu
+  const revenueData = await this.billModel.aggregate([
+    { $match: { status: 'PAID' } },
+    { $group: { _id: null, total: { $sum: '$amount' } } }
+  ]).exec();
+  const totalRevenue = revenueData[0]?.total || 0;
+
+  // 5. Tổng stock
+  const allDetails = await this.shoeDetailModel.find().lean().exec();
+  let totalStock = 0;
+  allDetails.forEach(detail => {
+    detail.colors?.forEach(color => {
+      color.sizes?.forEach(size => {
+        totalStock += Number(size.stock) || 0;
+      });
+    });
+  });
+
+  // 6. Recent orders với đầy đủ customer info
+  const recentOrders = await this.billModel
+    .find()
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .lean()
+    .exec();
+
+  // ✅ Map để trả về đầy đủ customer info
+  const formattedOrders = recentOrders.map(bill => ({
+    orderCode: bill.orderCode,
+    paymentLinkId: bill.paymentLinkId,
+    amount: bill.amount,
+    description: bill.description,
+    status: bill.status,
+    items: bill.items,
+    
+    // ✅ Customer data
+    userId: bill.userId,
+    customerEmail: bill.customerEmail,
+    customerInfo: bill.customerInfo,
+    
+    transactionData: bill.transactionData,
+    createdAt: bill.createdAt,
+    paidAt: bill.paidAt,
+  }));
+
+  return {
+    totalProducts,
+    totalStock,
+    totalOrders,
+    paidOrders,
+    totalRevenue,
+    recentOrders: formattedOrders
+  };
+}
+
+
 }

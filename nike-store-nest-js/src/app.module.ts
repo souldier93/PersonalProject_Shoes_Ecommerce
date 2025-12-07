@@ -6,6 +6,8 @@ import { ShoesModule } from './shoes/shoes.module';
 import { ConfigModule } from '@nestjs/config';
 import { R2Module } from './r2/r2.module';
 import { PaymentModule } from './payment/payment.module';
+import { join } from 'path'; // ✅ Import
+import { ServeStaticModule } from '@nestjs/serve-static'; // ✅ Import
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -14,6 +16,10 @@ import { PaymentModule } from './payment/payment.module';
     }),
     R2Module,
     MongooseModule.forRoot('mongodb://localhost:27017/nike-store'),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+      serveRoot: '/', // Files sẽ được serve tại root path
+    }),
     ShoesModule,
     AuthModule,
     ScheduleModule.forRoot(),

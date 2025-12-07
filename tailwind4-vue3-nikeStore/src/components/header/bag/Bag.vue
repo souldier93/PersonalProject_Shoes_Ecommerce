@@ -73,11 +73,71 @@
             </div>
           </div>
           
+          <!-- Checkout Buttons - Hiển thị khác nhau theo trạng thái đăng nhập -->
           <div class="mt-6 space-y-3">
-            <button @click="guestCheckout"
-              class="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-gray-800">
-              Guest Checkout
-            </button>
+            <!-- Nếu đã đăng nhập: Chỉ hiện Member Checkout -->
+            <template v-if="isLoggedIn">
+              <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                <div class="flex items-center gap-2">
+                  <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span class="text-sm font-medium text-green-800">Logged in as {{ currentUser.username }}</span>
+                </div>
+              </div>
+              
+              <button @click="memberCheckout"
+                class="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-gray-800 transition-colors">
+                Member Checkout
+              </button>
+            </template>
+
+            <!-- Nếu chưa đăng nhập: Hiện cả 2 options -->
+            <template v-else>
+              <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
+                <div class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-gray-700 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                  </svg>
+                  <div>
+                    <h4 class="font-semibold text-sm mb-1">Nike Member Benefits</h4>
+                    <p class="text-xs text-gray-600">Fast checkout, order tracking, and exclusive access</p>
+                  </div>
+                </div>
+              </div>
+
+              <button @click="memberCheckout"
+                class="w-full bg-black text-white py-4 rounded-full font-medium hover:bg-gray-800 transition-colors">
+                Member Checkout
+              </button>
+              
+              <button @click="guestCheckout"
+                class="w-full border-2 border-black text-black py-4 rounded-full font-medium hover:bg-gray-100 transition-colors">
+                Guest Checkout
+              </button>
+
+              <p class="text-xs text-center text-gray-500 mt-2">
+                Don't have an account? 
+                <button @click="goToSignup" class="underline hover:text-black">Sign up now</button>
+              </p>
+            </template>
+          </div>
+
+          <!-- Delivery Info -->
+          <div class="mt-6 pt-6 border-t border-gray-200">
+            <div class="flex items-start gap-3 text-sm text-gray-600">
+              <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <div>
+                <p class="font-medium text-gray-900 mb-1">Delivery Information</p>
+                <p>Estimated delivery: 3-8 business days</p>
+                <p class="mt-1">Free delivery on orders over 5,000,000₫</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -91,6 +151,20 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const bagItems = ref([])
+
+// Check if user is logged in
+const isLoggedIn = computed(() => {
+  return !!localStorage.getItem('user')
+})
+
+// Get current user info
+const currentUser = computed(() => {
+  const userStr = localStorage.getItem('user')
+  if (userStr) {
+    return JSON.parse(userStr)
+  }
+  return null
+})
 
 onMounted(() => {
   loadBag()
@@ -112,7 +186,7 @@ const loadBag = () => {
 
 const saveBag = () => {
   localStorage.setItem('shoppingBag', JSON.stringify(bagItems.value))
-  // ✅ Dispatch event để header cập nhật
+  // Dispatch event để header cập nhật
   window.dispatchEvent(new Event('bagUpdated'))
 }
 
@@ -161,15 +235,45 @@ const removeItem = (item) => {
   }
 }
 
-const guestCheckout = () => {
+const validateBag = () => {
   const invalidItems = bagItems.value.filter(item => !item.colorName || !item.size)
   
   if (invalidItems.length > 0) {
     alert('Một số sản phẩm thiếu thông tin. Vui lòng kiểm tra lại!')
     console.error('❌ Invalid items:', invalidItems)
-    return
+    return false
   }
+  return true
+}
+
+// Guest Checkout - Chuyển thẳng đến checkout
+const guestCheckout = () => {
+  if (!validateBag()) return
   
+  // Đánh dấu là guest checkout
+  localStorage.setItem('checkoutMode', 'guest')
   router.push('/checkout')
+}
+
+// Member Checkout - Kiểm tra login trước
+const memberCheckout = () => {
+  if (!validateBag()) return
+  
+  if (isLoggedIn.value) {
+    // Đã đăng nhập - Chuyển thẳng đến checkout
+    localStorage.setItem('checkoutMode', 'member')
+    router.push('/checkout')
+  } else {
+    // Chưa đăng nhập - Chuyển đến login
+    localStorage.setItem('redirectAfterLogin', '/checkout')
+    localStorage.setItem('checkoutMode', 'member')
+    router.push('/login')
+  }
+}
+
+// Go to signup page
+const goToSignup = () => {
+  localStorage.setItem('redirectAfterLogin', '/bag')
+  router.push('/register')
 }
 </script>
