@@ -1,11 +1,11 @@
 <template>
-    <div v-if="product" class="max-w-6xl mx-auto px-8 justify-center">
-        <div class="flex gap-6">
+    <div v-if="product" class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[88px_minmax(0,1fr)_380px] xl:grid-cols-[96px_minmax(0,680px)_400px]">
             <!-- LEFT - Thumbnails -->
-            <div class="flex flex-col items-start">
-                <div class="flex flex-col gap-3 max-h-[680px] overflow-y-auto scrollbar-hide">
+            <div class="order-2 lg:order-1">
+                <div class="flex gap-3 overflow-x-auto pb-2 lg:max-h-[680px] lg:flex-col lg:overflow-y-auto lg:pb-0 scrollbar-hide">
                     <div v-for="(img, i) in currentImages" :key="i"
-                        class="aspect-square w-16 bg-gray-100 rounded-md flex items-center justify-center cursor-pointer border-2 transition-all hover:border-gray-400"
+                        class="aspect-square w-16 shrink-0 bg-gray-100 rounded-md flex items-center justify-center cursor-pointer border-2 transition-all hover:border-gray-400 sm:w-20 lg:w-16"
                         :class="selectedImgIndex === i ? 'border-black' : 'border-transparent'"
                         @click="selectedImgIndex = i">
 
@@ -21,23 +21,23 @@
             </div>
 
             <!-- CENTER - Main Image/Video -->
-            <div class="flex items-start">
-                <div class="max-w-full max-h-full bg-[#f5f5f5] rounded-lg inline-flex">
+            <div class="order-1 lg:order-2">
+                <div class="flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg bg-[#f5f5f5] lg:max-h-[680px]">
                     <!-- Video Player -->
                     <video v-if="isVideo(currentImages[selectedImgIndex])" :src="currentImages[selectedImgIndex]"
-                        class="max-w-[680px] max-h-[680px] object-contain rounded-lg" controls autoplay muted loop
+                        class="h-full w-full object-contain rounded-lg" controls autoplay muted loop
                         playsinline>
                         Your browser does not support the video tag.
                     </video>
 
                     <!-- Image Display -->
                     <img v-else-if="currentImages[selectedImgIndex]" :src="currentImages[selectedImgIndex]"
-                        class="max-w-[680px] max-h-[680px] object-contain" />
+                        class="h-full w-full object-contain" />
                 </div>
             </div>
 
             <!-- RIGHT - Product Info -->
-            <div class="w-1/3 space-y-6">
+            <div class="order-3 space-y-6 lg:sticky lg:top-24 lg:self-start">
                 <div v-if="productBadge" class="text-orange-600 text-sm font-semibold -mb-1">
                     {{ productBadge }}
                 </div>
@@ -107,7 +107,7 @@
                     </div>
 
                     <!-- Size Grid -->
-                    <div v-else-if="currentSizes.length > 0" class="grid grid-cols-3 gap-2">
+                    <div v-else-if="currentSizes.length > 0" class="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         <button v-for="size in currentSizes" :key="size.size" @click="selectSize(size)"
                             class="border rounded-md py-2 px-2 text-sm font-medium relative transition-all text-center min-h-[58px] flex flex-col items-center justify-center"
                             :class="[
@@ -191,7 +191,7 @@
         </div>
 
         <section class="mt-12 border-t pt-8">
-            <div class="flex items-end justify-between mb-6">
+            <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h2 class="text-2xl font-bold">Reviews</h2>
                     <p class="text-sm text-gray-500" v-if="reviewSummary.total">
@@ -223,7 +223,7 @@
 
     <!-- Success Toast -->
     <div v-if="showToast"
-        class="fixed bottom-6 right-6 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-up">
+        class="fixed bottom-4 left-4 right-4 z-50 flex items-center gap-3 rounded-lg bg-green-600 px-4 py-4 text-white shadow-lg animate-slide-up sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-md sm:px-6">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>

@@ -23,6 +23,15 @@ on:
         description: Frontend Container App name
         default: shoes-frontend
         required: true
+      dry_run:
+        description: Build and validate only. Does not create/update Azure resources.
+        type: boolean
+        default: true
+        required: true
+      confirm_cost:
+        description: Type DEPLOY_AZURE to allow Azure resource changes.
+        default: ""
+        required: false
 
 jobs:
   deploy:
@@ -35,7 +44,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cost guard
+        run: |
+          echo "dry_run=${{ inputs.dry_run }}"
+          if [ "${{ inputs.dry_run }}" != "true" ] && [ "${{ inputs.confirm_cost }}" != "DEPLOY_AZURE" ]; then
+            echo "Refusing to deploy. Set dry_run=false and confirm_cost=DEPLOY_AZURE to allow Azure changes."
+            exit 1
+          fi
+
+      - name: Build backend locally
+        run: |
+          cd nike-store-nest-js
+          npm ci
+          npm run build
+
+      - name: Build frontend locally
+        run: |
+          cd tailwind4-vue3-nikeStore
+          npm ci
+          npm run build
+
       - name: Azure login
+        if: ${{ inputs.dry_run == false }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -43,6 +73,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Ensure Azure resources
+        if: ${{ inputs.dry_run == false }}
         run: |
           az group create \
             --name "${{ inputs.resource_group }}" \
@@ -60,15 +91,18 @@ jobs:
             --location "${{ inputs.location }}" || true
 
       - name: ACR login
+        if: ${{ inputs.dry_run == false }}
         run: az acr login --name "${{ secrets.AZURE_ACR_NAME }}"
 
       - name: Build and push backend image
+        if: ${{ inputs.dry_run == false }}
         run: |
           REGISTRY="${{ secrets.AZURE_ACR_NAME }}.azurecr.io"
           docker build -t "$REGISTRY/shoes-backend:${{ github.sha }}" ./nike-store-nest-js
           docker push "$REGISTRY/shoes-backend:${{ github.sha }}"
 
       - name: Deploy backend
+        if: ${{ inputs.dry_run == false }}
         run: |
           REGISTRY="${{ secrets.AZURE_ACR_NAME }}.azurecr.io"
           ACR_PASSWORD=$(az acr credential show --name "${{ secrets.AZURE_ACR_NAME }}" --query "passwords[0].value" -o tsv)
@@ -100,7 +134,9 @@ jobs:
               --set-env-vars \
                 NODE_ENV=production \
                 PORT=3000 \
+                DEPLOY_VERSION="${{ github.sha }}" \
                 MONGO_URI=secretref:mongo-uri \
+                MONGO_DB_NAME="${{ secrets.MONGO_DB_NAME || 'nike-store' }}" \
                 JWT_SECRET=secretref:jwt-secret \
                 PAYOS_CLIENT_ID=secretref:payos-client-id \
                 PAYOS_API_KEY=secretref:payos-api-key \
@@ -133,7 +169,9 @@ jobs:
               --env-vars \
                 NODE_ENV=production \
                 PORT=3000 \
+                DEPLOY_VERSION="${{ github.sha }}" \
                 MONGO_URI=secretref:mongo-uri \
+                MONGO_DB_NAME="${{ secrets.MONGO_DB_NAME || 'nike-store' }}" \
                 JWT_SECRET=secretref:jwt-secret \
                 PAYOS_CLIENT_ID=secretref:payos-client-id \
                 PAYOS_API_KEY=secretref:payos-api-key \
@@ -145,6 +183,7 @@ jobs:
           fi
 
       - name: Resolve backend URL
+        if: ${{ inputs.dry_run == false }}
         id: backend
         run: |
           FQDN=$(az containerapp show \
@@ -154,6 +193,7 @@ jobs:
           echo "url=https://$FQDN" >> "$GITHUB_OUTPUT"
 
       - name: Build and push frontend image
+        if: ${{ inputs.dry_run == false }}
         run: |
           REGISTRY="${{ secrets.AZURE_ACR_NAME }}.azurecr.io"
           docker build \
@@ -163,6 +203,7 @@ jobs:
           docker push "$REGISTRY/shoes-frontend:${{ github.sha }}"
 
       - name: Deploy frontend
+        if: ${{ inputs.dry_run == false }}
         run: |
           REGISTRY="${{ secrets.AZURE_ACR_NAME }}.azurecr.io"
           ACR_PASSWORD=$(az acr credential show --name "${{ secrets.AZURE_ACR_NAME }}" --query "passwords[0].value" -o tsv)
@@ -191,6 +232,7 @@ jobs:
           fi
 
       - name: Print URLs
+        if: ${{ inputs.dry_run == false }}
         run: |
           FRONTEND_FQDN=$(az containerapp show \
             --name "${{ inputs.frontend_app }}" \
@@ -198,3 +240,8 @@ jobs:
             --query "properties.configuration.ingress.fqdn" -o tsv)
           echo "Backend:  ${{ steps.backend.outputs.url }}"
           echo "Frontend: https://$FRONTEND_FQDN"
+
+      - name: Dry run summary
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "Dry run completed. No Azure resources were created or updated."

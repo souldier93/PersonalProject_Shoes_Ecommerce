@@ -1,12 +1,12 @@
 <template>
-  <div class="w-full max-w-7xl mx-auto px-4 py-8 mt-16">
+  <div class="mx-auto mt-10 w-full max-w-7xl px-4 py-8 sm:mt-16">
     <div class="flex flex-col gap-5 mb-8">
-      <div class="flex items-center justify-between">
-        <h2 class="text-3xl font-semibold">All products</h2>
+      <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <h2 class="text-2xl font-semibold sm:text-3xl">All products</h2>
         <p class="text-sm text-gray-500">{{ products.length }} results</p>
       </div>
 
-      <div class="bg-white border border-gray-200 rounded-lg p-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+      <div class="grid grid-cols-1 gap-3 rounded-lg border border-gray-200 bg-white p-3 sm:grid-cols-2 sm:p-4 lg:grid-cols-6">
         <input v-model="filters.search" @input="fetchProducts" placeholder="Search products" class="filter-input md:col-span-2" />
 
         <select v-model="filters.category" @change="fetchProducts" class="filter-input">
@@ -53,7 +53,7 @@
       No products match your filters.
     </div>
 
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div v-else class="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
       <button
         v-for="product in products"
         :key="product.id"
@@ -64,8 +64,8 @@
           <img :src="product.image" :alt="product.name" class="w-full h-full object-contain group-hover:scale-105 transition">
         </div>
         <div class="space-y-1">
-          <h3 class="font-semibold text-lg">{{ product.name }}</h3>
-          <p class="text-gray-600">{{ productSubtitle(product.category, product.productType) }}</p>
+          <h3 class="text-sm font-semibold sm:text-lg">{{ product.name }}</h3>
+          <p class="text-sm text-gray-600 sm:text-base">{{ productSubtitle(product.category, product.productType) }}</p>
           <p class="text-sm text-gray-500">{{ productMeta(product) }}</p>
           <p class="text-sm text-gray-500">{{ product.stock }} in stock</p>
           <p class="font-semibold">{{ formatPrice(product.price) }}</p>

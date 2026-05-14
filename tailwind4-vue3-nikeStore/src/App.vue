@@ -48,7 +48,7 @@ const shouldShowNormalHeader = computed(() => {
     <Header v-if="shouldShowNormalHeader" />
 
     <!-- ✅ Main Content với padding phù hợp -->
-    <main :class="shouldShowAdminHeader ? 'pt-16' : shouldShowNormalHeader ? 'pt-[128px]' : ''">
+    <main :class="shouldShowAdminHeader ? 'pt-16' : shouldShowNormalHeader ? 'pt-[112px] sm:pt-[128px]' : ''">
       <router-view />
     </main>
 

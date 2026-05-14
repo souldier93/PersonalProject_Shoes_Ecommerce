@@ -1,6 +1,6 @@
 <template>
-  <div class="p-8 mt-16 bg-gray-50 min-h-screen">
-    <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
+  <div class="mt-16 min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <h1 class="mb-6 text-2xl font-bold sm:text-3xl">Dashboard</h1>
     
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center items-center h-64">
@@ -11,7 +11,7 @@
     <div v-else>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Total Products -->
-        <div class="bg-white p-6 rounded-xl shadow-sm">
+        <div class="rounded-xl bg-white p-5 shadow-sm sm:p-6">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-gray-500 text-sm font-medium">Total Products</h3>
             <svg class="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -23,7 +23,7 @@
         </div>
         
         <!-- Total Orders -->
-        <div class="bg-white p-6 rounded-xl shadow-sm">
+        <div class="rounded-xl bg-white p-5 shadow-sm sm:p-6">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-gray-500 text-sm font-medium">Total Orders</h3>
             <svg class="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -35,7 +35,7 @@
         </div>
         
         <!-- Pending Orders -->
-        <div class="bg-white p-6 rounded-xl shadow-sm">
+        <div class="rounded-xl bg-white p-5 shadow-sm sm:p-6">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-gray-500 text-sm font-medium">Pending Orders</h3>
             <svg class="w-8 h-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -47,7 +47,7 @@
         </div>
         
         <!-- Total Revenue -->
-        <div class="bg-white p-6 rounded-xl shadow-sm">
+        <div class="rounded-xl bg-white p-5 shadow-sm sm:p-6">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-gray-500 text-sm font-medium">Revenue</h3>
             <svg class="w-8 h-8 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -60,7 +60,7 @@
       </div>
 
       <!-- Recent Orders -->
-      <div class="bg-white rounded-xl shadow-sm p-6">
+      <div class="rounded-xl bg-white p-4 shadow-sm sm:p-6">
         <h2 class="text-xl font-bold mb-4">Recent Orders</h2>
         <div class="overflow-x-auto">
           <table class="w-full">

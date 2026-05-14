@@ -1,6 +1,6 @@
 <template>
-  <div class="p-8 mt-16 bg-gray-50 min-h-screen">
-    <h1 class="text-3xl font-bold mb-6">Users Management</h1>
+  <div class="mt-16 min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <h1 class="mb-6 text-2xl font-bold sm:text-3xl">Users Management</h1>
     
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center items-center h-64">
@@ -9,7 +9,7 @@
 
     <!-- User Management Section -->
     <div v-else class="bg-white rounded-xl shadow-sm p-6">
-      <div class="flex justify-between items-center mb-6">
+      <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 class="text-xl font-bold">All Users</h2>
           <p class="text-sm text-gray-500 mt-1">Total: {{ users.length }} users</p>

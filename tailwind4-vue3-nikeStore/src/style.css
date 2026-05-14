@@ -1,1 +1,35 @@
 @import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-width: 320px;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+table {
+  min-width: 720px;
+}
+
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px;
+  }
+}

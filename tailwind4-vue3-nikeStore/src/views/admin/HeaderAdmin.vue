@@ -1,6 +1,6 @@
 <template>
   <header class="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
-    <div class="px-6 py-3">
+    <div class="px-4 py-3 sm:px-6">
       <div class="flex items-center justify-between">
         <!-- Logo -->
         <router-link to="/">
@@ -11,12 +11,13 @@
               <path d="M16 16L20 14L24 16V24L20 26L16 24V16Z" fill="black" />
             </svg>
 
-            <span class="text-xl font-bold">Store Management</span>
+            <span class="hidden text-xl font-bold sm:inline">Store Management</span>
+            <span class="text-lg font-bold sm:hidden">Store</span>
           </div>
         </router-link>
 
         <!-- Navigation Menu -->
-        <nav class="flex items-center gap-1">
+        <nav class="hidden items-center gap-1 overflow-x-auto lg:flex">
           <router-link v-for="item in menuItems" :key="item.path" :to="item.path" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-gray-100" :class="isActive(item.path) ? 'bg-gray-900 text-white hover:bg-gray-800' : 'text-gray-700'">
             <!-- Dashboard Icon -->
             <svg v-if="item.name === 'Dashboard'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,8 +72,21 @@
           </router-link>
         </nav>
 
+        <button
+          @click="showAdminNav = !showAdminNav"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100 lg:hidden"
+          aria-label="Toggle admin navigation"
+        >
+          <svg v-if="!showAdminNav" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+          <svg v-else class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         <!-- User Profile -->
-        <div class="relative" ref="profileRef">
+        <div class="relative hidden sm:block" ref="profileRef">
           <button @click="toggleProfileMenu" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
             <span class="text-sm font-medium">{{ currentUser.username }}</span>
             <svg class="w-4 h-4 transition-transform" :class="showProfileMenu ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -130,6 +144,21 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showAdminNav" class="border-t border-gray-200 bg-white px-4 py-3 lg:hidden">
+      <nav class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <router-link
+          v-for="item in menuItems"
+          :key="item.path"
+          :to="item.path"
+          @click="showAdminNav = false"
+          class="rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+          :class="isActive(item.path) ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'"
+        >
+          {{ item.label }}
+        </router-link>
+      </nav>
+    </div>
   </header>
 </template>
 
@@ -142,6 +171,7 @@ const router = useRouter();
 
 // State
 const showProfileMenu = ref(false);
+const showAdminNav = ref(false);
 const profileRef = ref(null);
 
 // Menu Items

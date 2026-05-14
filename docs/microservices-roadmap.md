@@ -86,7 +86,34 @@ Phase 3:
   - `ReturnRequested`
   - `ReviewSubmitted`
 
-## First Real Extraction: Support Service
+## Local Gateway Scaffold
+
+The repository includes a no-cloud-cost gateway scaffold:
+
+- `docker-compose.microservices.yml`
+- `services/api-gateway/nginx.conf`
+- `services/catalog-service/README.md`
+
+Run it locally only:
+
+```powershell
+docker compose -f docker-compose.microservices.yml up --build
+```
+
+Open `http://localhost:8081`.
+
+## First Real Extraction: Catalog Service
+
+Start with catalog reads before extracting order/payment:
+
+- product list
+- product detail
+- stock read APIs
+- inventory overview
+
+See `docs/catalog-service-extraction.md`.
+
+## Later Extraction: Support Service
 
 Create a new NestJS app with:
 

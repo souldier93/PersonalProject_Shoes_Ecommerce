@@ -9,26 +9,28 @@ const bagCount = ref(0)
 const showMiniCart = ref(false)
 const lastAddedItem = ref(null)
 const showProfileMenu = ref(false)
+const showMobileMenu = ref(false)
 const profileRef = ref(null)
 let miniCartTimeout = null
 
-const isLoggedIn = computed(() => {
-  return !!localStorage.getItem('user')
-})
+const navItems = ['New & Featured', 'Men', 'Women', 'Kids', 'Sale']
+
+const isLoggedIn = computed(() => !!localStorage.getItem('user'))
 
 const currentUser = computed(() => {
   const userStr = localStorage.getItem('user')
-  if (userStr) {
-    return JSON.parse(userStr)
-  }
-  return null
+  return userStr ? JSON.parse(userStr) : null
 })
 
-const isAdmin = computed(() => {
-  return currentUser.value?.role === 'admin'
-})
+const isAdmin = computed(() => currentUser.value?.role === 'admin')
+
+const closeMenus = () => {
+  showMobileMenu.value = false
+  showProfileMenu.value = false
+}
 
 const goToLogin = () => {
+  closeMenus()
   router.push('/login')
 }
 
@@ -36,18 +38,22 @@ const toggleProfileMenu = () => {
   showProfileMenu.value = !showProfileMenu.value
 }
 
+const toggleMobileMenu = () => {
+  showMobileMenu.value = !showMobileMenu.value
+}
+
 const goToMyOrders = () => {
-  showProfileMenu.value = false
+  closeMenus()
   router.push('/my-orders')
 }
 
 const goToProfile = () => {
-  showProfileMenu.value = false
+  closeMenus()
   router.push('/profile')
 }
 
 const goToAdmin = () => {
-  showProfileMenu.value = false
+  closeMenus()
   router.push('/admin/dashboard')
 }
 
@@ -56,34 +62,24 @@ const handleLogout = () => {
   localStorage.removeItem('user')
   localStorage.removeItem('authToken')
   localStorage.removeItem('accessToken')
-  showProfileMenu.value = false
+  closeMenus()
   router.push('/')
   window.location.reload()
 }
 
-const getShoppingBag = () => {
-  return getBag()
-}
-
 const updateBagCount = () => {
-  const bag = getShoppingBag()
+  const bag = getBag()
   bagCount.value = bag.reduce((sum, item) => sum + item.quantity, 0)
 }
 
 const handleBagAdded = () => {
   updateBagCount()
-
-  const bag = getShoppingBag()
+  const bag = getBag()
   lastAddedItem.value = bag[bag.length - 1] || null
-
   if (!lastAddedItem.value) return
 
   showMiniCart.value = true
-
-  if (miniCartTimeout) {
-    clearTimeout(miniCartTimeout)
-  }
-
+  if (miniCartTimeout) clearTimeout(miniCartTimeout)
   miniCartTimeout = setTimeout(() => {
     showMiniCart.value = false
   }, 5000)
@@ -91,7 +87,6 @@ const handleBagAdded = () => {
 
 const handleBagCountUpdated = () => {
   updateBagCount()
-
   if (bagCount.value === 0) {
     showMiniCart.value = false
     lastAddedItem.value = null
@@ -104,13 +99,14 @@ const closeMiniCart = () => {
 
 const goToBag = () => {
   showMiniCart.value = false
+  showMobileMenu.value = false
   router.push('/bag')
 }
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
-    currency: 'VND'
+    currency: 'VND',
   }).format(price).replace('₫', 'đ')
 }
 
@@ -133,290 +129,152 @@ onBeforeUnmount(() => {
   window.removeEventListener('bagUpdated', handleBagAdded)
   window.removeEventListener('bagCountUpdated', handleBagCountUpdated)
   document.removeEventListener('click', handleClickOutside)
-
-  if (miniCartTimeout) {
-    clearTimeout(miniCartTimeout)
-  }
+  if (miniCartTimeout) clearTimeout(miniCartTimeout)
 })
 </script>
 
 <template>
-  <nav class="flex items-center justify-between px-10 py-4 bg-white shadow-sm fixed top-0 left-0 w-full z-50">
-    <div class="flex items-center space-x-4">
-      <router-link to="/">
-        <img
-          src="/public/assets/img/Logo_NIKE.svg.png"
-          alt="Nike"
-          class="w-10 cursor-pointer hover:opacity-80 transition"
-        />
-      </router-link>
-
-      <ul class="hidden md:flex space-x-8 font-semibold text-gray-900">
-        <li><a href="#" class="hover:text-gray-600">New & Featured</a></li>
-        <li><a href="#" class="hover:text-gray-600">Men</a></li>
-        <li><a href="#" class="hover:text-gray-600">Women</a></li>
-        <li><a href="#" class="hover:text-gray-600">Kids</a></li>
-        <li><a href="#" class="hover:text-gray-600">Sale</a></li>
-      </ul>
-    </div>
-
-    <div class="flex items-center space-x-6">
-      <div class="flex items-center bg-gray-100 rounded-full px-4 py-1.5 text-gray-500">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-5 h-5"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z"
-          />
-        </svg>
-        <span class="ml-2 text-sm font-medium text-gray-600">Search</span>
-      </div>
-
-      <router-link to="/wishlist" class="hover:scale-110 transition">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-6 h-6"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-          />
-        </svg>
-      </router-link>
-
-      <div class="relative">
-        <router-link to="/bag" class="relative">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class="w-6 h-6 hover:scale-110 transition"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-            />
-          </svg>
-
-          <span
-            v-if="bagCount > 0"
-            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"
-          >
-            {{ bagCount }}
-          </span>
-        </router-link>
-
-        <transition
-          enter-active-class="transition ease-out duration-200"
-          enter-from-class="opacity-0 translate-y-1"
-          enter-to-class="opacity-100 translate-y-0"
-          leave-active-class="transition ease-in duration-150"
-          leave-from-class="opacity-100 translate-y-0"
-          leave-to-class="opacity-0 translate-y-1"
-        >
-          <div
-            v-if="showMiniCart && lastAddedItem"
-            class="absolute right-0 top-12 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 p-6 z-50"
-          >
-            <div class="flex items-start justify-between mb-4">
-              <div class="flex items-center gap-2">
-                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-                <h3 class="font-semibold text-lg">Added to Bag</h3>
-              </div>
-
-              <button @click="closeMiniCart" class="text-gray-400 hover:text-gray-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
-
-            <div class="flex gap-4 mb-4">
-              <img
-                :src="lastAddedItem.thumbnail || lastAddedItem.image"
-                :alt="lastAddedItem.name"
-                class="w-24 h-24 object-cover rounded-md"
-              />
-              <div class="flex-1">
-                <h4 class="font-semibold mb-1">{{ lastAddedItem.name }}</h4>
-                <p class="text-sm text-gray-600 mb-1">{{ lastAddedItem.colorName }}</p>
-                <p class="text-sm text-gray-600 mb-2">Size {{ lastAddedItem.size }}</p>
-                <p class="font-semibold">{{ formatPrice(lastAddedItem.price) }}</p>
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <button
-                @click="goToBag"
-                class="w-full bg-black text-white py-3 rounded-full font-medium hover:bg-gray-800 transition"
-              >
-                View Bag ({{ bagCount }})
-              </button>
-
-              <button
-                @click="closeMiniCart"
-                class="w-full border border-gray-300 py-3 rounded-full font-medium hover:bg-gray-50 transition"
-              >
-                Continue Shopping
-              </button>
-            </div>
-          </div>
-        </transition>
-      </div>
-
-      <div v-if="isLoggedIn" class="relative" ref="profileRef">
+  <nav class="fixed left-0 top-0 z-50 w-full bg-white shadow-sm">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
+      <div class="flex min-w-0 items-center gap-3">
         <button
-          @click="toggleProfileMenu"
-          class="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-gray-100 transition"
+          @click="toggleMobileMenu"
+          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 md:hidden"
+          aria-label="Toggle navigation"
         >
-          <span
-            v-if="isAdmin"
-            class="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full"
-          >
-            Admin
-          </span>
-
-          <span class="text-sm font-medium">{{ currentUser.username || currentUser.email }}</span>
-
-          <svg
-            class="w-4 h-4 transition-transform"
-            :class="showProfileMenu ? 'rotate-180' : ''"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          <svg v-if="!showMobileMenu" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+          <svg v-else class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        <transition
-          enter-active-class="transition ease-out duration-200"
-          enter-from-class="opacity-0 translate-y-1"
-          enter-to-class="opacity-100 translate-y-0"
-          leave-active-class="transition ease-in duration-150"
-          leave-from-class="opacity-100 translate-y-0"
-          leave-to-class="opacity-0 translate-y-1"
-        >
-          <div
-            v-if="showProfileMenu"
-            class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2"
-          >
-            <div class="px-4 py-3 border-b border-gray-100">
-              <p class="text-sm font-medium text-gray-900">{{ currentUser.username }}</p>
-              <p class="text-xs text-gray-500">{{ currentUser.email }}</p>
-              <p v-if="isAdmin" class="text-xs text-purple-600 font-semibold mt-1">👑 Administrator</p>
-            </div>
+        <router-link to="/" @click="closeMenus" class="shrink-0">
+          <img src="/public/assets/img/Logo_NIKE.svg.png" alt="Nike" class="w-10 cursor-pointer transition hover:opacity-80" />
+        </router-link>
 
-            <div v-if="isAdmin" class="py-2 border-b border-gray-100">
-              <button
-                @click="goToAdmin"
-                class="w-full flex items-center gap-3 px-4 py-2 text-sm text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors font-medium"
-              >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                  />
-                </svg>
-                <span>Admin Dashboard</span>
-              </button>
-            </div>
-
-            <div class="py-2">
-              <button
-                @click="goToProfile"
-                class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                <span>My Profile</span>
-              </button>
-
-              <button
-                @click="goToMyOrders"
-                class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                  />
-                </svg>
-                <span>My Orders</span>
-              </button>
-
-              <button class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                  />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>Settings</span>
-              </button>
-            </div>
-
-            <div class="border-t border-gray-100 py-2">
-              <button
-                @click="handleLogout"
-                class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-              >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </transition>
+        <ul class="hidden items-center space-x-8 font-semibold text-gray-900 md:flex">
+          <li v-for="item in navItems" :key="item">
+            <a href="#" class="hover:text-gray-600">{{ item }}</a>
+          </li>
+        </ul>
       </div>
 
-      <button
-        v-else
-        @click="goToLogin"
-        class="bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition"
-      >
-        Login
-      </button>
+      <div class="flex items-center gap-2 sm:gap-4 lg:gap-6">
+        <div class="hidden items-center rounded-full bg-gray-100 px-4 py-1.5 text-gray-500 sm:flex">
+          <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z" />
+          </svg>
+          <span class="ml-2 text-sm font-medium text-gray-600">Search</span>
+        </div>
+
+        <router-link to="/wishlist" class="hidden transition hover:scale-110 sm:block" @click="closeMenus">
+          <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+          </svg>
+        </router-link>
+
+        <div class="relative">
+          <router-link to="/bag" class="relative" @click="showMobileMenu = false">
+            <svg class="h-6 w-6 transition hover:scale-110" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
+            </svg>
+            <span v-if="bagCount > 0" class="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
+              {{ bagCount }}
+            </span>
+          </router-link>
+
+          <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
+            <div v-if="showMiniCart && lastAddedItem" class="fixed left-4 right-4 top-20 z-50 rounded-lg border border-gray-200 bg-white p-4 shadow-2xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-96 sm:p-6">
+              <div class="mb-4 flex items-start justify-between">
+                <div class="flex items-center gap-2">
+                  <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <h3 class="text-lg font-semibold">Added to Bag</h3>
+                </div>
+                <button @click="closeMiniCart" class="text-gray-400 hover:text-gray-600" aria-label="Close mini cart">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="mb-4 flex gap-4">
+                <img :src="lastAddedItem.thumbnail || lastAddedItem.image" :alt="lastAddedItem.name" class="h-24 w-24 rounded-md object-cover" />
+                <div class="min-w-0 flex-1">
+                  <h4 class="mb-1 truncate font-semibold">{{ lastAddedItem.name }}</h4>
+                  <p class="mb-1 text-sm text-gray-600">{{ lastAddedItem.colorName }}</p>
+                  <p class="mb-2 text-sm text-gray-600">Size {{ lastAddedItem.size }}</p>
+                  <p class="font-semibold">{{ formatPrice(lastAddedItem.price) }}</p>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <button @click="goToBag" class="w-full rounded-full bg-black py-3 font-medium text-white transition hover:bg-gray-800">
+                  View Bag ({{ bagCount }})
+                </button>
+                <button @click="closeMiniCart" class="w-full rounded-full border border-gray-300 py-3 font-medium transition hover:bg-gray-50">
+                  Continue Shopping
+                </button>
+              </div>
+            </div>
+          </transition>
+        </div>
+
+        <div v-if="isLoggedIn" class="relative" ref="profileRef">
+          <button @click="toggleProfileMenu" class="flex max-w-[140px] items-center gap-2 truncate rounded-full px-3 py-2 transition hover:bg-gray-100 sm:max-w-[220px] sm:px-4">
+            <span v-if="isAdmin" class="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">Admin</span>
+            <span class="hidden truncate text-sm font-medium sm:inline">{{ currentUser.username || currentUser.email }}</span>
+            <svg class="h-4 w-4 transition-transform" :class="showProfileMenu ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
+            <div v-if="showProfileMenu" class="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 bg-white py-2 shadow-xl sm:w-56">
+              <div class="border-b border-gray-100 px-4 py-3">
+                <p class="truncate text-sm font-medium text-gray-900">{{ currentUser.username }}</p>
+                <p class="truncate text-xs text-gray-500">{{ currentUser.email }}</p>
+                <p v-if="isAdmin" class="mt-1 text-xs font-semibold text-purple-600">Administrator</p>
+              </div>
+
+              <div v-if="isAdmin" class="border-b border-gray-100 py-2">
+                <button @click="goToAdmin" class="flex w-full items-center gap-3 bg-purple-50 px-4 py-2 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100">
+                  <span>Admin Dashboard</span>
+                </button>
+              </div>
+
+              <div class="py-2">
+                <button @click="goToProfile" class="flex w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50">My Profile</button>
+                <button @click="goToMyOrders" class="flex w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50">My Orders</button>
+              </div>
+
+              <div class="border-t border-gray-100 py-2">
+                <button @click="handleLogout" class="flex w-full items-center gap-3 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50">Logout</button>
+              </div>
+            </div>
+          </transition>
+        </div>
+
+        <button v-else @click="goToLogin" class="rounded-full bg-black px-4 py-2 text-sm text-white transition hover:bg-gray-800">
+          Login
+        </button>
+      </div>
     </div>
   </nav>
 
-  <div class="text-center py-3 bg-gray-100 text-sm mt-[64px]">
+  <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
+    <div v-if="showMobileMenu" class="fixed left-0 right-0 top-16 z-40 border-b border-gray-200 bg-white px-4 py-4 shadow-lg md:hidden">
+      <div class="flex flex-col gap-1 font-semibold text-gray-900">
+        <a v-for="item in navItems" :key="item" href="#" @click="closeMenus" class="rounded-lg px-3 py-3 hover:bg-gray-100">{{ item }}</a>
+        <router-link to="/wishlist" @click="closeMenus" class="rounded-lg px-3 py-3 hover:bg-gray-100">Wishlist</router-link>
+      </div>
+    </div>
+  </transition>
+
+  <div class="mt-16 bg-gray-100 px-4 py-3 text-center text-xs sm:text-sm">
     Free Standard Delivery & 30-Day Free Returns ·
     <a href="#" class="underline">Join Now</a>
   </div>

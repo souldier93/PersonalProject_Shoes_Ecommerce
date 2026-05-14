@@ -1,8 +1,8 @@
 <template>
-  <div class="p-8 mt-16 bg-gray-50 min-h-screen">
-    <div class="flex items-center justify-between mb-6">
+  <div class="mt-16 min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-3xl font-bold">Analytics</h1>
+        <h1 class="text-2xl font-bold sm:text-3xl">Analytics</h1>
         <p class="text-sm text-gray-500 mt-1">Revenue, products, fulfillment, and inventory signals.</p>
       </div>
       <button @click="fetchAnalytics" class="px-4 py-2 bg-black text-white rounded-lg font-medium">
@@ -25,12 +25,12 @@
         <section class="bg-white rounded-xl shadow-sm p-6">
           <h2 class="text-xl font-bold mb-4">Revenue by Day</h2>
           <div class="space-y-3">
-            <div v-for="day in data.salesByDay" :key="day.date" class="grid grid-cols-[96px_1fr_120px] items-center gap-3">
+            <div v-for="day in data.salesByDay" :key="day.date" class="grid grid-cols-[72px_1fr] items-center gap-3 sm:grid-cols-[96px_1fr_120px]">
               <span class="text-xs text-gray-500">{{ day.date }}</span>
               <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
                 <div class="h-full bg-black rounded-full" :style="{ width: percent(day.revenue, maxDailyRevenue) + '%' }"></div>
               </div>
-              <span class="text-sm font-semibold text-right">{{ formatPrice(day.revenue) }}</span>
+              <span class="text-right text-sm font-semibold sm:block col-span-2 sm:col-span-1">{{ formatPrice(day.revenue) }}</span>
             </div>
             <p v-if="!data.salesByDay?.length" class="text-sm text-gray-500">No paid revenue yet.</p>
           </div>
@@ -39,12 +39,12 @@
         <section class="bg-white rounded-xl shadow-sm p-6">
           <h2 class="text-xl font-bold mb-4">Revenue by Category</h2>
           <div class="space-y-3">
-            <div v-for="item in data.revenueByCategory" :key="item.category" class="grid grid-cols-[96px_1fr_120px] items-center gap-3">
+            <div v-for="item in data.revenueByCategory" :key="item.category" class="grid grid-cols-[72px_1fr] items-center gap-3 sm:grid-cols-[96px_1fr_120px]">
               <span class="text-sm capitalize">{{ item.category }}</span>
               <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
                 <div class="h-full bg-blue-600 rounded-full" :style="{ width: percent(item.revenue, maxCategoryRevenue) + '%' }"></div>
               </div>
-              <span class="text-sm font-semibold text-right">{{ formatPrice(item.revenue) }}</span>
+              <span class="text-right text-sm font-semibold col-span-2 sm:col-span-1">{{ formatPrice(item.revenue) }}</span>
             </div>
             <p v-if="!data.revenueByCategory?.length" class="text-sm text-gray-500">No category revenue yet.</p>
           </div>

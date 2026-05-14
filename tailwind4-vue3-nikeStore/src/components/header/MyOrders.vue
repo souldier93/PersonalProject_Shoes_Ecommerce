@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8 px-4 mt-16">
+  <div class="mt-10 min-h-screen bg-gray-50 px-4 py-6 sm:mt-16 sm:py-8">
     <div class="max-w-6xl mx-auto">
-      <h1 class="text-3xl font-bold mb-8">My Orders</h1>
+      <h1 class="mb-6 text-2xl font-bold sm:mb-8 sm:text-3xl">My Orders</h1>
 
       <!-- Loading State -->
       <div v-if="loading" class="flex justify-center items-center h-64">
@@ -27,7 +27,7 @@
         <div v-for="order in orders" :key="order.orderCode" 
              class="bg-white rounded-lg shadow-md overflow-hidden">
           <!-- Order Header -->
-          <div class="bg-gray-50 px-6 py-4 border-b flex items-center justify-between">
+          <div class="flex flex-col gap-3 border-b bg-gray-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div class="flex items-center gap-4">
               <div>
                 <p class="text-sm text-gray-600">Order #{{ order.orderCode }}</p>

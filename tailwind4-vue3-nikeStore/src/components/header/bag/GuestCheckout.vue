@@ -1,9 +1,9 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 py-8 lg:px-8">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+  <div class="mx-auto max-w-7xl px-4 py-6 sm:py-8 lg:px-8">
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-12">
       <!-- LEFT COLUMN - Delivery Form -->
       <div>
-        <h1 class="text-3xl font-semibold mb-8">Delivery</h1>
+        <h1 class="mb-6 text-2xl font-semibold sm:mb-8 sm:text-3xl">Delivery</h1>
 
         <div v-if="isLoggedIn" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
           <div class="flex items-center gap-3">
@@ -105,7 +105,7 @@
               placeholder="Address Line 2"
               class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
             />
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <input
                 v-model="form.city"
                 type="text"
@@ -175,8 +175,8 @@
       </div>
 
       <!-- RIGHT COLUMN - Order Summary -->
-      <div>
-        <h2 class="text-2xl font-semibold mb-6">Order Summary</h2>
+      <div class="lg:sticky lg:top-24 lg:self-start">
+        <h2 class="mb-6 text-2xl font-semibold">Order Summary</h2>
 
         <div class="space-y-4">
           <div class="space-y-2">
@@ -189,19 +189,19 @@
               <span>{{ deliveryFee === 0 ? 'Free' : formatPrice(deliveryFee) }}</span>
             </div>
             <div class="pt-4 border-t border-gray-100">
-              <div class="flex gap-2">
+              <div class="flex flex-col gap-2 sm:flex-row">
                 <input
                   v-model="couponCode"
                   :disabled="!!appliedCoupon"
                   placeholder="Promo code"
-                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-100"
+                  class="w-full flex-1 rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-100"
                 />
                 <button
                   v-if="!appliedCoupon"
                   type="button"
                   @click="applyCoupon"
                   :disabled="applyingCoupon || !couponCode"
-                  class="px-4 py-2 bg-black text-white rounded-md text-sm font-medium disabled:bg-gray-300"
+                  class="rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:bg-gray-300"
                 >
                   {{ applyingCoupon ? 'Applying...' : 'Apply' }}
                 </button>
@@ -209,7 +209,7 @@
                   v-else
                   type="button"
                   @click="clearCoupon"
-                  class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium"
+                  class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium"
                 >
                   Remove
                 </button>
@@ -250,13 +250,13 @@
             <div
               v-for="item in bagItemsWithStock"
               :key="`${item.productId}-${item.styleCode}-${item.size}`"
-              class="flex gap-4 mb-4 p-3 rounded-lg transition"
+              class="mb-4 flex gap-3 rounded-lg p-3 transition sm:gap-4"
               :class="item.stockStatus === 'available' ? 'bg-white' : 'bg-red-50'"
             >
               <img
                 :src="item.thumbnail || item.image"
                 :alt="item.name"
-                class="w-24 h-24 object-cover rounded-md"
+                class="h-20 w-20 shrink-0 rounded-md object-cover sm:h-24 sm:w-24"
               />
               <div class="flex-1">
                 <h3 class="font-semibold text-sm">{{ item.name }}</h3>

@@ -1,8 +1,8 @@
 <template>
-  <div class="p-8 mt-16 bg-gray-50 min-h-screen">
-    <div class="flex items-center justify-between mb-6">
+  <div class="mt-16 min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-3xl font-bold">Settings</h1>
+        <h1 class="text-2xl font-bold sm:text-3xl">Settings</h1>
         <p class="text-sm text-gray-500 mt-1">Promotion and system controls.</p>
       </div>
       <button @click="fetchCoupons" class="px-4 py-2 bg-black text-white rounded-lg font-medium">

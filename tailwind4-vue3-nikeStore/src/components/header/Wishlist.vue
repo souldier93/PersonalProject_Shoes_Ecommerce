@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8 px-4 mt-16">
+  <div class="mt-10 min-h-screen bg-gray-50 px-4 py-6 sm:mt-16 sm:py-8">
     <div class="max-w-6xl mx-auto">
-      <div class="flex items-center justify-between mb-8">
-        <h1 class="text-3xl font-bold">Wishlist</h1>
+      <div class="mb-6 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+        <h1 class="text-2xl font-bold sm:text-3xl">Wishlist</h1>
         <router-link to="/" class="text-sm font-medium underline">Continue Shopping</router-link>
       </div>
 

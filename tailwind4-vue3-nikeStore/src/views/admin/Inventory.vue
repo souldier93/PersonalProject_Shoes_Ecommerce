@@ -1,8 +1,8 @@
 <template>
-  <div class="p-8 mt-16 bg-gray-50 min-h-screen">
-    <div class="flex items-center justify-between mb-6">
+  <div class="mt-16 min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-3xl font-bold">Inventory</h1>
+        <h1 class="text-2xl font-bold sm:text-3xl">Inventory</h1>
         <p class="text-sm text-gray-500 mt-1">Adjust stock and review movement history.</p>
       </div>
       <button @click="fetchInventory" class="px-4 py-2 bg-black text-white rounded-lg font-medium">Refresh</button>
@@ -29,9 +29,9 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <section class="lg:col-span-2 bg-white rounded-xl shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b flex items-center justify-between">
+        <div class="flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <h2 class="text-xl font-bold">Variants</h2>
-          <input v-model="search" placeholder="Search product, color, size" class="border rounded-lg px-3 py-2 w-72" />
+          <input v-model="search" placeholder="Search product, color, size" class="w-full rounded-lg border px-3 py-2 sm:w-72" />
         </div>
 
         <div class="overflow-x-auto max-h-[650px]">

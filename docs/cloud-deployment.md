@@ -2,6 +2,8 @@
 
 This project is now prepared for container deployment.
 
+For cost-sensitive work, read `docs/no-billing-cloud-plan.md` first. Deployment workflows default to dry run and should not create or update Azure resources unless explicitly confirmed.
+
 ## Local Docker Run
 
 1. Copy environment files:
@@ -65,6 +67,7 @@ Recommended first AWS path:
 - Media: keep Cloudflare R2 or move to Azure Blob Storage.
 - Secrets: Azure Key Vault or Container App secrets.
 - CI/CD: GitHub Actions builds Docker images, pushes to Azure Container Registry, deploys Container Apps.
+- Cost guard: keep deploys manual and dry-run by default.
 
 Recommended first Azure path:
 
@@ -74,6 +77,8 @@ Recommended first Azure path:
 4. Create backend Container App with `MONGO_URI`, R2, PayOS, JWT secrets.
 5. Create frontend Container App with `VITE_API_BASE_URL` set to the backend public URL, or deploy Vue build to Azure Static Web Apps.
 6. Add custom domain and HTTPS after smoke tests pass.
+
+Do not add Key Vault, private endpoints, dedicated workload profiles, Service Bus, or monitoring resources until budget alerts are configured and billing is approved.
 
 ## Smoke Tests
 

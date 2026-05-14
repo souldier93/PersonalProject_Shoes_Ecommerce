@@ -1,12 +1,12 @@
 <template>
-  <div class="p-8 mt-16 bg-gray-50 min-h-screen">
-    <div class="flex items-center justify-between mb-6">
+  <div class="mt-16 min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div class="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div>
-        <h1 class="text-3xl font-bold">Support Chat</h1>
+        <h1 class="text-2xl font-bold sm:text-3xl">Support Chat</h1>
         <p class="text-sm text-gray-500 mt-1">Quản lý hội thoại khách hàng và chatbot</p>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
         <select v-model="statusFilter" @change="fetchConversations" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
           <option value="all">All conversations</option>
           <option value="pending_manager">Need manager</option>
@@ -19,8 +19,8 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-12 gap-6">
-      <aside class="col-span-4 bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
+      <aside class="overflow-hidden rounded-xl border border-gray-200 bg-white xl:col-span-4">
         <div v-if="loadingList" class="p-8 text-center text-gray-500">Loading...</div>
         <button
           v-for="item in conversations"
@@ -50,7 +50,7 @@
         </div>
       </aside>
 
-      <section class="col-span-8 bg-white border border-gray-200 rounded-xl flex flex-col min-h-[680px] overflow-hidden">
+      <section class="flex min-h-[560px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white xl:col-span-8 xl:min-h-[680px]">
         <div v-if="!selectedConversation" class="flex-1 flex items-center justify-center text-gray-400">
           Select a conversation to reply
         </div>

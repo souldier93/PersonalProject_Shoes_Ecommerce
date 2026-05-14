@@ -1,16 +1,16 @@
 <template>
-  <div class="p-8 mt-16 bg-gray-50 min-h-screen">
-    <div class="grid grid-cols-12 gap-6">
+  <div class="mt-16 min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
       <!-- LEFT SIDE - Products List -->
-      <div class="col-span-7">
+      <div class="xl:col-span-7">
         <!-- Header -->
         <div class="mb-6">
-          <h1 class="text-3xl font-bold">Products</h1>
+          <h1 class="text-2xl font-bold sm:text-3xl">Products</h1>
         </div>
 
         <!-- Search and Add Button -->
-        <div class="flex items-center justify-between mb-6">
-          <div class="relative flex-1 max-w-md">
+        <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="relative w-full flex-1 sm:max-w-md">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24"
               stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -20,7 +20,7 @@
               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
           </div>
           <button @click="openAddProductModal"
-            class="ml-4 flex items-center gap-2 bg-white border-2 border-black px-4 py-2 rounded-lg hover:bg-black hover:text-white transition-colors">
+            class="flex items-center justify-center gap-2 rounded-lg border-2 border-black bg-white px-4 py-2 transition-colors hover:bg-black hover:text-white sm:ml-4">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -53,7 +53,7 @@
         </div>
 
         <!-- Products Grid -->
-        <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 lg:gap-4">
           <div v-for="product in filteredProducts" :key="product._id" @click="selectProduct(product)"
             @mouseenter="showProductCard(product, $event)" @mouseleave="hideProductCard"
             class="bg-white rounded-xl p-4 cursor-pointer hover:shadow-lg transition-shadow border-2 relative"
@@ -109,7 +109,7 @@
       </div>
 
       <!-- RIGHT SIDE - Edit Product Form -->
-      <div class="col-span-5">
+      <div class="xl:col-span-5">
         <div class="bg-white rounded-xl p-6 sticky top-20 max-h-[calc(100vh-6rem)] flex flex-col">
           <div class="flex items-center justify-between mb-6 flex-shrink-0">
             <h2 class="text-2xl font-bold">Edit Product</h2>

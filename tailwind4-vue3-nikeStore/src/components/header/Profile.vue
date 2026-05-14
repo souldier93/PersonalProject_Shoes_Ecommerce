@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8 px-4 mt-16">
+  <div class="mt-10 min-h-screen bg-gray-50 px-4 py-6 sm:mt-16 sm:py-8">
     <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
       <section class="lg:col-span-1 bg-white rounded-lg shadow-sm p-6 h-fit">
-        <h1 class="text-3xl font-bold mb-2">My Profile</h1>
+        <h1 class="mb-2 text-2xl font-bold sm:text-3xl">My Profile</h1>
         <p class="text-gray-500 text-sm">{{ user.email }}</p>
         <div class="mt-6 space-y-2 text-sm">
           <router-link to="/my-orders" class="block px-3 py-2 rounded-lg hover:bg-gray-50">Orders</router-link>
@@ -55,7 +55,7 @@
           </form>
 
           <div class="space-y-3">
-            <div v-for="(address, index) in addresses" :key="index" class="border rounded-lg p-4 flex items-start justify-between gap-4">
+            <div v-for="(address, index) in addresses" :key="index" class="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <div class="flex items-center gap-2">
                   <p class="font-semibold">{{ address.label || 'Address' }}</p>
