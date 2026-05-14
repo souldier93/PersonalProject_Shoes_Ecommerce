@@ -29,6 +29,10 @@ export interface CreatePaymentDto {
   orderId: string;
   description: string;
   amount: number;
+  subtotal?: number;
+  deliveryFee?: number;
+  couponCode?: string;
+  discountAmount?: number;
   items: PaymentItem[];           // ✅ Danh sách sản phẩm
   userId?: string;                 // ✅ null nếu guest checkout
   customerEmail: string;           // ✅ Email khách hàng (bắt buộc)

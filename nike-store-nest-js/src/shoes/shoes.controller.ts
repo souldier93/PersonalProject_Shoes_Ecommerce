@@ -9,9 +9,9 @@ export class ShoesController {
 
   // GET /shoes?category=men - Danh sÃ¡ch shoes (listing page)
   @Get()
-  async getAll(@Query('category') category?: string) {
-    if (category) {
-      return this.shoesService.findByCategory(category);
+  async getAll(@Query() query: any) {
+    if (Object.keys(query || {}).length > 0) {
+      return this.shoesService.findWithFilters(query);
     }
     return this.shoesService.findAll();
   }

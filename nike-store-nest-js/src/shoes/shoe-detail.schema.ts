@@ -18,6 +18,12 @@ export class ShoeDetail {
   @Prop({ required: true })
   category: string;
 
+  @Prop()
+  productType: string;
+
+  @Prop()
+  collection: string;
+
   @Prop({ type: Number, required: true })
   price: number;
 
@@ -34,6 +40,8 @@ export class ShoeDetail {
       }],
       styleCode: String,
       category: String,
+      productType: String,
+      collection: String,
       createdAt: String,
       description: String,
       materialNote: String,
@@ -53,6 +61,8 @@ export class ShoeDetail {
     sizes: { size: string; stock: number }[];
     styleCode: string;
     category: string;
+    productType: string;
+    collection: string;
     createdAt: string;
     description: string;
     materialNote: string;

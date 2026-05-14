@@ -23,6 +23,40 @@ export class User {
   @Prop()
   age: number;
 
+  @Prop({ default: '' })
+  phone: string;
+
+  @Prop({ default: '' })
+  fullName: string;
+
+  @Prop({
+    type: [{
+      label: String,
+      firstName: String,
+      lastName: String,
+      phone: String,
+      address: String,
+      addressLine1: String,
+      addressLine2: String,
+      city: String,
+      postalCode: String,
+      isDefault: Boolean,
+    }],
+    default: [],
+  })
+  addresses: {
+    label: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    address: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    postalCode?: string;
+    isDefault?: boolean;
+  }[];
+
   @Prop({ default: false }) // ✅ Mặc định chưa xác thực
   isVerified: boolean;
 

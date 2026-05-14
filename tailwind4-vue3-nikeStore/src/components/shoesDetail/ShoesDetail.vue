@@ -38,16 +38,20 @@
 
             <!-- RIGHT - Product Info -->
             <div class="w-1/3 space-y-6">
-                <div class="text-orange-600 text-sm font-semibold -mb-1">
-                    Recycled Materials
+                <div v-if="productBadge" class="text-orange-600 text-sm font-semibold -mb-1">
+                    {{ productBadge }}
                 </div>
 
                 <div class="space-y-2">
                     <h1 class="text-2xl font-bold">{{ productName }}</h1>
-                    <p class="text-gray-600 text-sm">{{ currentColor?.category || 'Men\'s Shoes' }}</p>
+                    <p class="text-gray-600 text-sm">{{ productSubtitleText }}</p>
                     <p v-if="currentColor?.price" class="text-2xl font-bold">
                         {{ formatPrice(currentColor.price) }}
                     </p>
+                    <button @click="saveToWishlist(false)"
+                        class="mt-3 w-full border border-gray-300 rounded-full py-3 font-semibold hover:border-black transition">
+                        Save to Wishlist
+                    </button>
                 </div>
 
                 <!-- Color Selector -->
@@ -105,26 +109,40 @@
                     <!-- Size Grid -->
                     <div v-else-if="currentSizes.length > 0" class="grid grid-cols-3 gap-2">
                         <button v-for="size in currentSizes" :key="size.size" @click="selectSize(size)"
-                            :disabled="size.stock === 0"
-                            class="border rounded-md py-3 px-2 text-sm font-medium relative transition-all text-center"
+                            class="border rounded-md py-2 px-2 text-sm font-medium relative transition-all text-center min-h-[58px] flex flex-col items-center justify-center"
                             :class="[
                                 selectedSize === size.size
                                     ? 'border-black bg-gray-50'
                                     : size.stock === 0
-                                        ? 'opacity-40 border-gray-200 cursor-not-allowed line-through'
+                                        ? 'opacity-60 border-gray-200 line-through hover:border-black'
                                         : 'hover:border-black border-gray-300'
                             ]">
-                            {{ size.size }}
+                            <span>{{ size.size }}</span>
+                            <span v-if="size.stock === 0" class="text-[11px] text-gray-500 font-normal no-underline">
+                                Sold out
+                            </span>
+                            <span v-else-if="isLowStock(size)" class="text-[11px] text-orange-600 font-semibold no-underline">
+                                Only {{ size.stock }} left
+                            </span>
                         </button>
+                    </div>
+
+                    <div v-if="stockNotice" class="mt-3 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-700">
+                        {{ stockNotice }}
                     </div>
                 </div>
 
                 <!-- Add to Bag Button -->
-                <button @click="addToBag" :disabled="!selectedSize || isCurrentColorSoldOut"
-                    class="py-4 w-full rounded-full font-semibold transition-all text-base" :class="selectedSize && !isCurrentColorSoldOut
+                <button @click="addToBag" :disabled="!selectedSize || selectedSizeStock === 0"
+                    class="py-4 w-full rounded-full font-semibold transition-all text-base" :class="selectedSize && selectedSizeStock > 0
                         ? 'bg-black text-white hover:bg-gray-800 active:scale-95'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'">
-                    {{ isCurrentColorSoldOut ? 'Sold Out' : (selectedSize ? 'Add to Bag' : 'Select a size') }}
+                    {{ selectedSize && selectedSizeStock === 0 ? 'Out of Stock' : (selectedSize ? 'Add to Bag' : 'Select a size') }}
+                </button>
+
+                <button v-if="selectedSize && selectedSizeStock === 0" @click="saveToWishlist(true)"
+                    class="py-4 w-full rounded-full font-semibold border border-black hover:bg-gray-50 transition">
+                    Notify me when size {{ selectedSize }} is back
                 </button>
 
                 <!-- Product Details -->
@@ -140,6 +158,10 @@
                     <div v-if="currentColor?.styleCode" class="flex items-center gap-2">
                         <span class="text-gray-900 font-bold">Style code:</span>
                         <span class="font-medium">{{ currentColor.styleCode }}</span>
+                    </div>
+                    <div v-if="currentCollection" class="flex items-center gap-2">
+                        <span class="text-gray-900 font-bold">Collection:</span>
+                        <span class="font-medium">{{ currentCollection }}</span>
                     </div>
                     <p v-if="currentColor?.materialNote" class="text-gray-700 pt-2">
                         {{ currentColor.materialNote }}
@@ -167,6 +189,31 @@
                 </div>
             </div>
         </div>
+
+        <section class="mt-12 border-t pt-8">
+            <div class="flex items-end justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold">Reviews</h2>
+                    <p class="text-sm text-gray-500" v-if="reviewSummary.total">
+                        {{ reviewSummary.average }} out of 5 from {{ reviewSummary.total }} reviews
+                    </p>
+                    <p class="text-sm text-gray-500" v-else>No reviews yet.</p>
+                </div>
+            </div>
+
+            <div v-if="reviews.length" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div v-for="review in reviews" :key="review._id" class="border rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <p class="font-semibold">{{ review.username }}</p>
+                        <div class="text-yellow-400">
+                            <span v-for="n in 5" :key="n" :class="n <= review.rating ? 'text-yellow-400' : 'text-gray-300'">★</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">{{ review.colorName }} · Size {{ review.size }}</p>
+                    <p class="text-sm text-gray-700 mt-3">{{ review.comment || 'No comment.' }}</p>
+                </div>
+            </div>
+        </section>
     </div>
 
     <div v-else class="text-center py-20 text-gray-400">
@@ -181,10 +228,10 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
         <div>
-            <p class="font-semibold">Added to bag!</p>
-            <p class="text-sm opacity-90">{{ selectedColorName }} - Size {{ selectedSize }}</p>
+            <p class="font-semibold">{{ toastTitle }}</p>
+            <p class="text-sm opacity-90">{{ toastMessage }}</p>
         </div>
-        <button @click="goToBag" class="ml-4 underline text-sm hover:text-gray-200">
+        <button v-if="toastTitle === 'Added to bag!'" @click="goToBag" class="ml-4 underline text-sm hover:text-gray-200">
             View Bag
         </button>
     </div>
@@ -193,6 +240,8 @@
 <script>
 import axios from "axios";
 import { addToBag as addToBagHelper } from '../../utils/bagHelper'
+import { API_BASE } from '../../utils/apiBase'
+import { productSubtitle, productTypeLabel } from '../../utils/productMeta'
 export default {
     data() {
         return {
@@ -201,6 +250,13 @@ export default {
             selectedColorIndex: 0,
             selectedSize: null,
             showToast: false,
+            toastTitle: 'Added to bag!',
+            toastMessage: '',
+            reviews: [],
+            reviewSummary: {
+                total: 0,
+                average: 0,
+            },
         };
     },
 
@@ -210,15 +266,64 @@ export default {
         },
 
         productName() {
-            return this.product?.name || `Nike Pegasus Trail 5 - ${this.product?.productId || ''}`;
+            return this.product?.name || 'Product detail';
+        },
+
+        currentCategory() {
+            return this.currentColor?.category || this.product?.category || '';
+        },
+
+        currentProductType() {
+            return this.currentColor?.productType || this.product?.productType || '';
+        },
+
+        currentCollection() {
+            return this.currentColor?.collection || this.product?.collection || '';
+        },
+
+        productSubtitleText() {
+            return productSubtitle(this.currentCategory, this.currentProductType);
+        },
+
+        productBadge() {
+            if (this.currentCollection) return this.currentCollection;
+            return this.currentProductType ? productTypeLabel(this.currentProductType) : '';
         },
 
         currentImages() {
-            return this.currentColor?.images || [];
+            return this.currentColor?.images?.length
+                ? this.currentColor.images
+                : [this.currentColor?.thumbnail].filter(Boolean);
         },
 
         currentSizes() {
             return this.currentColor?.sizes || [];
+        },
+
+        selectedSizeStock() {
+            if (!this.selectedSize) return 0;
+            return this.currentSizes.find(size => size.size === this.selectedSize)?.stock || 0;
+        },
+
+        lowStockSizes() {
+            return this.currentSizes.filter(size => this.isLowStock(size));
+        },
+
+        stockNotice() {
+            if (this.selectedSize && this.selectedSizeStock > 0 && this.selectedSizeStock <= 5) {
+                return `Size ${this.selectedSize} is almost gone. Only ${this.selectedSizeStock} left.`;
+            }
+
+            if (!this.selectedSize && this.lowStockSizes.length > 0) {
+                const preview = this.lowStockSizes
+                    .slice(0, 3)
+                    .map(size => `${size.size} (${size.stock} left)`)
+                    .join(', ');
+                const more = this.lowStockSizes.length > 3 ? ` and ${this.lowStockSizes.length - 3} more` : '';
+                return `Low stock: ${preview}${more}.`;
+            }
+
+            return '';
         },
 
         selectedColorName() {
@@ -240,8 +345,9 @@ export default {
     async mounted() {
         try {
             const id = this.$route.params.id;
-            const res = await axios.get(`http://localhost:3000/shoes/detail/${id}`);
+            const res = await axios.get(`${API_BASE}/shoes/detail/${id}`);
             this.product = res.data;
+            await this.fetchReviews();
 
             console.log('✅ Product loaded:', {
                 id: this.product._id,
@@ -275,9 +381,11 @@ export default {
         },
 
         selectSize(size) {
-            if (size.stock > 0) {
-                this.selectedSize = size.size;
-            }
+            this.selectedSize = size.size;
+        },
+
+        isLowStock(size) {
+            return Number(size?.stock || 0) > 0 && Number(size.stock) <= 5;
         },
 
         addToBag() {
@@ -303,10 +411,61 @@ export default {
 
             console.log('✅ Added to bag:', bagItem);
 
+            this.showFeedback('Added to bag!', `${this.selectedColorName} - Size ${this.selectedSize}`);
+        },
+
+        async fetchReviews() {
+            if (!this.product?.productId) return;
+
+            try {
+                const res = await axios.get(`${API_BASE}/reviews/product/${this.product.productId}`);
+                this.reviews = res.data.reviews || [];
+                this.reviewSummary = res.data.summary || { total: 0, average: 0 };
+            } catch (error) {
+                console.error('Failed to load reviews:', error);
+            }
+        },
+
+        async saveToWishlist(notifyOnRestock) {
+            const user = this.getCurrentUser();
+            if (!user) {
+                this.$router.push('/login');
+                return;
+            }
+
+            try {
+                await axios.post(`${API_BASE}/wishlist`, {
+                    userId: user._id,
+                    productId: this.product.productId,
+                    colorName: this.selectedColorName || '',
+                    size: this.selectedSize || '',
+                    notifyOnRestock,
+                });
+
+                this.showFeedback(
+                    notifyOnRestock ? 'Restock alert saved!' : 'Saved to wishlist!',
+                    notifyOnRestock
+                        ? `${this.selectedColorName} - Size ${this.selectedSize}`
+                        : this.productName
+                );
+            } catch (error) {
+                console.error('Failed to save wishlist:', error);
+                alert(error.response?.data?.message || 'Failed to save wishlist');
+            }
+        },
+
+        showFeedback(title, message) {
+            this.toastTitle = title;
+            this.toastMessage = message;
             this.showToast = true;
             setTimeout(() => {
                 this.showToast = false;
             }, 5000);
+        },
+
+        getCurrentUser() {
+            const userStr = localStorage.getItem('user');
+            return userStr ? JSON.parse(userStr) : null;
         },
 
 

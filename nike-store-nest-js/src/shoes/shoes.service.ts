@@ -20,7 +20,7 @@ export class ShoesService {
 async findAll() {
   const shoes = await this.shoeModel
     .find()
-    .select('productId name category price color thumbnail')
+    .select('productId name category productType collection price color thumbnail')
     .lean()
     .exec();
 
@@ -57,11 +57,99 @@ async findAll() {
   return shoesWithStock;
 }
 
+async findWithFilters(query: {
+  search?: string;
+  category?: string;
+  productType?: string;
+  collection?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  size?: string;
+  color?: string;
+  sort?: string;
+}) {
+  const details = await this.shoeDetailModel.find().lean().exec();
+  const search = (query.search || '').trim().toLowerCase();
+  const category = (query.category || '').trim().toLowerCase();
+  const productType = (query.productType || '').trim().toLowerCase();
+  const collection = (query.collection || '').trim().toLowerCase();
+  const colorFilter = (query.color || '').trim().toLowerCase();
+  const sizeFilter = (query.size || '').trim();
+  const minPrice = query.minPrice ? Number(query.minPrice) : 0;
+  const maxPrice = query.maxPrice ? Number(query.maxPrice) : Number.MAX_SAFE_INTEGER;
+
+  const products = details
+    .map(detail => {
+      const matchingColors = (detail.colors || []).filter(color => {
+        const price = Number(color.price || detail.price || 0);
+        const colorStock = (color.sizes || []).reduce(
+          (sum, size) => sum + Number(size.stock || 0),
+          0,
+        );
+        const hasSize = !sizeFilter || (color.sizes || []).some(size => size.size === sizeFilter && Number(size.stock || 0) > 0);
+        const matchesColor = !colorFilter || color.colorName?.toLowerCase().includes(colorFilter);
+
+        return price >= minPrice && price <= maxPrice && hasSize && matchesColor && colorStock > 0;
+      });
+
+      const primaryColor = matchingColors[0] || detail.colors?.[0];
+      const totalStock = matchingColors.reduce((sum, color) => {
+        return sum + (color.sizes || []).reduce(
+          (sizeSum, size) => sizeSum + Number(size.stock || 0),
+          0,
+        );
+      }, 0);
+
+      return {
+        productId: detail.productId,
+        name: detail.name,
+        category: detail.category,
+        productType: detail.productType || primaryColor?.productType || '',
+        collection: detail.collection || primaryColor?.collection || '',
+        price: Number(primaryColor?.price || detail.price || 0),
+        color: primaryColor?.colorName || '',
+        thumbnail: primaryColor?.thumbnail || primaryColor?.images?.[0] || '',
+        stock: totalStock,
+        rating: Number(primaryColor?.rating || 0),
+        reviewCount: Number(primaryColor?.reviewCount || 0),
+        colors: matchingColors.map(color => color.colorName),
+        sizes: matchingColors.flatMap(color => color.sizes || []),
+      };
+    })
+    .filter(product => {
+      if (!product.stock) return false;
+      if (category && product.category?.toLowerCase() !== category) return false;
+      if (productType && product.productType?.toLowerCase() !== productType) return false;
+      if (collection && product.collection?.toLowerCase() !== collection) return false;
+      if (!search) return true;
+
+      return [
+        product.name,
+        product.category,
+        product.productType,
+        product.collection,
+        product.color,
+        ...(product.colors || []),
+      ].some(value => String(value || '').toLowerCase().includes(search));
+    });
+
+  const sort = query.sort || 'featured';
+  products.sort((a, b) => {
+    if (sort === 'price-asc') return a.price - b.price;
+    if (sort === 'price-desc') return b.price - a.price;
+    if (sort === 'rating') return b.rating - a.rating;
+    if (sort === 'stock') return b.stock - a.stock;
+    return Number(a.productId) - Number(b.productId);
+  });
+
+  return products;
+}
+
 
   async findByCategory(category: string) {
     const shoes = await this.shoeModel
       .find({ category })
-      .select('productId name category price color thumbnail')
+      .select('productId name category productType collection price color thumbnail')
       .lean()
       .exec();
     return shoes;
@@ -70,7 +158,7 @@ async findAll() {
   async findByProductId(productId: string) {
     const shoe = await this.shoeModel
       .findOne({ productId })
-      .select('productId name category price color thumbnail')
+      .select('productId name category productType collection price color thumbnail')
       .lean()
       .exec();
 
@@ -150,6 +238,8 @@ async findAll() {
   async createProduct(productData: {
     name: string;
     category: string;
+    productType?: string;
+    collection?: string;
     colors: any[];
   }) {
     // 1. Táº¡o productId tá»± tÄƒng
@@ -163,6 +253,8 @@ async findAll() {
       productId,
       name: productData.name,
       category: productData.category,
+      productType: productData.productType || '',
+      collection: productData.collection || '',
       price: productData.colors[0]?.price || 0,
 
       // Array colors: Má»–I MÃ€U CÃ“ Äáº¦Y Äá»¦ Táº¤T Cáº¢ THÃ”NG TIN
@@ -174,6 +266,8 @@ async findAll() {
         sizes: color.sizes || [],
         styleCode: color.styleCode || '',
         category: productData.category,
+        productType: color.productType || productData.productType || '',
+        collection: color.collection || productData.collection || '',
         createdAt: now,
         description: color.description || '',
         materialNote: color.materialNote || '',
@@ -194,6 +288,8 @@ async findAll() {
       productId,
       name: productData.name,
       category: productData.category,
+      productType: productData.productType || '',
+      collection: productData.collection || '',
       price: productData.colors[0]?.price || 0,
       color: productData.colors[0]?.colorName || '',
       thumbnail: productData.colors[0]?.thumbnail || '',
@@ -218,6 +314,8 @@ async findAll() {
 
     if (updateData.name) shoeUpdateData.name = updateData.name;
     if (updateData.category) shoeUpdateData.category = updateData.category;
+    if (updateData.productType !== undefined) shoeUpdateData.productType = updateData.productType;
+    if (updateData.collection !== undefined) shoeUpdateData.collection = updateData.collection;
 
     // ⭐ CHỈ update shoes.thumbnail khi có field thumbnail EXPLICIT (từ tab Basic Info)
     // KHÔNG update khi chỉ có colors[] array
@@ -247,6 +345,8 @@ async findAll() {
 
     if (updateData.name) detailUpdateData.name = updateData.name;
     if (updateData.category) detailUpdateData.category = updateData.category;
+    if (updateData.productType !== undefined) detailUpdateData.productType = updateData.productType;
+    if (updateData.collection !== undefined) detailUpdateData.collection = updateData.collection;
 
     // 3️⃣ Nếu có colors[] → REPLACE TOÀN BỘ colors array (bao gồm thumbnail của từng màu)
     if (updateData.colors && Array.isArray(updateData.colors)) {
@@ -258,6 +358,8 @@ async findAll() {
         sizes: Array.isArray(color.sizes) ? color.sizes : [],
         styleCode: color.styleCode || '',
         category: color.category || updateData.category || 'men',
+        productType: color.productType || updateData.productType || '',
+        collection: color.collection || updateData.collection || '',
         createdAt: color.createdAt || new Date().toISOString(),
         description: color.description || '',
         materialNote: color.materialNote || '',
@@ -277,6 +379,8 @@ async findAll() {
         detailUpdateData.colors = existingDetail.colors.map((color) => ({
           ...color,
           category: updateData.category,
+          productType: updateData.productType || color.productType || '',
+          collection: updateData.collection || color.collection || '',
           updatedAt: new Date().toISOString(),
         }));
       }
@@ -349,6 +453,8 @@ async findAll() {
       })),
       styleCode: color.styleCode || '',
       category: color.category || '',
+      productType: color.productType || '',
+      collection: color.collection || '',
       createdAt: color.createdAt || new Date().toISOString(),
       description: color.description || '',
       materialNote: color.materialNote || '',
@@ -509,8 +615,17 @@ async getDashboardStats() {
     orderCode: bill.orderCode,
     paymentLinkId: bill.paymentLinkId,
     amount: bill.amount,
+    subtotal: bill.subtotal || 0,
+    deliveryFee: bill.deliveryFee || 0,
+    couponCode: bill.couponCode || '',
+    discountAmount: bill.discountAmount || 0,
     description: bill.description,
     status: bill.status,
+    fulfillmentStatus: bill.fulfillmentStatus || 'AWAITING_PAYMENT',
+    carrier: bill.carrier || '',
+    trackingCode: bill.trackingCode || '',
+    statusHistory: bill.statusHistory || [],
+    deliveredAt: bill.deliveredAt,
     items: bill.items,
     
     // ✅ Customer data

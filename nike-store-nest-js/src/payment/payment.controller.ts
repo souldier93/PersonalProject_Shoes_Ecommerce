@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -34,9 +35,38 @@ export class PaymentController {
     return this.paymentService.checkPaymentStatus(paymentLinkId);
   }
 
+  @Get('orders')
+  async getAllOrders() {
+    return this.paymentService.getAllOrders();
+  }
+
+  @Patch('orders/:orderCode/fulfillment')
+  async updateFulfillmentStatus(
+    @Param('orderCode') orderCode: string,
+    @Body() body: {
+      fulfillmentStatus: any;
+      carrier?: string;
+      trackingCode?: string;
+      note?: string;
+    },
+  ) {
+    return this.paymentService.updateFulfillmentStatus(Number(orderCode), body);
+  }
+
   // ✅ API check status by orderCode
   @Get('check-order/:orderCode')
   async checkPaymentByOrderCode(@Param('orderCode') orderCode: string) {
     return this.paymentService.checkPaymentByOrderCode(Number(orderCode));
   }
+  // ✅ Get orders by userId
+@Get('user/:userId/orders')
+async getUserOrders(@Param('userId') userId: string) {
+  return this.paymentService.getUserOrders(userId);
+}
+
+// ✅ Get orders by email (for guest)
+@Get('guest/:email/orders')
+async getGuestOrders(@Param('email') email: string) {
+  return this.paymentService.getGuestOrders(email);
+}
 }

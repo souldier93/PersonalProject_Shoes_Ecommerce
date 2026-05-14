@@ -221,6 +221,134 @@ export class UsersService implements OnModuleInit {
     return updatedUser;
   }
 
+  async updateProfile(userId: string, profileData: {
+    username?: string;
+    email?: string;
+    age?: number;
+    phone?: string;
+    fullName?: string;
+  }) {
+    const updateData: any = {};
+    ['username', 'email', 'age', 'phone', 'fullName'].forEach((key) => {
+      if (profileData[key] !== undefined) updateData[key] = profileData[key];
+    });
+
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(userId, updateData, { new: true })
+      .populate('roleId')
+      .select('-password -verificationToken')
+      .lean()
+      .exec();
+
+    if (!updatedUser) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+
+    return {
+      success: true,
+      user: updatedUser,
+    };
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    return {
+      success: true,
+      message: 'Password changed successfully',
+    };
+  }
+
+  async addAddress(userId: string, address: any) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+
+    const addresses = user.addresses || [];
+    const nextAddress = {
+      ...address,
+      isDefault: address.isDefault || addresses.length === 0,
+    };
+
+    if (nextAddress.isDefault) {
+      addresses.forEach((item: any) => item.isDefault = false);
+    }
+
+    user.addresses = [...addresses, nextAddress];
+    await user.save();
+
+    return {
+      success: true,
+      addresses: user.addresses,
+    };
+  }
+
+  async updateAddress(userId: string, index: number, address: any) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+
+    const addresses = user.addresses || [];
+    if (!addresses[index]) {
+      throw new NotFoundException('Address not found');
+    }
+
+    if (address.isDefault) {
+      addresses.forEach((item: any) => item.isDefault = false);
+    }
+
+    addresses[index] = {
+      ...addresses[index],
+      ...address,
+    };
+
+    user.addresses = addresses;
+    await user.save();
+
+    return {
+      success: true,
+      addresses: user.addresses,
+    };
+  }
+
+  async deleteAddress(userId: string, index: number) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+
+    const addresses = user.addresses || [];
+    if (!addresses[index]) {
+      throw new NotFoundException('Address not found');
+    }
+
+    addresses.splice(index, 1);
+    if (addresses.length && !addresses.some((item: any) => item.isDefault)) {
+      addresses[0].isDefault = true;
+    }
+
+    user.addresses = addresses;
+    await user.save();
+
+    return {
+      success: true,
+      addresses: user.addresses,
+    };
+  }
+
   async getAllRoles() {
     return this.roleModel.find().lean().exec();
   }

@@ -68,6 +68,29 @@
               </select>
             </div>
 
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Product Type</label>
+                <select
+                  v-model="formData.productType"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black">
+                  <option value="">General</option>
+                  <option v-for="option in productTypeOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Collection</label>
+                <input
+                  v-model="formData.collection"
+                  type="text"
+                  placeholder="e.g., Sportswear Club"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+              </div>
+            </div>
+
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Main Thumbnail URL</label>
               <input
@@ -459,6 +482,8 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import axios from 'axios'
 import MediaGridItem from './MediaGridItem.vue'
+import { API_BASE } from '../../../utils/apiBase'
+import { PRODUCT_TYPE_OPTIONS } from '../../../utils/productMeta'
 
 const props = defineProps({
   isOpen: Boolean
@@ -469,6 +494,7 @@ const emit = defineEmits(['close', 'success'])
 const currentStep = ref(1)
 const isSubmitting = ref(false)
 const steps = ['Basic Info', 'Add Colors']
+const productTypeOptions = PRODUCT_TYPE_OPTIONS
 
 // ✅ R2 Media Selection
 const r2Folders = ref([])
@@ -512,6 +538,8 @@ const visiblePages = computed(() => {
 const formData = reactive({
   name: '',
   category: '',
+  productType: '',
+  collection: '',
   thumbnail: '',
   colors: [
     {
@@ -539,7 +567,7 @@ onMounted(async () => {
 
 const loadR2Folders = async () => {
   try {
-    const response = await axios.get('http://localhost:3000/r2/folders')
+    const response = await axios.get(`${API_BASE}/r2/folders`)
     r2Folders.value = response.data
     selectedProductFolder.value = ''
     selectedSubFolder.value = ''
@@ -558,7 +586,7 @@ const loadSubFolders = async () => {
   }
 
   try {
-    const response = await axios.get('http://localhost:3000/r2/subfolders', {
+    const response = await axios.get(`${API_BASE}/r2/subfolders`, {
       params: { folder: selectedProductFolder.value }
     })
     subFolders.value = response.data
@@ -577,7 +605,7 @@ const loadMediaFromSubfolder = async (colorIndex) => {
   if (!selectedSubFolder.value) return
 
   try {
-    const response = await axios.get('http://localhost:3000/r2/media', {
+    const response = await axios.get(`${API_BASE}/r2/media`, {
       params: {
         folder: selectedProductFolder.value,
         subfolder: selectedSubFolder.value
@@ -689,6 +717,8 @@ const resetForm = () => {
   Object.assign(formData, {
     name: '',
     category: '',
+    productType: '',
+    collection: '',
     thumbnail: '',
     colors: [
       {
@@ -718,6 +748,8 @@ const submitProduct = async () => {
     const payload = {
       name: formData.name,
       category: formData.category,
+      productType: formData.productType,
+      collection: formData.collection,
       thumbnail: formData.thumbnail,
       colors: formData.colors.map((color) => ({
         styleCode: color.styleCode,
@@ -732,12 +764,14 @@ const submitProduct = async () => {
         rating: color.rating,
         reviewCount: color.reviewCount,
         description: color.description,
+        productType: color.productType || formData.productType,
+        collection: color.collection || formData.collection,
         createdAt: new Date(),
         updatedAt: new Date()
       }))
     }
 
-    await axios.post('http://localhost:3000/shoes/product', payload)
+    await axios.post(`${API_BASE}/shoes/product`, payload)
 
     alert('✅ Product added successfully!')
     emit('success')

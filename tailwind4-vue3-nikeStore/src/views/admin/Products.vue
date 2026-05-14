@@ -109,7 +109,6 @@
       </div>
 
       <!-- RIGHT SIDE - Edit Product Form -->
-      <!-- RIGHT SIDE - Edit Product Form -->
       <div class="col-span-5">
         <div class="bg-white rounded-xl p-6 sticky top-20 max-h-[calc(100vh-6rem)] flex flex-col">
           <div class="flex items-center justify-between mb-6 flex-shrink-0">
@@ -156,10 +155,29 @@
                   <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <select v-model="editForm.category"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black">
-                    <option value="men">Men</option>
-                    <option value="women">Women</option>
-                    <option value="kids">Kids</option>
+                    <option v-for="option in categoryOptions" :key="option.value" :value="option.value">
+                      {{ option.label }}
+                    </option>
                   </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Product Type</label>
+                    <select v-model="editForm.productType"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black">
+                      <option value="">General</option>
+                      <option v-for="option in productTypeOptions" :key="option.value" :value="option.value">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Collection</label>
+                    <input v-model="editForm.collection" type="text" placeholder="e.g. Sportswear Club"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" />
+                  </div>
                 </div>
 
                 <div>
@@ -409,6 +427,8 @@
                   <h5 class="font-semibold text-sm mb-2">📊 Summary</h5>
                   <div class="space-y-1 text-sm">
                     <p><span class="text-gray-600">Category:</span> <strong>{{ editForm.category }}</strong></p>
+                    <p><span class="text-gray-600">Type:</span> <strong>{{ productTypeLabel(editForm.productType) }}</strong></p>
+                    <p><span class="text-gray-600">Collection:</span> <strong>{{ editForm.collection || '-' }}</strong></p>
                     <p><span class="text-gray-600">Colors:</span> <strong>{{ editForm.colors.length }}</strong></p>
                     <p><span class="text-gray-600">Total Stock:</span> <strong>{{ totalStock }}</strong></p>
                   </div>
@@ -505,6 +525,8 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import AddProductForm from './crud/AddProductForm.vue'
+import { API_BASE } from '../../utils/apiBase'
+import { CATEGORY_OPTIONS, PRODUCT_TYPE_OPTIONS, productTypeLabel } from '../../utils/productMeta'
 
 const router = useRouter()
 const showAddProductModal = ref(false)
@@ -559,15 +581,13 @@ const collapseAllColors = () => {
   expandedColors.value = {}
 }
 
+const categoryOptions = CATEGORY_OPTIONS
+const productTypeOptions = PRODUCT_TYPE_OPTIONS
+
 const categories = [
   { label: 'All products', value: 'all' },
-  { label: 'Most purchased', value: 'most_purchased' },
-  { label: 'Basketball', value: 'basketball' },
-  { label: 'Running', value: 'running' },
-  { label: 'Skateboard', value: 'skateboard' },
-  { label: 'Football', value: 'football' },
-  { label: 'Fun Sneakers', value: 'fun_sneakers' },
-  { label: 'Soccer', value: 'soccer' }
+  ...CATEGORY_OPTIONS,
+  ...PRODUCT_TYPE_OPTIONS,
 ]
 
 const tabs = ['Basic Info', 'Colors', 'Sizes', 'Product Info']
@@ -577,6 +597,8 @@ const editForm = ref({
   productId: '',
   name: '',
   category: '',
+  productType: '',
+  collection: '',
   thumbnail: '',
   colors: []
 })
@@ -592,7 +614,9 @@ const filteredProducts = computed(() => {
   }
 
   if (selectedCategory.value !== 'all') {
-    filtered = filtered.filter(p => p.category === selectedCategory.value)
+    filtered = filtered.filter(p =>
+      p.category === selectedCategory.value || p.productType === selectedCategory.value
+    )
   }
 
   return filtered
@@ -662,7 +686,7 @@ const formatPrice = (price) => {
 
 const fetchProducts = async () => {
   try {
-    const response = await axios.get('http://localhost:3000/shoes')
+    const response = await axios.get(`${API_BASE}/shoes`)
     console.log('Fetched Products:', response.data)
     
     // ⭐ KHÔNG CẦN tính toán - API đã trả về stock
@@ -682,8 +706,8 @@ const selectProduct = async (product) => {
     selectedProduct.value = product
 
     const [shoeResponse, detailResponse] = await Promise.all([
-      axios.get(`http://localhost:3000/shoes/product/${product.productId}`),
-      axios.get(`http://localhost:3000/shoes/detail/${product.productId}`)
+      axios.get(`${API_BASE}/shoes/product/${product.productId}`),
+      axios.get(`${API_BASE}/shoes/detail/${product.productId}`)
     ])
 
     const shoeData = shoeResponse.data
@@ -694,6 +718,8 @@ const selectProduct = async (product) => {
       productId: detailData.productId,
       name: detailData.name,
       category: detailData.category,
+      productType: detailData.productType || '',
+      collection: detailData.collection || '',
       thumbnail: shoeData.thumbnail || '',
       colors: detailData.colors ? JSON.parse(JSON.stringify(detailData.colors)) : []
     }
@@ -714,6 +740,8 @@ const selectProduct = async (product) => {
       reviewCount: color.reviewCount || 0,
       description: color.description || '',
       category: color.category || detailData.category,
+      productType: color.productType || detailData.productType || '',
+      collection: color.collection || detailData.collection || '',
       createdAt: color.createdAt || new Date().toISOString(),
       updatedAt: color.updatedAt || new Date().toISOString()
     }))
@@ -803,6 +831,8 @@ const updateProduct = async () => {
     const payload = {
       name: editForm.value.name,
       category: editForm.value.category,
+      productType: editForm.value.productType,
+      collection: editForm.value.collection,
       thumbnail: editForm.value.thumbnail,
       colors: editForm.value.colors.map(color => ({
         styleCode: color.styleCode,
@@ -823,6 +853,8 @@ const updateProduct = async () => {
         reviewCount: Number(color.reviewCount) || 0,
         description: color.description,
         category: color.category || editForm.value.category,
+        productType: color.productType || editForm.value.productType,
+        collection: color.collection || editForm.value.collection,
         createdAt: color.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }))
@@ -830,13 +862,13 @@ const updateProduct = async () => {
 
     console.log('Update Payload:', payload) // Debug
 
-    const putRespone = await axios.put(`http://localhost:3000/shoes/${editForm.value.productId}`, payload)
+    const putRespone = await axios.put(`${API_BASE}/shoes/${editForm.value.productId}`, payload)
     console.log(putRespone.data)
     alert('✅ Product updated successfully!')
     await fetchProducts()
 
     // Reload full product detail
-    const response = await axios.get(`http://localhost:3000/shoes/detail/${editForm.value.productId}`)
+    const response = await axios.get(`${API_BASE}/shoes/detail/${editForm.value.productId}`)
     selectProduct(response.data)
   } catch (error) {
     console.error('Error updating product:', error)
@@ -872,7 +904,7 @@ const softDeleteProduct = async () => {
 
   try {
     const response = await axios.post(
-      `http://localhost:3000/shoes/soft-delete/${editForm.value.productId}`
+      `${API_BASE}/shoes/soft-delete/${editForm.value.productId}`
     )
 
     console.log('✅ Soft Delete Response:', response.data)
@@ -894,6 +926,8 @@ const softDeleteProduct = async () => {
       productId: '',
       name: '',
       category: '',
+      productType: '',
+      collection: '',
       thumbnail: '',
       colors: []
     }

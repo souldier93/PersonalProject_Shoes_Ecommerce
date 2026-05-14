@@ -7,6 +7,10 @@ export interface BillDocument extends Document {
   orderCode: number;
   paymentLinkId: string;
   amount: number;
+  subtotal?: number;
+  deliveryFee?: number;
+  couponCode?: string;
+  discountAmount?: number;
   description: string;
   
   // ✅ User & Customer Info
@@ -35,11 +39,28 @@ export interface BillDocument extends Document {
   
   // ✅ Payment Status
   status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED';
+  fulfillmentStatus:
+    | 'AWAITING_PAYMENT'
+    | 'CONFIRMED'
+    | 'PACKING'
+    | 'SHIPPING'
+    | 'DELIVERED'
+    | 'RETURN_REQUESTED'
+    | 'REFUNDED'
+    | 'CANCELLED';
+  carrier?: string;
+  trackingCode?: string;
+  statusHistory: {
+    status: string;
+    note?: string;
+    changedAt: Date;
+  }[];
   transactionData?: any;
   
   // ✅ Timestamps
   createdAt: Date;
   paidAt?: Date;
+  deliveredAt?: Date;
 }
 
 export const BillSchema = new Schema<BillDocument>({
@@ -47,6 +68,10 @@ export const BillSchema = new Schema<BillDocument>({
   orderCode: { type: Number, required: true, unique: true },
   paymentLinkId: { type: String, required: true },
   amount: { type: Number, required: true },
+  subtotal: { type: Number, default: 0 },
+  deliveryFee: { type: Number, default: 0 },
+  couponCode: { type: String },
+  discountAmount: { type: Number, default: 0 },
   description: { type: String },
   
   // ✅ User identification
@@ -87,11 +112,35 @@ export const BillSchema = new Schema<BillDocument>({
     index: true
   },
   
+  fulfillmentStatus: {
+    type: String,
+    enum: [
+      'AWAITING_PAYMENT',
+      'CONFIRMED',
+      'PACKING',
+      'SHIPPING',
+      'DELIVERED',
+      'RETURN_REQUESTED',
+      'REFUNDED',
+      'CANCELLED',
+    ],
+    default: 'AWAITING_PAYMENT',
+    index: true,
+  },
+  carrier: String,
+  trackingCode: String,
+  statusHistory: [{
+    status: { type: String, required: true },
+    note: String,
+    changedAt: { type: Date, default: Date.now },
+  }],
+
   transactionData: { type: Schema.Types.Mixed },
   
   // ✅ Timestamps
   createdAt: { type: Date, default: Date.now, index: true },
   paidAt: { type: Date },
+  deliveredAt: { type: Date },
 });
 
 // ✅ Index for querying user orders

@@ -1,21 +1,12 @@
-// Lấy giỏ hàng từ localStorage
-export const getBag = () => {
-  const saved = localStorage.getItem('shoppingBag')
-  return saved ? JSON.parse(saved) : []
-}
+import { getBag, saveBag } from './bagStorage'
 
-// Lưu giỏ hàng và trigger update
-export const saveBag = (bag) => {
-  localStorage.setItem('shoppingBag', JSON.stringify(bag))
-  window.dispatchEvent(new Event('bagUpdated'))
-}
+export { getBag, saveBag }
 
-// Thêm sản phẩm vào giỏ
 export const addToBag = (item) => {
   const bag = getBag()
   const existingIndex = bag.findIndex(
-    i => i.productId === item.productId && 
-         i.styleCode === item.styleCode && 
+    i => i.productId === item.productId &&
+         i.styleCode === item.styleCode &&
          i.size === item.size
   )
 
@@ -28,14 +19,12 @@ export const addToBag = (item) => {
   saveBag(bag)
 }
 
-// Xóa sản phẩm khỏi giỏ
 export const removeFromBag = (index) => {
   const bag = getBag()
   bag.splice(index, 1)
   saveBag(bag)
 }
 
-// Cập nhật quantity
 export const updateQuantity = (index, quantity) => {
   const bag = getBag()
   if (quantity <= 0) {
@@ -46,7 +35,6 @@ export const updateQuantity = (index, quantity) => {
   }
 }
 
-// Tính tổng số sản phẩm
 export const getBagCount = () => {
   const bag = getBag()
   return bag.reduce((sum, item) => sum + item.quantity, 0)

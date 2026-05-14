@@ -3,13 +3,11 @@
     <div class="bg-white rounded-lg shadow-lg p-8">
       <h1 class="text-3xl font-bold mb-6 text-center">Payment</h1>
 
-      <!-- Loading State -->
       <div v-if="loading" class="text-center py-20">
         <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900 mx-auto"></div>
         <p class="mt-4">Loading payment...</p>
       </div>
 
-      <!-- Payment Info -->
       <div v-else-if="paymentOrder" class="space-y-6">
         <div class="bg-gray-50 rounded-lg p-6">
           <div class="grid grid-cols-2 gap-4">
@@ -31,7 +29,7 @@
             </div>
             <div>
               <p class="text-sm text-gray-600">Payment Link</p>
-              <a :href="paymentOrder.checkoutUrl" target="_blank" 
+              <a :href="paymentOrder.checkoutUrl" target="_blank"
                  class="text-blue-600 hover:underline text-sm">
                 Open Payment Page
               </a>
@@ -39,15 +37,13 @@
           </div>
         </div>
 
-        <!-- QR Code Display -->
         <div v-if="paymentOrder.status === 'PENDING'" class="text-center">
           <h2 class="text-xl font-semibold mb-4">Scan QR Code to Pay</h2>
-          
+
           <div class="bg-white p-6 rounded-lg border-2 border-gray-200 inline-block">
-            <!-- ✅ Sử dụng qrcode.vue để render từ string -->
-            <qrcode-vue 
-              :value="paymentOrder.qrCode" 
-              :size="300" 
+            <qrcode-vue
+              :value="paymentOrder.qrCode"
+              :size="300"
               level="H"
               class="mx-auto"
             />
@@ -58,16 +54,15 @@
             <p class="text-sm text-gray-500">Thanh toán sẽ được xác nhận tự động</p>
           </div>
 
-          <!-- Countdown Timer -->
           <div class="mt-6">
             <div class="text-gray-600 mb-2">
-              Thời gian còn lại: 
+              Thời gian còn lại:
               <span class="font-mono text-xl font-bold text-red-600">
                 {{ formatTime(countdown) }}
               </span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2">
-              <div class="bg-blue-600 h-2 rounded-full transition-all" 
+              <div class="bg-blue-600 h-2 rounded-full transition-all"
                    :style="{ width: (countdown / 600) * 100 + '%' }"></div>
             </div>
           </div>
@@ -78,21 +73,20 @@
           </button>
         </div>
 
-        <!-- Success State -->
         <div v-else-if="paymentOrder.status === 'PAID'" class="text-center py-8">
           <svg class="w-24 h-24 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           <h2 class="text-2xl font-bold text-green-600 mb-2">Thanh toán thành công!</h2>
           <p class="text-gray-600 mb-6">Đơn hàng của bạn đã được xác nhận</p>
-          <button @click="router.push('/')"
+
+          <button @click="continueShopping"
             class="px-6 py-3 bg-black text-white rounded-full hover:bg-gray-800">
             Tiếp tục mua sắm
           </button>
         </div>
 
-        <!-- Bank Info -->
         <div class="mt-8 p-4 bg-blue-50 rounded-lg">
           <h3 class="font-semibold mb-3">Thông tin chuyển khoản:</h3>
           <div class="text-sm space-y-2">
@@ -119,10 +113,9 @@
           </div>
         </div>
 
-        <!-- Order Items Summary -->
         <div class="border-t pt-6">
           <h3 class="font-semibold mb-4">Chi tiết đơn hàng:</h3>
-          <div v-for="item in orderItems" :key="item.productId" 
+          <div v-for="item in orderItems" :key="`${item.productId}-${item.styleCode}-${item.size}`"
                class="flex gap-4 mb-3 pb-3 border-b last:border-0">
             <img :src="item.thumbnail || item.image" :alt="item.name"
                  class="w-16 h-16 object-cover rounded" />
@@ -143,10 +136,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { getBag, saveBag } from '../../../utils/bagStorage'
 import QrcodeVue from 'qrcode.vue'
 
 const router = useRouter()
-const API_BASE = 'https://kit-perspectived-palely.ngrok-free.dev'
+const API_BASE = 'http://localhost:3000'
 
 const loading = ref(true)
 const paymentOrder = ref(null)
@@ -174,15 +168,12 @@ const loadPaymentData = () => {
     router.push('/checkout')
     return
   }
-  
+
   const orderData = JSON.parse(orderDataStr)
   paymentOrder.value = orderData.paymentData
   orderItems.value = orderData.items
   customerInfo.value = orderData.customerInfo
-  
   loading.value = false
-  
-  console.log('✅ Payment Data loaded:', paymentOrder.value)
 }
 
 const startCountdown = () => {
@@ -198,7 +189,7 @@ const startCountdown = () => {
 const startAutoCheck = () => {
   checkInterval.value = setInterval(async () => {
     await checkStatus()
-  }, 3000) // ✅ Check mỗi 3 giây
+  }, 3000)
 }
 
 const clearIntervals = () => {
@@ -206,40 +197,55 @@ const clearIntervals = () => {
   if (countdownInterval.value) clearInterval(countdownInterval.value)
 }
 
-// ✅ Gọi API check status từ backend
+const removePurchasedItemsFromBag = () => {
+  const checkoutItems = JSON.parse(localStorage.getItem('checkoutItems')) || []
+  const shoppingBag = getBag()
+
+  if (checkoutItems.length === 0) return
+
+  const checkoutKeys = checkoutItems.map(item =>
+    `${item.productId}-${item.styleCode}-${item.size}`
+  )
+
+  const updatedBag = shoppingBag.filter(item => {
+    const key = `${item.productId}-${item.styleCode}-${item.size}`
+    return !checkoutKeys.includes(key)
+  })
+
+  saveBag(updatedBag)
+  localStorage.removeItem('checkoutItems')
+  localStorage.removeItem('pendingOrder')
+  localStorage.removeItem('deliveryInfo')
+
+  window.dispatchEvent(new Event('bagCountUpdated'))
+}
+
 const checkStatus = async () => {
   if (!paymentOrder.value?.paymentLinkId) return
-  
+
   try {
     const response = await fetch(
       `${API_BASE}/payments/check/${paymentOrder.value.paymentLinkId}`,
       {
         headers: {
-          'ngrok-skip-browser-warning': 'true', // ✅ Bypass ngrok warning
+          'ngrok-skip-browser-warning': 'true',
           'Content-Type': 'application/json'
         }
       }
     )
-    
-    // ✅ Check nếu response không phải JSON
+
     const contentType = response.headers.get('content-type')
     if (!contentType || !contentType.includes('application/json')) {
       console.error('❌ Response is not JSON, got:', contentType)
       return
     }
-    
+
     const data = await response.json()
-    
-    console.log('📊 Payment status check:', data)
-    
+
     if (data.success && data.status === 'PAID') {
       paymentOrder.value.status = 'PAID'
       clearIntervals()
-      
-      localStorage.removeItem('shoppingBag')
-      localStorage.removeItem('pendingOrder')
-      localStorage.removeItem('deliveryInfo')
-      
+      removePurchasedItemsFromBag()
       console.log('✅ Payment confirmed!')
     }
   } catch (error) {
@@ -247,13 +253,17 @@ const checkStatus = async () => {
   }
 }
 
-
 const manualCheckStatus = async () => {
   checking.value = true
   await checkStatus()
   setTimeout(() => {
     checking.value = false
   }, 1000)
+}
+
+const continueShopping = () => {
+  removePurchasedItemsFromBag()
+  router.push('/')
 }
 
 const getBankName = (bin) => {
@@ -291,4 +301,3 @@ const formatTime = (seconds) => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 </script>
-

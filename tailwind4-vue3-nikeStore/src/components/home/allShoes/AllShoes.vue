@@ -1,126 +1,194 @@
 <template>
   <div class="w-full max-w-7xl mx-auto px-4 py-8 mt-16">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-      <h2 class="text-3xl font-semibold">All shoes</h2>
-      <div class="flex items-center gap-4">
-        <button class="text-sm font-medium hover:underline">Shop</button>
-        <div class="flex gap-2">
-          <button @click="scrollLeft"
-            class="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center hover:bg-gray-100 transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <button @click="scrollRight"
-            class="w-10 h-10 rounded-full border-2 border-blue-500 flex items-center justify-center hover:bg-blue-50 transition">
-            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
+    <div class="flex flex-col gap-5 mb-8">
+      <div class="flex items-center justify-between">
+        <h2 class="text-3xl font-semibold">All products</h2>
+        <p class="text-sm text-gray-500">{{ products.length }} results</p>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-lg p-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+        <input v-model="filters.search" @input="fetchProducts" placeholder="Search products" class="filter-input md:col-span-2" />
+
+        <select v-model="filters.category" @change="fetchProducts" class="filter-input">
+          <option value="">All categories</option>
+          <option v-for="option in categoryOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+
+        <select v-model="filters.productType" @change="fetchProducts" class="filter-input">
+          <option value="">All types</option>
+          <option v-for="option in productTypeOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+
+        <select v-model="filters.size" @change="fetchProducts" class="filter-input">
+          <option value="">Any size</option>
+          <option v-for="size in sizeOptions" :key="size" :value="size">{{ size }}</option>
+        </select>
+
+        <input v-model="filters.color" @input="fetchProducts" placeholder="Color" class="filter-input" />
+
+        <select v-model="filters.sort" @change="fetchProducts" class="filter-input">
+          <option value="featured">Featured</option>
+          <option value="price-asc">Price low to high</option>
+          <option value="price-desc">Price high to low</option>
+          <option value="rating">Top rated</option>
+          <option value="stock">Most stock</option>
+        </select>
+
+        <input v-model.number="filters.minPrice" @input="fetchProducts" type="number" min="0" placeholder="Min price" class="filter-input" />
+        <input v-model.number="filters.maxPrice" @input="fetchProducts" type="number" min="0" placeholder="Max price" class="filter-input" />
+
+        <button @click="clearFilters" class="border border-gray-300 rounded-lg px-4 py-2 font-medium hover:bg-gray-50">
+          Clear
+        </button>
       </div>
     </div>
 
-    <!-- Products Carousel -->
-    <div class="relative overflow-hidden">
-      <div ref="carousel" class="flex gap-6 overflow-x-auto scroll-smooth">
-        <div v-for="product in products" :key="product.id" @click="goToDetail(product)"
-          class="cursor-pointer flex-shrink-0 w-80">
+    <div v-if="loading" class="py-20 text-center text-gray-500">Loading products...</div>
 
-          <div class="bg-gray-100 rounded-2x mb-4 aspect-square flex items-center justify-center">
-            <img :src="product.image" :alt="product.name" class="w-full h-full object-contain">
-          </div>
-          <div class="space-y-1">
-            <h3 class="font-semibold text-lg">{{ product.name }}</h3>
-            <p class="text-gray-600">{{ product.category }}</p>
-            <p class="font-semibold">{{ formatPrice(product.price) }}</p>
-          </div>
+    <div v-else-if="products.length === 0" class="py-20 text-center text-gray-500">
+      No products match your filters.
+    </div>
+
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <button
+        v-for="product in products"
+        :key="product.id"
+        @click="goToDetail(product)"
+        class="text-left group"
+      >
+        <div class="bg-gray-100 rounded-lg mb-4 aspect-square flex items-center justify-center overflow-hidden">
+          <img :src="product.image" :alt="product.name" class="w-full h-full object-contain group-hover:scale-105 transition">
         </div>
-      </div>
+        <div class="space-y-1">
+          <h3 class="font-semibold text-lg">{{ product.name }}</h3>
+          <p class="text-gray-600">{{ productSubtitle(product.category, product.productType) }}</p>
+          <p class="text-sm text-gray-500">{{ productMeta(product) }}</p>
+          <p class="text-sm text-gray-500">{{ product.stock }} in stock</p>
+          <p class="font-semibold">{{ formatPrice(product.price) }}</p>
+        </div>
+      </button>
     </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
+import {
+  CATEGORY_OPTIONS,
+  PRODUCT_TYPE_OPTIONS,
+  SIZE_OPTIONS,
+  productSubtitle,
+  productTypeLabel,
+} from '../../../utils/productMeta'
+import { API_BASE } from '../../../utils/apiBase'
 
 export default {
-  name: 'ColorOfSeason',
+  name: 'AllShoes',
   data() {
     return {
-      products: []   // <-- Không fix cứng nữa
+      loading: true,
+      products: [],
+      categoryOptions: CATEGORY_OPTIONS,
+      productTypeOptions: PRODUCT_TYPE_OPTIONS,
+      filters: {
+        search: '',
+        category: '',
+        productType: '',
+        size: '',
+        color: '',
+        minPrice: '',
+        maxPrice: '',
+        sort: 'featured',
+      },
+      sizeOptions: SIZE_OPTIONS,
     }
   },
 
   async mounted() {
-    try {
-      const res = await axios.get("http://localhost:3000/shoes");
-
-// ✅ ĐÚNG - chỉ dùng thumbnail
-this.products = res.data.map(item => ({
-  id: item.productId,
-  name: item.name,
-  category: item.category,
-  price: item.price,
-  image: item.thumbnail || "https://via.placeholder.com/400"
-}));
-
-    } catch (error) {
-      console.error("Lỗi tải sản phẩm:", error);
-    }
-  }
-  ,
+    await this.fetchProducts()
+  },
 
   methods: {
-     goToDetail(product) {
-    this.$router.push(`/shoes/${product.id}`);
-  },
+    productSubtitle,
+
+    productMeta(product) {
+      return [product.collection, product.color]
+        .filter(Boolean)
+        .join(' / ') || productTypeLabel(product.productType)
+    },
+
+    async fetchProducts() {
+      this.loading = true
+      try {
+        const params = {}
+        Object.entries(this.filters).forEach(([key, value]) => {
+          if (value !== '' && value !== null && value !== undefined) {
+            params[key] = value
+          }
+        })
+
+        const res = await axios.get(`${API_BASE}/shoes`, { params });
+        this.products = res.data.map(item => ({
+          id: item.productId,
+          name: item.name,
+          category: item.category,
+          productType: item.productType || '',
+          collection: item.collection || '',
+          color: item.color,
+          stock: item.stock || 0,
+          price: item.price,
+          image: item.thumbnail || "https://via.placeholder.com/400"
+        }));
+      } catch (error) {
+        console.error("Failed to load products:", error);
+      } finally {
+        this.loading = false
+      }
+    },
+
+    clearFilters() {
+      this.filters = {
+        search: '',
+        category: '',
+        productType: '',
+        size: '',
+        color: '',
+        minPrice: '',
+        maxPrice: '',
+        sort: 'featured',
+      }
+      this.fetchProducts()
+    },
+
+    goToDetail(product) {
+      this.$router.push(`/shoes/${product.id}`);
+    },
+
     formatPrice(price) {
       return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND'
       }).format(price).replace('₫', 'đ')
     },
-    scrollLeft() {
-      this.$refs.carousel.scrollBy({
-        left: -350,
-        behavior: 'smooth'
-      })
-    },
-    scrollRight() {
-      this.$refs.carousel.scrollBy({
-        left: 350,
-        behavior: 'smooth'
-      })
-    }
   }
 }
 </script>
 
-
 <style scoped>
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+.filter-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
 }
 
-/* Custom scrollbar styling */
-div[ref="carousel"]::-webkit-scrollbar {
-  height: 8px;
-}
-
-div[ref="carousel"]::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-  margin: 0 20px;
-}
-
-div[ref="carousel"]::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-}
-
-div[ref="carousel"]::-webkit-scrollbar-thumb:hover {
-  background: #555;
+.filter-input:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.15);
 }
 </style>

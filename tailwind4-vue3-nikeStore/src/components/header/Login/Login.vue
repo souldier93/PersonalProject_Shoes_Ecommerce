@@ -30,6 +30,7 @@ const handleLogin = async () => {
       // ✅ Save token và user to localStorage
       localStorage.setItem('accessToken', res.data.accessToken)
       localStorage.setItem('user', JSON.stringify(res.data.user))
+      window.dispatchEvent(new Event('bagCountUpdated'))
       
       // ✅ Set default Authorization header cho tất cả requests
       axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.accessToken}`

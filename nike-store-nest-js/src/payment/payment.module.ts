@@ -8,11 +8,13 @@ import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 import { BillSchema } from './bill.schema';
 import { ShoeDetailSchema } from '../shoes/shoe-detail.schema';
+import { CouponsModule } from '../coupons/coupons.module';
 
 @Module({
   imports: [
     HttpModule,
     ConfigModule,
+    CouponsModule,
     MongooseModule.forFeature([
       { name: 'Bill', schema: BillSchema },
       { name: 'ShoeDetail', schema: ShoeDetailSchema },

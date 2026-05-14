@@ -1,6 +1,6 @@
 // payment.service.ts
 
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import type { CreatePaymentDto } from './dto/CreatePaymentDto';
@@ -13,12 +13,14 @@ import { PayosWebhookBodyPayload } from './dto/payos-webhook-body.payload';
 import { Bill } from './bill.schema';
 import { ShoeDetail } from '../shoes/shoe-detail.schema';
 import { StockCheckResult, WebhookResponse } from './payment.interface';
+import { CouponsService } from '../coupons/coupons.service';
 
 @Injectable()
 export class PaymentService {
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly couponsService: CouponsService,
     @InjectModel('Bill') private billModel: Model<Bill>,
     @InjectModel('ShoeDetail') private shoeDetailModel: Model<ShoeDetail>,
   ) {}
@@ -44,6 +46,26 @@ export class PaymentService {
     console.log('📦 Items:', JSON.stringify(body.items, null, 2));
 
     // ✅ Call PayOS API
+    const itemsSubtotal = body.items.reduce(
+      (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+      0,
+    );
+    const deliveryFee = Number(body.deliveryFee ?? Math.max(0, Number(body.amount || 0) - itemsSubtotal));
+    const orderBeforeDiscount = itemsSubtotal + deliveryFee;
+    let discountAmount = 0;
+    let couponCode = '';
+    let finalAmount = Number(body.amount || orderBeforeDiscount);
+
+    if (body.couponCode) {
+      const couponResult = await this.couponsService.validate(
+        body.couponCode,
+        orderBeforeDiscount,
+      );
+      discountAmount = couponResult.discountAmount;
+      couponCode = couponResult.coupon.code;
+      finalAmount = couponResult.finalAmount;
+    }
+
     const url = `https://api-merchant.payos.vn/v2/payment-requests`;
     const config = {
       headers: {
@@ -54,7 +76,7 @@ export class PaymentService {
 
     const dataForSignature = {
       orderCode: Number(body.orderId),
-      amount: body.amount,
+      amount: finalAmount,
       description: body.description,
       cancelUrl: 'https://example.com/cancel',
       returnUrl: 'https://example.com/return',
@@ -82,6 +104,10 @@ export class PaymentService {
       orderCode: paymentData.orderCode,
       paymentLinkId: paymentData.paymentLinkId,
       amount: paymentData.amount,
+      subtotal: itemsSubtotal,
+      deliveryFee,
+      couponCode,
+      discountAmount,
       description: paymentData.description,
       
       // ✅ User & Customer data
@@ -91,6 +117,12 @@ export class PaymentService {
       
       items: body.items,
       status: 'PENDING',
+      fulfillmentStatus: 'AWAITING_PAYMENT',
+      statusHistory: [{
+        status: 'AWAITING_PAYMENT',
+        note: 'Order created and waiting for payment',
+        changedAt: new Date(),
+      }],
       createdAt: new Date(),
     });
 
@@ -123,7 +155,16 @@ export class PaymentService {
       if (!bill.items || bill.items.length === 0) {
         console.error('❌ Bill has no items!');
         bill.status = 'FAILED';
+        bill.fulfillmentStatus = 'CANCELLED';
         bill.paidAt = new Date();
+        bill.statusHistory = [
+          ...(bill.statusHistory || []),
+          {
+            status: 'CANCELLED',
+            note: 'Payment failed because the order has no items',
+            changedAt: new Date(),
+          },
+        ];
         bill.transactionData = {
           ...transactionData,
           failureReason: 'NO_ITEMS',
@@ -153,7 +194,16 @@ export class PaymentService {
 
       if (hasInsufficientStock) {
         bill.status = 'FAILED';
+        bill.fulfillmentStatus = 'CANCELLED';
         bill.paidAt = new Date();
+        bill.statusHistory = [
+          ...(bill.statusHistory || []),
+          {
+            status: 'CANCELLED',
+            note: 'Payment failed because stock is insufficient',
+            changedAt: new Date(),
+          },
+        ];
         bill.transactionData = {
           ...transactionData,
           failureReason: 'INSUFFICIENT_STOCK',
@@ -184,13 +234,26 @@ export class PaymentService {
 
       // ✅ Update Bill → PAID
       bill.status = 'PAID';
+      bill.fulfillmentStatus = 'CONFIRMED';
       bill.paidAt = new Date();
+      bill.statusHistory = [
+        ...(bill.statusHistory || []),
+        {
+          status: 'CONFIRMED',
+          note: 'Payment completed',
+          changedAt: new Date(),
+        },
+      ];
       bill.transactionData = transactionData;
       await bill.save();
 
       console.log('✅ Payment successful!');
       console.log('✅ Bill updated:', bill._id);
       console.log('👤 Order by:', bill.userId ? 'Registered User' : 'Guest');
+
+      if (bill.couponCode) {
+        await this.couponsService.incrementUsage(bill.couponCode);
+      }
 
       return { received: true, updated: true, status: 'PAID' };
 
@@ -201,7 +264,16 @@ export class PaymentService {
         const bill = await this.billModel.findOne({ orderCode });
         if (bill && bill.status === 'PENDING') {
           bill.status = 'FAILED';
+          bill.fulfillmentStatus = 'CANCELLED';
           bill.paidAt = new Date();
+          bill.statusHistory = [
+            ...(bill.statusHistory || []),
+            {
+              status: 'CANCELLED',
+              note: 'Webhook processing failed',
+              changedAt: new Date(),
+            },
+          ];
           bill.transactionData = {
             ...transactionData,
             failureReason: 'WEBHOOK_ERROR',
@@ -335,14 +407,8 @@ export class PaymentService {
 
     return {
       success: true,
-      status: bill.status,
-      orderCode: bill.orderCode,
-      amount: bill.amount,
-      items: bill.items,
-      customerEmail: bill.customerEmail,
+      ...this.formatOrder(bill.toObject()),
       isGuest: !bill.userId,
-      paidAt: bill.paidAt,
-      transactionData: bill.transactionData
     };
   }
 
@@ -360,36 +426,196 @@ export class PaymentService {
 
     return {
       success: true,
-      status: bill.status,
-      orderCode: bill.orderCode,
-      paymentLinkId: bill.paymentLinkId,
-      amount: bill.amount,
-      items: bill.items,
-      customerEmail: bill.customerEmail,
-      customerInfo: bill.customerInfo,
+      ...this.formatOrder(bill.toObject()),
       isGuest: !bill.userId,
-      userId: bill.userId,
-      paidAt: bill.paidAt,
-      transactionData: bill.transactionData
     };
   }
 
   // ✅ Get user orders (for logged-in users)
-  async getUserOrders(userId: string) {
-    return this.billModel
-      .find({ userId })
-      .sort({ createdAt: -1 })
-      .exec();
+async getUserOrders(userId: string) {
+  const orders = await this.billModel
+    .find({ userId })
+    .sort({ createdAt: -1 })
+    .lean()
+    .exec();
+
+  return {
+    success: true,
+    userId,
+    total: orders.length,
+    orders: orders.map(order => ({
+      orderCode: order.orderCode,
+      paymentLinkId: order.paymentLinkId,
+      amount: order.amount,
+      subtotal: order.subtotal || 0,
+      deliveryFee: order.deliveryFee || 0,
+      couponCode: order.couponCode || '',
+      discountAmount: order.discountAmount || 0,
+      description: order.description,
+      status: order.status,
+      fulfillmentStatus: order.fulfillmentStatus || 'AWAITING_PAYMENT',
+      carrier: order.carrier || '',
+      trackingCode: order.trackingCode || '',
+      statusHistory: order.statusHistory || [],
+      deliveredAt: order.deliveredAt,
+      items: order.items,
+      
+      // ✅ Customer data
+      userId: order.userId,
+      customerEmail: order.customerEmail,
+      customerInfo: order.customerInfo,
+      
+      transactionData: order.transactionData,
+      createdAt: order.createdAt,
+      paidAt: order.paidAt,
+    }))
+  };
+}
+
+// ✅ Get guest orders (by email)
+async getGuestOrders(email: string) {
+  const orders = await this.billModel
+    .find({
+      userId: null,
+      customerEmail: email
+    })
+    .sort({ createdAt: -1 })
+    .lean()
+    .exec();
+
+  return {
+    success: true,
+    email,
+    isGuest: true,
+    total: orders.length,
+    orders: orders.map(order => ({
+      orderCode: order.orderCode,
+      paymentLinkId: order.paymentLinkId,
+      amount: order.amount,
+      subtotal: order.subtotal || 0,
+      deliveryFee: order.deliveryFee || 0,
+      couponCode: order.couponCode || '',
+      discountAmount: order.discountAmount || 0,
+      description: order.description,
+      status: order.status,
+      fulfillmentStatus: order.fulfillmentStatus || 'AWAITING_PAYMENT',
+      carrier: order.carrier || '',
+      trackingCode: order.trackingCode || '',
+      statusHistory: order.statusHistory || [],
+      deliveredAt: order.deliveredAt,
+      items: order.items,
+      
+      // ✅ Customer data
+      userId: order.userId,
+      customerEmail: order.customerEmail,
+      customerInfo: order.customerInfo,
+      
+      transactionData: order.transactionData,
+      createdAt: order.createdAt,
+      paidAt: order.paidAt,
+    }))
+  };
+}
+
+async getAllOrders() {
+  const orders = await this.billModel
+    .find()
+    .sort({ createdAt: -1 })
+    .lean()
+    .exec();
+
+  return {
+    success: true,
+    total: orders.length,
+    orders: orders.map(order => this.formatOrder(order)),
+  };
+}
+
+async updateFulfillmentStatus(
+  orderCode: number,
+  body: {
+    fulfillmentStatus: Bill['fulfillmentStatus'];
+    carrier?: string;
+    trackingCode?: string;
+    note?: string;
+  },
+) {
+  const allowedStatuses = [
+    'CONFIRMED',
+    'PACKING',
+    'SHIPPING',
+    'DELIVERED',
+    'RETURN_REQUESTED',
+    'REFUNDED',
+    'CANCELLED',
+  ];
+
+  if (!allowedStatuses.includes(body.fulfillmentStatus)) {
+    throw new BadRequestException('Invalid fulfillment status');
   }
 
-  // ✅ Get guest orders (by email)
-  async getGuestOrders(email: string) {
-    return this.billModel
-      .find({ 
-        userId: null, 
-        customerEmail: email 
-      })
-      .sort({ createdAt: -1 })
-      .exec();
+  const bill = await this.billModel.findOne({ orderCode }).exec();
+  if (!bill) {
+    throw new NotFoundException(`Order ${orderCode} not found`);
   }
+
+  if (bill.status !== 'PAID' && body.fulfillmentStatus !== 'CANCELLED') {
+    throw new BadRequestException('Only paid orders can move through fulfillment');
+  }
+
+  bill.fulfillmentStatus = body.fulfillmentStatus;
+  bill.carrier = body.carrier ?? bill.carrier;
+  bill.trackingCode = body.trackingCode ?? bill.trackingCode;
+
+  if (body.fulfillmentStatus === 'DELIVERED') {
+    bill.deliveredAt = bill.deliveredAt || new Date();
+  }
+
+  if (body.fulfillmentStatus === 'CANCELLED') {
+    bill.status = 'CANCELLED';
+  }
+
+  bill.statusHistory = [
+    ...(bill.statusHistory || []),
+    {
+      status: body.fulfillmentStatus,
+      note: body.note || '',
+      changedAt: new Date(),
+    },
+  ];
+
+  await bill.save();
+
+  return {
+    success: true,
+    order: this.formatOrder(bill.toObject()),
+  };
+}
+
+private formatOrder(order: any) {
+  return {
+    orderCode: order.orderCode,
+    paymentLinkId: order.paymentLinkId,
+    amount: order.amount,
+    subtotal: order.subtotal || 0,
+    deliveryFee: order.deliveryFee || 0,
+    couponCode: order.couponCode || '',
+    discountAmount: order.discountAmount || 0,
+    description: order.description,
+    status: order.status,
+    fulfillmentStatus: order.fulfillmentStatus || 'AWAITING_PAYMENT',
+    carrier: order.carrier || '',
+    trackingCode: order.trackingCode || '',
+    statusHistory: order.statusHistory || [],
+    deliveredAt: order.deliveredAt,
+    items: order.items,
+    userId: order.userId,
+    customerEmail: order.customerEmail,
+    customerInfo: order.customerInfo,
+    transactionData: order.transactionData,
+    createdAt: order.createdAt,
+    paidAt: order.paidAt,
+  };
+}
+
 }

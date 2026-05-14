@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Header from './components/header/Header.vue'
 import HeaderAdmin from './views/admin/HeaderAdmin.vue'
+import ChatWidget from './components/chat/ChatWidget.vue'
 
 const route = useRoute()
 
@@ -25,7 +26,7 @@ const isLoginPage = computed(() => {
 // ✅ Kiểm tra user có phải admin không
 const isAdmin = computed(() => {
   const user = getCurrentUser()
-  return user && user.role === 'admin'
+  return user && ['admin', 'manager'].includes(user.role)
 })
 
 // ✅ Logic hiển thị header
@@ -50,6 +51,8 @@ const shouldShowNormalHeader = computed(() => {
     <main :class="shouldShowAdminHeader ? 'pt-16' : shouldShowNormalHeader ? 'pt-[128px]' : ''">
       <router-view />
     </main>
+
+    <ChatWidget v-if="shouldShowNormalHeader" />
   </div>
 </template>
 

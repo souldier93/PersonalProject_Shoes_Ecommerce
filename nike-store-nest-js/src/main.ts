@@ -1,24 +1,23 @@
-// main.ts
-import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // ✅ Enable CORS nếu frontend khác port
   app.enableCors();
 
-  // ✅ Enable validation globally
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Loại bỏ các fields không khai báo trong DTO
-      forbidNonWhitelisted: true, // Throw error nếu có field không hợp lệ
-      transform: true, // Tự động convert types
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 
-  await app.listen(3000);
-  console.log('🚀 Server running on http://localhost:3000');
+  const port = Number(process.env.PORT) || 3000;
+  await app.listen(port);
+  console.log(`Server running on http://localhost:${port}`);
 }
+
 bootstrap();

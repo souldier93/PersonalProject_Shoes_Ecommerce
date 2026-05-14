@@ -1,5 +1,5 @@
 // auth.controller.ts
-import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Delete, Get, Post, Body, Param, Patch, UseGuards, Request, Query } from '@nestjs/common';
 import { UsersService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -42,6 +42,11 @@ export class AuthController {
   }
 
   // ✅ Get current user profile (Protected)
+  @Get('users/:id/profile')
+  getUserProfile(@Param('id') id: string) {
+    return this.usersService.findById(id);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   getProfile(@Request() req) {
@@ -68,6 +73,39 @@ export class AuthController {
   @Patch('users/:id/role')
   updateRole(@Param('id') id: string, @Body('roleName') roleName: string) {
     return this.usersService.updateUserRole(id, roleName);
+  }
+
+  @Patch('users/:id/profile')
+  updateProfile(@Param('id') id: string, @Body() body: any) {
+    return this.usersService.updateProfile(id, body);
+  }
+
+  @Patch('users/:id/password')
+  changePassword(
+    @Param('id') id: string,
+    @Body('currentPassword') currentPassword: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return this.usersService.changePassword(id, currentPassword, newPassword);
+  }
+
+  @Post('users/:id/addresses')
+  addAddress(@Param('id') id: string, @Body() body: any) {
+    return this.usersService.addAddress(id, body);
+  }
+
+  @Patch('users/:id/addresses/:index')
+  updateAddress(
+    @Param('id') id: string,
+    @Param('index') index: string,
+    @Body() body: any,
+  ) {
+    return this.usersService.updateAddress(id, Number(index), body);
+  }
+
+  @Delete('users/:id/addresses/:index')
+  deleteAddress(@Param('id') id: string, @Param('index') index: string) {
+    return this.usersService.deleteAddress(id, Number(index));
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

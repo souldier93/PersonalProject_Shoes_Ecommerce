@@ -18,6 +18,12 @@ export class Shoe {
   @Prop({ required: true })
   category: string;
 
+  @Prop()
+  productType: string;
+
+  @Prop()
+  collection: string;
+
   @Prop({ type: Number, required: true })
   price: number;
 

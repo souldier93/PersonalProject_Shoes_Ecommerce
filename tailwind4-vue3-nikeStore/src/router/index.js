@@ -7,6 +7,9 @@ import ShoesDetail from "../components/shoesDetail/ShoesDetail.vue";
 import Bag from "../components/header/bag/Bag.vue";
 import GuestCheckout from "../components/header/bag/GuestCheckout.vue";
 import Payment from "../components/header/bag/Payment.vue";
+import Wishlist from '../components/header/Wishlist.vue'
+import Profile from '../components/header/Profile.vue'
+import MyOrders from '../components/header/MyOrders.vue' // ✅ Import
 
 const routes = [
   // ✅ Public Routes
@@ -43,12 +46,32 @@ const routes = [
     redirect: "/checkout",
   },
   {
-    path: "/payment",        // ✅ THÊM route này
+    path: "/payment",
     name: "Payment",
     component: Payment,
   },
+  
+  // ✅ My Orders - Yêu cầu đăng nhập
+  {
+    path: '/my-orders',
+    name: 'MyOrders',
+    component: MyOrders,
+    meta: { requiresAuth: true } // ✅ Yêu cầu đăng nhập
+  },
 
   // ✅ Admin Routes - Lazy loading
+  {
+    path: '/wishlist',
+    name: 'Wishlist',
+    component: Wishlist,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
+    meta: { requiresAuth: true }
+  },
   {
     path: "/admin",
     redirect: "/admin/dashboard",
@@ -67,9 +90,21 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
+    path: "/admin/inventory",
+    name: "AdminInventory",
+    component: () => import("../views/admin/Inventory.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
     path: "/admin/purchases",
     name: "AdminPurchases",
     component: () => import("../views/admin/Purchases.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: "/admin/chat",
+    name: "AdminChatSupport",
+    component: () => import("../views/admin/ChatSupport.vue"),
     meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
@@ -117,20 +152,31 @@ const router = createRouter({
   },
 });
 
-// ✅ Navigation Guard
+// ✅ Navigation Guard - CẬP NHẬT ĐỂ XỬ LÝ requiresAuth
 router.beforeEach((to, from, next) => {
   const userStr = localStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
 
+  // ✅ Kiểm tra yêu cầu admin
   if (to.meta.requiresAdmin) {
     if (!user) {
       next("/login");
-    } else if (user.role !== "admin") {
+    } else if (!["admin", "manager"].includes(user.role)) {
       next("/unauthorized");
     } else {
       next();
     }
-  } else {
+  } 
+  // ✅ Kiểm tra yêu cầu đăng nhập (không phải admin)
+  else if (to.meta.requiresAuth && !to.meta.requiresAdmin) {
+    if (!user) {
+      next("/login");
+    } else {
+      next();
+    }
+  } 
+  // ✅ Route công khai
+  else {
     next();
   }
 });
