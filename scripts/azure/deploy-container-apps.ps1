@@ -150,6 +150,7 @@ $secretArgs = @(
 $envArgs = @(
   "NODE_ENV=production",
   "PORT=3000",
+  "DEPLOY_VERSION=$(Get-Date -Format yyyyMMddHHmmss)",
   "MONGO_URI=secretref:mongo-uri",
   "MONGO_DB_NAME=$($envValues["MONGO_DB_NAME"])",
   "JWT_SECRET=secretref:jwt-secret",
