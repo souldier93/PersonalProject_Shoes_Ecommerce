@@ -1,0 +1,200 @@
+name: Deploy Azure Container Apps
+
+on:
+  workflow_dispatch:
+    inputs:
+      resource_group:
+        description: Azure resource group
+        default: shoes-rg
+        required: true
+      location:
+        description: Azure region
+        default: southeastasia
+        required: true
+      container_environment:
+        description: Azure Container Apps environment
+        default: shoes-env
+        required: true
+      backend_app:
+        description: Backend Container App name
+        default: shoes-backend
+        required: true
+      frontend_app:
+        description: Frontend Container App name
+        default: shoes-frontend
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Ensure Azure resources
+        run: |
+          az group create \
+            --name "${{ inputs.resource_group }}" \
+            --location "${{ inputs.location }}"
+
+          az acr create \
+            --resource-group "${{ inputs.resource_group }}" \
+            --name "${{ secrets.AZURE_ACR_NAME }}" \
+            --sku Basic \
+            --admin-enabled true
+
+          az containerapp env create \
+            --name "${{ inputs.container_environment }}" \
+            --resource-group "${{ inputs.resource_group }}" \
+            --location "${{ inputs.location }}" || true
+
+      - name: ACR login
+        run: az acr login --name "${{ secrets.AZURE_ACR_NAME }}"
+
+      - name: Build and push backend image
+        run: |
+          REGISTRY="${{ secrets.AZURE_ACR_NAME }}.azurecr.io"
+          docker build -t "$REGISTRY/shoes-backend:${{ github.sha }}" ./nike-store-nest-js
+          docker push "$REGISTRY/shoes-backend:${{ github.sha }}"
+
+      - name: Deploy backend
+        run: |
+          REGISTRY="${{ secrets.AZURE_ACR_NAME }}.azurecr.io"
+          ACR_PASSWORD=$(az acr credential show --name "${{ secrets.AZURE_ACR_NAME }}" --query "passwords[0].value" -o tsv)
+
+          az containerapp show \
+            --name "${{ inputs.backend_app }}" \
+            --resource-group "${{ inputs.resource_group }}" >/dev/null 2>&1 \
+          && EXISTS=true || EXISTS=false
+
+          if [ "$EXISTS" = "true" ]; then
+            az containerapp secret set \
+              --name "${{ inputs.backend_app }}" \
+              --resource-group "${{ inputs.resource_group }}" \
+              --secrets \
+                mongo-uri="${{ secrets.MONGO_URI }}" \
+                jwt-secret="${{ secrets.JWT_SECRET }}" \
+                payos-client-id="${{ secrets.PAYOS_CLIENT_ID }}" \
+                payos-api-key="${{ secrets.PAYOS_API_KEY }}" \
+                payos-checksum-key="${{ secrets.PAYOS_CHECKSUM_KEY }}" \
+                r2-endpoint="${{ secrets.R2_ENDPOINT }}" \
+                r2-access-key="${{ secrets.R2_ACCESS_KEY }}" \
+                r2-secret-key="${{ secrets.R2_SECRET_KEY }}" \
+                r2-public-url="${{ secrets.R2_PUBLIC_URL }}"
+
+            az containerapp update \
+              --name "${{ inputs.backend_app }}" \
+              --resource-group "${{ inputs.resource_group }}" \
+              --image "$REGISTRY/shoes-backend:${{ github.sha }}" \
+              --set-env-vars \
+                NODE_ENV=production \
+                PORT=3000 \
+                MONGO_URI=secretref:mongo-uri \
+                JWT_SECRET=secretref:jwt-secret \
+                PAYOS_CLIENT_ID=secretref:payos-client-id \
+                PAYOS_API_KEY=secretref:payos-api-key \
+                PAYOS_CHECKSUM_KEY=secretref:payos-checksum-key \
+                R2_ENDPOINT=secretref:r2-endpoint \
+                R2_ACCESS_KEY=secretref:r2-access-key \
+                R2_SECRET_KEY=secretref:r2-secret-key \
+                R2_PUBLIC_URL=secretref:r2-public-url
+          else
+            az containerapp create \
+              --name "${{ inputs.backend_app }}" \
+              --resource-group "${{ inputs.resource_group }}" \
+              --environment "${{ inputs.container_environment }}" \
+              --image "$REGISTRY/shoes-backend:${{ github.sha }}" \
+              --target-port 3000 \
+              --ingress external \
+              --registry-server "$REGISTRY" \
+              --registry-username "${{ secrets.AZURE_ACR_NAME }}" \
+              --registry-password "$ACR_PASSWORD" \
+              --secrets \
+                mongo-uri="${{ secrets.MONGO_URI }}" \
+                jwt-secret="${{ secrets.JWT_SECRET }}" \
+                payos-client-id="${{ secrets.PAYOS_CLIENT_ID }}" \
+                payos-api-key="${{ secrets.PAYOS_API_KEY }}" \
+                payos-checksum-key="${{ secrets.PAYOS_CHECKSUM_KEY }}" \
+                r2-endpoint="${{ secrets.R2_ENDPOINT }}" \
+                r2-access-key="${{ secrets.R2_ACCESS_KEY }}" \
+                r2-secret-key="${{ secrets.R2_SECRET_KEY }}" \
+                r2-public-url="${{ secrets.R2_PUBLIC_URL }}" \
+              --env-vars \
+                NODE_ENV=production \
+                PORT=3000 \
+                MONGO_URI=secretref:mongo-uri \
+                JWT_SECRET=secretref:jwt-secret \
+                PAYOS_CLIENT_ID=secretref:payos-client-id \
+                PAYOS_API_KEY=secretref:payos-api-key \
+                PAYOS_CHECKSUM_KEY=secretref:payos-checksum-key \
+                R2_ENDPOINT=secretref:r2-endpoint \
+                R2_ACCESS_KEY=secretref:r2-access-key \
+                R2_SECRET_KEY=secretref:r2-secret-key \
+                R2_PUBLIC_URL=secretref:r2-public-url
+          fi
+
+      - name: Resolve backend URL
+        id: backend
+        run: |
+          FQDN=$(az containerapp show \
+            --name "${{ inputs.backend_app }}" \
+            --resource-group "${{ inputs.resource_group }}" \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+          echo "url=https://$FQDN" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push frontend image
+        run: |
+          REGISTRY="${{ secrets.AZURE_ACR_NAME }}.azurecr.io"
+          docker build \
+            --build-arg VITE_API_BASE_URL="${{ steps.backend.outputs.url }}" \
+            -t "$REGISTRY/shoes-frontend:${{ github.sha }}" \
+            ./tailwind4-vue3-nikeStore
+          docker push "$REGISTRY/shoes-frontend:${{ github.sha }}"
+
+      - name: Deploy frontend
+        run: |
+          REGISTRY="${{ secrets.AZURE_ACR_NAME }}.azurecr.io"
+          ACR_PASSWORD=$(az acr credential show --name "${{ secrets.AZURE_ACR_NAME }}" --query "passwords[0].value" -o tsv)
+
+          az containerapp show \
+            --name "${{ inputs.frontend_app }}" \
+            --resource-group "${{ inputs.resource_group }}" >/dev/null 2>&1 \
+          && EXISTS=true || EXISTS=false
+
+          if [ "$EXISTS" = "true" ]; then
+            az containerapp update \
+              --name "${{ inputs.frontend_app }}" \
+              --resource-group "${{ inputs.resource_group }}" \
+              --image "$REGISTRY/shoes-frontend:${{ github.sha }}"
+          else
+            az containerapp create \
+              --name "${{ inputs.frontend_app }}" \
+              --resource-group "${{ inputs.resource_group }}" \
+              --environment "${{ inputs.container_environment }}" \
+              --image "$REGISTRY/shoes-frontend:${{ github.sha }}" \
+              --target-port 80 \
+              --ingress external \
+              --registry-server "$REGISTRY" \
+              --registry-username "${{ secrets.AZURE_ACR_NAME }}" \
+              --registry-password "$ACR_PASSWORD"
+          fi
+
+      - name: Print URLs
+        run: |
+          FRONTEND_FQDN=$(az containerapp show \
+            --name "${{ inputs.frontend_app }}" \
+            --resource-group "${{ inputs.resource_group }}" \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+          echo "Backend:  ${{ steps.backend.outputs.url }}"
+          echo "Frontend: https://$FRONTEND_FQDN"

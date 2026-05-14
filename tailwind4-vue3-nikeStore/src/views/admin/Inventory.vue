@@ -115,8 +115,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-
-const API_BASE = 'http://localhost:3000'
+import { API_BASE } from '../../utils/apiBase'
 const fallbackImage = 'https://via.placeholder.com/100'
 
 const overview = ref({ variants: [], movements: [], lowStock: [], outOfStock: [] })

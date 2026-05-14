@@ -301,6 +301,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { API_BASE } from '../../utils/apiBase'
 
 const loading = ref(true)
 const users = ref([])
@@ -331,7 +332,7 @@ onMounted(async () => {
 const loadUsers = async () => {
   try {
     const accessTokenaccessToken = localStorage.getItem('accessToken')
-    const response = await axios.get('http://localhost:3000/auth/users', {
+    const response = await axios.get(`${API_BASE}/auth/users`, {
       headers: {
         'Authorization': `Bearer ${accessTokenaccessToken}`
       }
@@ -347,7 +348,7 @@ const loadUsers = async () => {
 
 const createUser = async () => {
   try {
-    const response = await axios.post('http://localhost:3000/auth/register', newUser.value)
+    const response = await axios.post(`${API_BASE}/auth/register`, newUser.value)
     
     alert('✅ User created successfully!')
     showCreateUserModal.value = false
@@ -379,7 +380,7 @@ const updateUserRole = async () => {
   try {
     const accessToken = localStorage.getItem('accessToken')
     await axios.patch(
-      `http://localhost:3000/auth/users/${selectedUser.value._id}/role`,
+      `${API_BASE}/auth/users/${selectedUser.value._id}/role`,
       { roleName: editRole.value.roleName },
       {
         headers: {

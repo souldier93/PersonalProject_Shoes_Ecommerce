@@ -303,6 +303,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { API_BASE } from '../../utils/apiBase'
 
 const loading = ref(true)
 const stats = ref({
@@ -318,7 +319,7 @@ const selectedOrder = ref(null)
 
 onMounted(async () => {
   try {
-    const response = await axios.get('http://localhost:3000/shoes/stats/dashboard')
+    const response = await axios.get(`${API_BASE}/shoes/stats/dashboard`)
     const data = response.data
     
     stats.value = {

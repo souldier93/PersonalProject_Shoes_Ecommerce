@@ -1,0 +1,101 @@
+name: Deploy AWS ECR and ECS
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: AWS region
+        default: ap-southeast-1
+        required: true
+      ecs_cluster:
+        description: Existing ECS cluster name
+        required: true
+      backend_service:
+        description: Existing backend ECS service name
+        required: true
+      backend_container:
+        description: Backend container name in the task definition
+        default: backend
+        required: true
+      frontend_api_base_url:
+        description: Public backend URL used when building frontend image
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Ensure ECR repositories
+        run: |
+          aws ecr describe-repositories --repository-names shoes-backend >/dev/null 2>&1 \
+            || aws ecr create-repository --repository-name shoes-backend
+          aws ecr describe-repositories --repository-names shoes-frontend >/dev/null 2>&1 \
+            || aws ecr create-repository --repository-name shoes-frontend
+
+      - name: Build and push backend image
+        id: backend-image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE="$REGISTRY/shoes-backend:$IMAGE_TAG"
+          docker build -t "$IMAGE" ./nike-store-nest-js
+          docker push "$IMAGE"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push frontend image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE="$REGISTRY/shoes-frontend:$IMAGE_TAG"
+          docker build \
+            --build-arg VITE_API_BASE_URL="${{ inputs.frontend_api_base_url }}" \
+            -t "$IMAGE" \
+            ./tailwind4-vue3-nikeStore
+          docker push "$IMAGE"
+
+      - name: Download current backend task definition
+        run: |
+          TASK_DEF_ARN=$(aws ecs describe-services \
+            --cluster "${{ inputs.ecs_cluster }}" \
+            --services "${{ inputs.backend_service }}" \
+            --query "services[0].taskDefinition" \
+            --output text)
+
+          aws ecs describe-task-definition \
+            --task-definition "$TASK_DEF_ARN" \
+            --query taskDefinition > backend-task-definition.json
+
+      - name: Render backend task definition
+        id: render-backend
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: backend-task-definition.json
+          container-name: ${{ inputs.backend_container }}
+          image: ${{ steps.backend-image.outputs.image }}
+
+      - name: Deploy backend ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-backend.outputs.task-definition }}
+          service: ${{ inputs.backend_service }}
+          cluster: ${{ inputs.ecs_cluster }}
+          wait-for-service-stability: true

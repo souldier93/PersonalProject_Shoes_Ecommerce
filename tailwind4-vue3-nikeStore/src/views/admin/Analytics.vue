@@ -117,8 +117,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-
-const API_BASE = 'http://localhost:3000'
+import { API_BASE } from '../../utils/apiBase'
 
 const loading = ref(true)
 const data = ref({

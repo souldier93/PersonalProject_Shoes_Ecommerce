@@ -57,8 +57,8 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { API_BASE } from '../../utils/apiBase'
 
-const API_BASE = 'http://localhost:3000'
 const fallbackImage = 'https://via.placeholder.com/400'
 
 const router = useRouter()

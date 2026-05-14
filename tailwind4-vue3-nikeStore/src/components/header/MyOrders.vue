@@ -311,9 +311,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { API_BASE } from '../../utils/apiBase'
 
 const router = useRouter()
-const API_BASE = 'http://localhost:3000'
 
 const loading = ref(true)
 const orders = ref([])

@@ -1,8 +1,9 @@
 import axios from 'axios'
 import router from '@/router'
+import { API_BASE } from './apiBase'
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: API_BASE,
 })
 
 // ✅ Add token to every request

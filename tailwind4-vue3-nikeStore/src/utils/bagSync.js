@@ -2,8 +2,7 @@
 
 import axios from 'axios'
 import { getBag, saveBag } from './bagStorage'
-
-const API_BASE = 'http://localhost:3000'
+import { API_BASE } from './apiBase'
 
 /**
  * Sync shopping bag items với database để lấy thông tin mới nhất

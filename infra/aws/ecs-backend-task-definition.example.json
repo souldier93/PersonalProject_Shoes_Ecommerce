@@ -1,0 +1,51 @@
+{
+  "family": "shoes-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<account-id>:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "<account-id>.dkr.ecr.<region>.amazonaws.com/shoes-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "3000" }
+      ],
+      "secrets": [
+        { "name": "MONGO_URI", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/MONGO_URI" },
+        { "name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/JWT_SECRET" },
+        { "name": "PAYOS_CLIENT_ID", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/PAYOS_CLIENT_ID" },
+        { "name": "PAYOS_API_KEY", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/PAYOS_API_KEY" },
+        { "name": "PAYOS_CHECKSUM_KEY", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/PAYOS_CHECKSUM_KEY" },
+        { "name": "R2_ENDPOINT", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/R2_ENDPOINT" },
+        { "name": "R2_ACCESS_KEY", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/R2_ACCESS_KEY" },
+        { "name": "R2_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/R2_SECRET_KEY" },
+        { "name": "R2_PUBLIC_URL", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/R2_PUBLIC_URL" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/shoes-backend",
+          "awslogs-region": "<region>",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

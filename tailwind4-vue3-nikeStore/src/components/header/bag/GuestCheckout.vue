@@ -296,9 +296,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBag, saveBag } from '../../../utils/bagStorage'
+import { API_BASE } from '../../../utils/apiBase'
 
 const router = useRouter()
-const API_BASE = 'http://localhost:3000'
 
 const currentUser = ref(null)
 const isLoggedIn = computed(() => !!currentUser.value)

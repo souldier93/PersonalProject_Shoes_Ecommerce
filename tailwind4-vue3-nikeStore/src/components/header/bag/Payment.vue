@@ -138,9 +138,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBag, saveBag } from '../../../utils/bagStorage'
 import QrcodeVue from 'qrcode.vue'
+import { API_BASE } from '../../../utils/apiBase'
 
 const router = useRouter()
-const API_BASE = 'http://localhost:3000'
 
 const loading = ref(true)
 const paymentOrder = ref(null)
