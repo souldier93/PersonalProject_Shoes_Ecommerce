@@ -18,6 +18,30 @@ function Assert-Command($name) {
   }
 }
 
+function Resolve-AzCli {
+  $az = Get-Command az -ErrorAction SilentlyContinue
+  if ($az) {
+    return @{
+      Command = $az.Source
+      Prefix = @()
+    }
+  }
+
+  $defaultAzPython = "C:\Program Files\Microsoft SDKs\Azure\CLI2\python.exe"
+  if (Test-Path $defaultAzPython) {
+    return @{
+      Command = $defaultAzPython
+      Prefix = @("-IBm", "azure.cli")
+    }
+  }
+
+  throw "Azure CLI is not installed or is not in PATH."
+}
+
+function Invoke-Az {
+  & $script:AzCli.Command @($script:AzCli.Prefix + $args)
+}
+
 function Read-EnvFile($path) {
   $values = @{}
   if (-not (Test-Path $path)) {
@@ -42,8 +66,8 @@ function Require-Env($values, $key) {
   return $values[$key]
 }
 
-Assert-Command az
 Assert-Command docker
+$script:AzCli = Resolve-AzCli
 
 $envValues = Read-EnvFile $BackendEnvPath
 $requiredKeys = @(
@@ -60,17 +84,23 @@ $requiredKeys = @(
 $requiredKeys | ForEach-Object { Require-Env $envValues $_ | Out-Null }
 
 Write-Host "Creating Azure resource group..." -ForegroundColor Cyan
-az group create --name $ResourceGroup --location $Location | Out-Null
+Invoke-Az group create --name $ResourceGroup --location $Location | Out-Null
+
+Write-Host "Registering Azure providers..." -ForegroundColor Cyan
+Invoke-Az provider register --namespace Microsoft.App | Out-Null
+Invoke-Az provider register --namespace Microsoft.OperationalInsights | Out-Null
+Invoke-Az provider register --namespace Microsoft.ContainerRegistry | Out-Null
+Invoke-Az extension add --name containerapp --upgrade --only-show-errors | Out-Null
 
 Write-Host "Creating Azure Container Registry..." -ForegroundColor Cyan
-az acr create `
+Invoke-Az acr create `
   --resource-group $ResourceGroup `
   --name $RegistryName `
   --sku Basic `
   --admin-enabled true | Out-Null
 
 Write-Host "Logging Docker into ACR..." -ForegroundColor Cyan
-az acr login --name $RegistryName | Out-Null
+Invoke-Az acr login --name $RegistryName | Out-Null
 $registryServer = "$RegistryName.azurecr.io"
 
 Write-Host "Building and pushing backend image..." -ForegroundColor Cyan
@@ -78,22 +108,28 @@ docker build -t "$registryServer/shoes-backend:latest" .\nike-store-nest-js
 docker push "$registryServer/shoes-backend:latest"
 
 Write-Host "Creating Container Apps environment..." -ForegroundColor Cyan
-az containerapp env create `
-  --name $EnvironmentName `
+$environmentExists = Invoke-Az containerapp env list `
   --resource-group $ResourceGroup `
-  --location $Location | Out-Null
+  --query "[?name=='$EnvironmentName'].name | [0]" `
+  --output tsv
 
-$acrPassword = az acr credential show `
+if (-not $environmentExists) {
+  Invoke-Az containerapp env create `
+    --name $EnvironmentName `
+    --resource-group $ResourceGroup `
+    --location $Location | Out-Null
+}
+
+$acrPassword = Invoke-Az acr credential show `
   --name $RegistryName `
   --query "passwords[0].value" `
   --output tsv
 
 Write-Host "Creating/updating backend Container App..." -ForegroundColor Cyan
-$backendExists = az containerapp show `
-  --name $BackendAppName `
+$backendExists = Invoke-Az containerapp list `
   --resource-group $ResourceGroup `
-  --query "name" `
-  --output tsv 2>$null
+  --query "[?name=='$BackendAppName'].name | [0]" `
+  --output tsv
 
 $secretArgs = @(
   "mongo-uri=$($envValues["MONGO_URI"])",
@@ -122,18 +158,18 @@ $envArgs = @(
 )
 
 if ($backendExists) {
-  az containerapp secret set `
+  Invoke-Az containerapp secret set `
     --name $BackendAppName `
     --resource-group $ResourceGroup `
-    --secrets $secretArgs | Out-Null
+    --secrets @secretArgs | Out-Null
 
-  az containerapp update `
+  Invoke-Az containerapp update `
     --name $BackendAppName `
     --resource-group $ResourceGroup `
     --image "$registryServer/shoes-backend:latest" `
-    --set-env-vars $envArgs | Out-Null
+    --replace-env-vars @envArgs | Out-Null
 } else {
-  az containerapp create `
+  Invoke-Az containerapp create `
     --name $BackendAppName `
     --resource-group $ResourceGroup `
     --environment $EnvironmentName `
@@ -143,11 +179,11 @@ if ($backendExists) {
     --registry-server $registryServer `
     --registry-username $RegistryName `
     --registry-password $acrPassword `
-    --secrets $secretArgs `
-    --env-vars $envArgs | Out-Null
+    --secrets @secretArgs `
+    --env-vars @envArgs | Out-Null
 }
 
-$backendFqdn = az containerapp show `
+$backendFqdn = Invoke-Az containerapp show `
   --name $BackendAppName `
   --resource-group $ResourceGroup `
   --query "properties.configuration.ingress.fqdn" `
@@ -162,19 +198,18 @@ docker build `
 docker push "$registryServer/shoes-frontend:latest"
 
 Write-Host "Creating/updating frontend Container App..." -ForegroundColor Cyan
-$frontendExists = az containerapp show `
-  --name $FrontendAppName `
+$frontendExists = Invoke-Az containerapp list `
   --resource-group $ResourceGroup `
-  --query "name" `
-  --output tsv 2>$null
+  --query "[?name=='$FrontendAppName'].name | [0]" `
+  --output tsv
 
 if ($frontendExists) {
-  az containerapp update `
+  Invoke-Az containerapp update `
     --name $FrontendAppName `
     --resource-group $ResourceGroup `
     --image "$registryServer/shoes-frontend:latest" | Out-Null
 } else {
-  az containerapp create `
+  Invoke-Az containerapp create `
     --name $FrontendAppName `
     --resource-group $ResourceGroup `
     --environment $EnvironmentName `
@@ -186,7 +221,7 @@ if ($frontendExists) {
     --registry-password $acrPassword | Out-Null
 }
 
-$frontendFqdn = az containerapp show `
+$frontendFqdn = Invoke-Az containerapp show `
   --name $FrontendAppName `
   --resource-group $ResourceGroup `
   --query "properties.configuration.ingress.fqdn" `

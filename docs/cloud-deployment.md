@@ -14,6 +14,7 @@ Copy-Item tailwind4-vue3-nikeStore\.env.example tailwind4-vue3-nikeStore\.env
 2. Fill real values in `nike-store-nest-js/.env`:
 
 - `JWT_SECRET`
+- `MONGO_URI` with the real MongoDB Atlas cluster host, not a placeholder host such as `xxxxx.mongodb.net`
 - `PAYOS_CLIENT_ID`
 - `PAYOS_API_KEY`
 - `PAYOS_CHECKSUM_KEY`
@@ -70,7 +71,7 @@ Recommended first Azure path:
 2. Push backend and frontend images.
 3. Create an Azure Container Apps environment.
 4. Create backend Container App with `MONGO_URI`, R2, PayOS, JWT secrets.
-5. Create frontend Container App with `VITE_API_BASE_URL=/api`, or deploy Vue build to Azure Static Web Apps.
+5. Create frontend Container App with `VITE_API_BASE_URL` set to the backend public URL, or deploy Vue build to Azure Static Web Apps.
 6. Add custom domain and HTTPS after smoke tests pass.
 
 ## Smoke Tests
