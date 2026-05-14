@@ -70,6 +70,10 @@ Assert-Command docker
 $script:AzCli = Resolve-AzCli
 
 $envValues = Read-EnvFile $BackendEnvPath
+if (-not $envValues.ContainsKey("MONGO_DB_NAME") -or [string]::IsNullOrWhiteSpace($envValues["MONGO_DB_NAME"])) {
+  $envValues["MONGO_DB_NAME"] = "nike-store"
+}
+
 $requiredKeys = @(
   "MONGO_URI",
   "JWT_SECRET",
@@ -147,6 +151,7 @@ $envArgs = @(
   "NODE_ENV=production",
   "PORT=3000",
   "MONGO_URI=secretref:mongo-uri",
+  "MONGO_DB_NAME=$($envValues["MONGO_DB_NAME"])",
   "JWT_SECRET=secretref:jwt-secret",
   "PAYOS_CLIENT_ID=secretref:payos-client-id",
   "PAYOS_API_KEY=secretref:payos-api-key",

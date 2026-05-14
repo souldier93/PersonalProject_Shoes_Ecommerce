@@ -27,11 +27,16 @@ import { ServeStaticModule } from '@nestjs/serve-static'; // ✅ Import
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        uri:
+      useFactory: (configService: ConfigService) => {
+        const uri =
           configService.get<string>('MONGO_URI') ||
-          'mongodb://localhost:27017/nike-store',
-      }),
+          'mongodb://localhost:27017/nike-store';
+
+        return {
+          uri,
+          dbName: configService.get<string>('MONGO_DB_NAME') || 'nike-store',
+        };
+      },
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),

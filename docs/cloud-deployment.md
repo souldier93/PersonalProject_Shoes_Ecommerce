@@ -15,6 +15,7 @@ Copy-Item tailwind4-vue3-nikeStore\.env.example tailwind4-vue3-nikeStore\.env
 
 - `JWT_SECRET`
 - `MONGO_URI` with the real MongoDB Atlas cluster host, not a placeholder host such as `xxxxx.mongodb.net`
+- The username and password in `MONGO_URI` must be a MongoDB Atlas Database User from `Database Access`, not only the Atlas login account.
 - `PAYOS_CLIENT_ID`
 - `PAYOS_API_KEY`
 - `PAYOS_CHECKSUM_KEY`
