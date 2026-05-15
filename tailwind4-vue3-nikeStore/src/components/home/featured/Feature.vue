@@ -3,22 +3,26 @@ const features = [
   {
     title: "Nike Killshot",
     subtitle: "Courtside Attitude with a Modern Touch",
-    img: "/public/assets/img/nike-just-do-it.jpg",
+    img: "/assets/img/nike-just-do-it.jpg",
+    query: { search: "Killshot" },
   },
   {
     title: "Nike United",
     subtitle: "Wicked Game",
-    img: "/public/assets/img/nike-just-do-it-2.jpg",
+    img: "/assets/img/nike-just-do-it-2.jpg",
+    query: { search: "Nike United" },
   },
   {
     title: "Jordan",
     subtitle: "New Season, Same Energy",
-    img: "/public/assets/img/nike-just-do-it-3.jpg",
+    img: "/assets/img/nike-just-do-it-3.jpg",
+    query: { search: "Jordan" },
   },
   {
     title: "Nike Sportswear",
     subtitle: "Winter Essentials",
-    img: "/public/assets/img/nike-just-do-it-4.jpg",
+    img: "/assets/img/nike-just-do-it-4.jpg",
+    query: { productType: "apparel" },
   },
 ];
 </script>
@@ -29,9 +33,10 @@ const features = [
       <h2 class="text-2xl font-bold mb-10">Featured</h2>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div
+        <router-link
           v-for="(item, index) in features"
           :key="index"
+          :to="{ path: '/products', query: item.query }"
           class="relative group overflow-hidden "
         >
           <img
@@ -44,13 +49,13 @@ const features = [
           >
             <h3 class="text-lg font-semibold">{{ item.title }}</h3>
             <p class="text-sm text-gray-200">{{ item.subtitle }}</p>
-            <button
+            <span
               class="mt-3 bg-white text-black font-semibold px-4 py-1.5 rounded-full w-fit hover:bg-gray-200 transition"
             >
               Shop
-            </button>
+            </span>
           </div>
-        </div>
+        </router-link>
       </div>
     </div>
   </section>

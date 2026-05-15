@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between mb-8">
       <h2 class="text-3xl font-semibold">Colour of the Season: Burgundy Brown</h2>
       <div class="flex items-center gap-4">
-        <button class="text-sm font-medium hover:underline">Shop</button>
+        <button @click="goToSeason" class="text-sm font-medium hover:underline">Shop</button>
         <div class="flex gap-2">
           <button 
             @click="scrollLeft"
@@ -35,13 +35,14 @@
         <div 
           v-for="product in products" 
           :key="product.id"
-          class="flex-shrink-0 w-80"
+          @click="goToProduct(product)"
+          class="flex-shrink-0 w-80 cursor-pointer group"
         >
           <div class="bg-gray-100 rounded-2x mb-4 aspect-square flex items-center justify-center">
             <img 
               :src="product.image" 
               :alt="product.name"
-              class="w-full h-full object-contain"
+              class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
             >
           </div>
           <div class="space-y-1">
@@ -56,85 +57,43 @@
 </template>
 
 <script>
+import axios from 'axios'
+import { API_BASE } from '../../../utils/apiBase'
+
 export default {
   name: 'ColorOfSeason',
   data() {
     return {
-      products: [
-        {
-          id: 1,
-          name: 'Jordan NOLA',
-          category: "Women's Slide",
-          price: 1329000,
-          image: 'https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=400&h=400&fit=crop'
-        },
-        {
-          id: 2,
-          name: 'Nike Dunk Low',
-          category: "Women's Shoes",
-          price: 3829000,
-          image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop'
-        },
-        {
-          id: 3,
-          name: 'Nike ReactX Rejuven8',
-          category: "Men's Shoes",
-          price: 2069000,
-          image: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=400&h=400&fit=crop'
-        },
-        {
-          id: 4,
-          name: 'Nike Air Max',
-          category: "Women's Shoes",
-          price: 3599000,
-          image: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?w=400&h=400&fit=crop'
-        },
-        {
-          id: 5,
-          name: 'Nike Air Force 1',
-          category: "Men's Shoes",
-          price: 2899000,
-          image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop'
-        },
-        {
-          id: 6,
-          name: 'Nike Blazer Mid',
-          category: "Women's Shoes",
-          price: 3199000,
-          image: 'https://images.unsplash.com/photo-1600269452121-4f2416e55c28?w=400&h=400&fit=crop'
-        },
-        {
-          id: 7,
-          name: 'Nike Cortez',
-          category: "Unisex Shoes",
-          price: 2599000,
-          image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop'
-        },
-        {
-          id: 8,
-          name: 'Air Jordan 1 Low',
-          category: "Men's Shoes",
-          price: 3499000,
-          image: 'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=400&h=400&fit=crop'
-        },
-        {
-          id: 9,
-          name: 'Nike Pegasus',
-          category: "Running Shoes",
-          price: 3699000,
-          image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=400&fit=crop'
-        },
-        {
-          id: 10,
-          name: 'Nike Vaporfly',
-          category: "Running Shoes",
-          price: 7299000,
-          image: 'https://images.unsplash.com/photo-1539185441755-769473a23570?w=400&h=400&fit=crop'
-        }
-      ]
+      products: []
     }
   },
+  async mounted() {
+    await this.loadSeasonProducts()
+  },
   methods: {
+    async loadSeasonProducts() {
+      try {
+        let response = await axios.get(`${API_BASE}/shoes`, {
+          params: { color: 'burgundy' },
+        })
+
+        if (!response.data.length) {
+          response = await axios.get(`${API_BASE}/shoes`, {
+            params: { sort: 'featured' },
+          })
+        }
+
+        this.products = response.data.slice(0, 10).map(product => ({
+          id: product.productId,
+          name: product.name,
+          category: product.category,
+          price: product.price,
+          image: product.thumbnail || 'https://via.placeholder.com/400',
+        }))
+      } catch (error) {
+        console.error('Failed to load season products:', error)
+      }
+    },
     formatPrice(price) {
       return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -152,6 +111,12 @@ export default {
         left: 350,
         behavior: 'smooth'
       })
+    },
+    goToSeason() {
+      this.$router.push({ path: '/products', query: { color: 'burgundy' } })
+    },
+    goToProduct(product) {
+      this.$router.push(`/shoes/${product.id}`)
     }
   }
 }

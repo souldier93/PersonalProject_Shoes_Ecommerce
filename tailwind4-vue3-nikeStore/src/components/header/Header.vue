@@ -11,9 +11,16 @@ const lastAddedItem = ref(null)
 const showProfileMenu = ref(false)
 const showMobileMenu = ref(false)
 const profileRef = ref(null)
+const searchTerm = ref('')
 let miniCartTimeout = null
 
-const navItems = ['New & Featured', 'Men', 'Women', 'Kids', 'Sale']
+const navItems = [
+  { label: 'New & Featured', query: { sort: 'featured' } },
+  { label: 'Men', query: { category: 'men' } },
+  { label: 'Women', query: { category: 'women' } },
+  { label: 'Kids', query: { category: 'kids' } },
+  { label: 'Sale', query: { sort: 'price-asc' } },
+]
 
 const isLoggedIn = computed(() => !!localStorage.getItem('user'))
 
@@ -103,6 +110,21 @@ const goToBag = () => {
   router.push('/bag')
 }
 
+const goToProducts = (query = {}) => {
+  closeMenus()
+  router.push({ path: '/products', query })
+}
+
+const searchProducts = () => {
+  const search = searchTerm.value.trim()
+  if (!search) {
+    goToProducts()
+    return
+  }
+
+  goToProducts({ search })
+}
+
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -151,22 +173,30 @@ onBeforeUnmount(() => {
         </button>
 
         <router-link to="/" @click="closeMenus" class="shrink-0">
-          <img src="/public/assets/img/Logo_NIKE.svg.png" alt="Nike" class="w-10 cursor-pointer transition hover:opacity-80" />
+          <img src="/assets/img/Logo_NIKE.svg.png" alt="Nike" class="w-10 cursor-pointer transition hover:opacity-80" />
         </router-link>
 
         <ul class="hidden items-center space-x-8 font-semibold text-gray-900 md:flex">
-          <li v-for="item in navItems" :key="item">
-            <a href="#" class="hover:text-gray-600">{{ item }}</a>
+          <li v-for="item in navItems" :key="item.label">
+            <button type="button" @click="goToProducts(item.query)" class="hover:text-gray-600">{{ item.label }}</button>
           </li>
         </ul>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 lg:gap-6">
         <div class="hidden items-center rounded-full bg-gray-100 px-4 py-1.5 text-gray-500 sm:flex">
-          <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z" />
-          </svg>
-          <span class="ml-2 text-sm font-medium text-gray-600">Search</span>
+          <button type="button" @click="searchProducts" aria-label="Search products">
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z" />
+            </svg>
+          </button>
+          <input
+            v-model="searchTerm"
+            @keyup.enter="searchProducts"
+            class="ml-2 w-24 bg-transparent text-sm font-medium text-gray-700 outline-none placeholder:text-gray-500 lg:w-40"
+            placeholder="Search"
+            aria-label="Search products"
+          />
         </div>
 
         <router-link to="/wishlist" class="hidden transition hover:scale-110 sm:block" @click="closeMenus">
@@ -268,7 +298,7 @@ onBeforeUnmount(() => {
   <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
     <div v-if="showMobileMenu" class="fixed left-0 right-0 top-16 z-40 border-b border-gray-200 bg-white px-4 py-4 shadow-lg md:hidden">
       <div class="flex flex-col gap-1 font-semibold text-gray-900">
-        <a v-for="item in navItems" :key="item" href="#" @click="closeMenus" class="rounded-lg px-3 py-3 hover:bg-gray-100">{{ item }}</a>
+        <button v-for="item in navItems" :key="item.label" type="button" @click="goToProducts(item.query)" class="rounded-lg px-3 py-3 text-left hover:bg-gray-100">{{ item.label }}</button>
         <router-link to="/wishlist" @click="closeMenus" class="rounded-lg px-3 py-3 hover:bg-gray-100">Wishlist</router-link>
       </div>
     </div>

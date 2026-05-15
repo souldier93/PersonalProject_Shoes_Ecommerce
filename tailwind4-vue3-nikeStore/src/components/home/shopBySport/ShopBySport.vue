@@ -32,6 +32,7 @@
         <div 
           v-for="sport in sports" 
           :key="sport.id"
+          @click="goToSport(sport)"
           class="flex-shrink-0 w-96 cursor-pointer group"
         >
           <div class="relative overflow-hidden mb-4 aspect-[4/3]">
@@ -58,37 +59,44 @@ export default {
         {
           id: 1,
           name: 'Basketball',
-          image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&h=600&fit=crop'
+          image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&h=600&fit=crop',
+          query: { productType: 'basketball' },
         },
         {
           id: 2,
           name: 'Football',
-          image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&h=600&fit=crop'
+          image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&h=600&fit=crop',
+          query: { productType: 'training' },
         },
         {
           id: 3,
           name: 'Running',
-          image: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&h=600&fit=crop'
+          image: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&h=600&fit=crop',
+          query: { productType: 'running' },
         },
         {
           id: 4,
           name: 'Tennis',
-          image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&h=600&fit=crop'
+          image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&h=600&fit=crop',
+          query: { productType: 'lifestyle' },
         },
         {
           id: 5,
           name: 'Training',
-          image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&h=600&fit=crop'
+          image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&h=600&fit=crop',
+          query: { productType: 'training' },
         },
         {
           id: 6,
           name: 'Yoga',
-          image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&h=600&fit=crop'
+          image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&h=600&fit=crop',
+          query: { productType: 'training' },
         },
         {
           id: 7,
           name: 'Golf',
-          image: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&h=600&fit=crop'
+          image: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&h=600&fit=crop',
+          query: { productType: 'accessories' },
         }
       ]
     }
@@ -105,6 +113,9 @@ export default {
         left: 420,
         behavior: 'smooth'
       })
+    },
+    goToSport(sport) {
+      this.$router.push({ path: '/products', query: sport.query })
     }
   }
 }

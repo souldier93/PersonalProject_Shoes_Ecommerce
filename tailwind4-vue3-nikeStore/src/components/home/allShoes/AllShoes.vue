@@ -2,7 +2,7 @@
   <div class="mx-auto mt-10 w-full max-w-7xl px-4 py-8 sm:mt-16">
     <div class="flex flex-col gap-5 mb-8">
       <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <h2 class="text-2xl font-semibold sm:text-3xl">All products</h2>
+        <h2 class="text-2xl font-semibold sm:text-3xl">{{ pageTitle }}</h2>
         <p class="text-sm text-gray-500">{{ products.length }} results</p>
       </div>
 
@@ -81,6 +81,7 @@ import {
   CATEGORY_OPTIONS,
   PRODUCT_TYPE_OPTIONS,
   SIZE_OPTIONS,
+  categoryLabel,
   productSubtitle,
   productTypeLabel,
 } from '../../../utils/productMeta'
@@ -109,7 +110,28 @@ export default {
   },
 
   async mounted() {
+    this.applyRouteFilters()
     await this.fetchProducts()
+  },
+
+  watch: {
+    '$route.query': {
+      deep: true,
+      async handler() {
+        this.applyRouteFilters()
+        await this.fetchProducts()
+      },
+    },
+  },
+
+  computed: {
+    pageTitle() {
+      if (this.filters.search) return `Search results for "${this.filters.search}"`
+      if (this.filters.category) return `${categoryLabel(this.filters.category)} products`
+      if (this.filters.productType) return `${productTypeLabel(this.filters.productType)} products`
+      if (this.filters.color) return `${this.filters.color} products`
+      return 'All products'
+    },
   },
 
   methods: {
@@ -119,6 +141,22 @@ export default {
       return [product.collection, product.color]
         .filter(Boolean)
         .join(' / ') || productTypeLabel(product.productType)
+    },
+
+    applyRouteFilters() {
+      const query = this.$route?.query || {}
+      const routeFilters = {
+        search: query.search || '',
+        category: query.category || '',
+        productType: query.productType || '',
+        size: query.size || '',
+        color: query.color || '',
+        minPrice: query.minPrice || '',
+        maxPrice: query.maxPrice || '',
+        sort: query.sort || 'featured',
+      }
+
+      Object.assign(this.filters, routeFilters)
     },
 
     async fetchProducts() {

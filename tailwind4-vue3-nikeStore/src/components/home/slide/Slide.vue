@@ -1,11 +1,14 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 // ✅ Sử dụng public folder cho video và ảnh
 const slides = [
-  { type: 'video', src: '/public/assets/video/videoplayback.mp4' },
-  { type: 'image', src: '/public/assets/img/nikeHomeslide2.jpg' },
-  { type: 'image', src: '/public/assets/img/nikeSlide3.jpg' }
+  { type: 'video', src: '/assets/video/videoplayback.mp4' },
+  { type: 'image', src: '/assets/img/nikeHomeslide2.jpg' },
+  { type: 'image', src: '/assets/img/nikeSlide3.jpg' }
 ]
 
 // Trạng thái
@@ -85,6 +88,20 @@ const toggleVideo = () => {
   isPlaying.value = !isPlaying.value
 }
 
+const shopFeatured = () => {
+  router.push({ path: '/products', query: { sort: 'featured' } })
+}
+
+const showVideoSlide = async () => {
+  currentSlide.value = 0
+  await nextTick()
+  const video = getCurrentVideo()
+  if (video) {
+    video.play().catch(err => console.log('Video play error:', err))
+    isPlaying.value = true
+  }
+}
+
 // ✅ Watch để handle khi chuyển slide
 watch(currentSlide, (newVal) => {
   // Nếu không phải slide video, restart auto-play
@@ -143,11 +160,13 @@ watch(currentSlide, (newVal) => {
         </p>
         <div class="flex space-x-4 mt-6">
           <button
+            @click="shopFeatured"
             class="bg-white text-black font-bold px-6 py-2 rounded-full hover:bg-gray-200 transition"
           >
             Shop
           </button>
           <button
+            @click="showVideoSlide"
             class="bg-white text-black font-bold px-6 py-2 rounded-full hover:bg-gray-200 transition flex items-center"
           >
             Watch <span class="ml-2">▶</span>
