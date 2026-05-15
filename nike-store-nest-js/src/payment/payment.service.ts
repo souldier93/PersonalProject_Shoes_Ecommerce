@@ -74,12 +74,22 @@ export class PaymentService {
       },
     };
 
+    const frontendUrl = (
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173'
+    ).replace(/\/$/, '');
+    const cancelUrl =
+      this.configService.get<string>('PAYOS_CANCEL_URL') ||
+      `${frontendUrl}/checkout`;
+    const returnUrl =
+      this.configService.get<string>('PAYOS_RETURN_URL') ||
+      `${frontendUrl}/payment`;
+
     const dataForSignature = {
       orderCode: Number(body.orderId),
       amount: finalAmount,
       description: body.description,
-      cancelUrl: 'https://example.com/cancel',
-      returnUrl: 'https://example.com/return',
+      cancelUrl,
+      returnUrl,
     };
 
     const signature = generateSignature(
