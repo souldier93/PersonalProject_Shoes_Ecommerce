@@ -406,7 +406,10 @@ export class UsersService implements OnModuleInit {
   }
 
   async validateUser(username: string, password: string) {
-    const user = await this.userModel.findOne({ username }).populate('roleId');
+    const login = username.trim();
+    const user = await this.userModel.findOne({
+      $or: [{ username: login }, { email: login }],
+    }).populate('roleId');
 
     if (!user) {
       return null;

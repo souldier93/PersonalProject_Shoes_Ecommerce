@@ -10,6 +10,7 @@
     "seed:nike": "node src/seed-nike-products.js",
     "seed:nike:catalog": "node src/seed-nike-catalog.js",
     "seed:nike:r2": "node src/import-nike-media-to-r2.js",
+    "seed:initial-user": "node src/seed-initial-user.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

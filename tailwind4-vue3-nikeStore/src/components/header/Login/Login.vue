@@ -21,7 +21,7 @@ const handleLogin = async () => {
 
   try {
     const res = await axios.post(`${API_BASE}/auth/login`, {
-      username: username.value,
+      username: username.value.trim(),
       password: password.value
     })
 
@@ -68,7 +68,7 @@ const handleLogin = async () => {
 
       <input
         v-model="username"
-        placeholder="Username"
+        placeholder="Username or email"
         class="w-full mb-4 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black"
         @keyup.enter="handleLogin"
       />
