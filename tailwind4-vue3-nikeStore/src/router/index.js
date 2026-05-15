@@ -4,6 +4,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from "../components/home/Home.vue";
 import AllShoes from "../components/home/allShoes/AllShoes.vue";
 import Login from "../components/header/Login/Login.vue";
+import Register from "../components/header/Register/Register.vue";
 import ShoesDetail from "../components/shoesDetail/ShoesDetail.vue";
 import Bag from "../components/header/bag/Bag.vue";
 import GuestCheckout from "../components/header/bag/GuestCheckout.vue";
@@ -28,6 +29,11 @@ const routes = [
     path: "/login",
     name: "Login",
     component: Login,
+  },
+  {
+    path: "/register",
+    name: "Register",
+    component: Register,
   },
   {
     path: "/shoes/:id",

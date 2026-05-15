@@ -84,6 +84,10 @@ export class UsersService implements OnModuleInit {
   }
 
   async createUser(createUserDto: CreateUserDto) {
+    const emailVerificationEnabled =
+      process.env.EMAIL_VERIFICATION_REQUIRED === 'true' &&
+      Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASSWORD);
+
     // ✅ Check username exists
     const existingUser = await this.userModel.findOne({
       username: createUserDto.username,
@@ -112,8 +116,12 @@ export class UsersService implements OnModuleInit {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
     // ✅ Generate verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const verificationToken = emailVerificationEnabled
+      ? crypto.randomBytes(32).toString('hex')
+      : undefined;
+    const verificationTokenExpires = emailVerificationEnabled
+      ? new Date(Date.now() + 24 * 60 * 60 * 1000)
+      : undefined;
 
     const user = new this.userModel({
       username: createUserDto.username,
@@ -122,7 +130,7 @@ export class UsersService implements OnModuleInit {
       roleId: role._id,
       age: createUserDto.age,
       active: true,
-      isVerified: false, // ✅ Chưa xác thực
+      isVerified: !emailVerificationEnabled,
       verificationToken,
       verificationTokenExpires,
     });
@@ -130,19 +138,22 @@ export class UsersService implements OnModuleInit {
     const savedUser = await user.save();
 
     // ✅ Send verification email
-    try {
-      await this.emailService.sendVerificationEmail(
-        createUserDto.email,
-        verificationToken,
-      );
-    } catch (error) {
-      console.error('Failed to send verification email:', error);
-      // Không throw error để user vẫn được tạo
+    if (emailVerificationEnabled && verificationToken) {
+      try {
+        await this.emailService.sendVerificationEmail(
+          createUserDto.email,
+          verificationToken,
+        );
+      } catch (error) {
+        console.error('Failed to send verification email:', error);
+      }
     }
 
     return {
       success: true,
-      message: 'User created successfully. Please check your email to verify your account.',
+      message: emailVerificationEnabled
+        ? 'User created successfully. Please check your email to verify your account.'
+        : 'User created successfully. You can login now.',
       user: {
         _id: savedUser._id,
         username: savedUser.username,

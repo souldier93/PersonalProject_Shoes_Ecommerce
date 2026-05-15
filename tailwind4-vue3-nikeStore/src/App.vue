@@ -19,8 +19,8 @@ const isAdminRoute = computed(() => {
 })
 
 // ✅ Kiểm tra có phải trang login không
-const isLoginPage = computed(() => {
-  return route.path === '/login'
+const isAuthPage = computed(() => {
+  return ['/login', '/register'].includes(route.path)
 })
 
 // ✅ Kiểm tra user có phải admin không
@@ -31,11 +31,11 @@ const isAdmin = computed(() => {
 
 // ✅ Logic hiển thị header
 const shouldShowAdminHeader = computed(() => {
-  return !isLoginPage.value && isAdminRoute.value && isAdmin.value
+  return !isAuthPage.value && isAdminRoute.value && isAdmin.value
 })
 
 const shouldShowNormalHeader = computed(() => {
-  return !isLoginPage.value && !isAdminRoute.value
+  return !isAuthPage.value && !isAdminRoute.value
 })
 </script>
 

@@ -12,7 +12,7 @@ const isLoading = ref(false)
 
 const handleLogin = async () => {
   if (!username.value || !password.value) {
-    errorMessage.value = '⚠️ Please enter both username and password'
+    errorMessage.value = 'Please enter username/email and password'
     return
   }
 
@@ -22,38 +22,28 @@ const handleLogin = async () => {
   try {
     const res = await axios.post(`${API_BASE}/auth/login`, {
       username: username.value.trim(),
-      password: password.value
+      password: password.value,
     })
 
-    console.log('✅ Login response:', res.data)
-
     if (res.data.success) {
-      // ✅ Save token và user to localStorage
       localStorage.setItem('accessToken', res.data.accessToken)
       localStorage.setItem('user', JSON.stringify(res.data.user))
       window.dispatchEvent(new Event('bagCountUpdated'))
-      
-      // ✅ Set default Authorization header cho tất cả requests
-      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.accessToken}`
-      
-      // Redirect based on role
+      axios.defaults.headers.common.Authorization = `Bearer ${res.data.accessToken}`
+
       if (res.data.user.role === 'admin') {
         router.push('/admin/dashboard')
       } else {
         router.push('/')
       }
-      
-      alert(`✅ Welcome back, ${res.data.user.username}!`)
     }
   } catch (err) {
-    console.error('❌ Login error:', err)
-    
     if (err.response) {
-      errorMessage.value = err.response.data.message || '❌ Login failed'
+      errorMessage.value = err.response.data.message || 'Login failed'
     } else if (err.request) {
-      errorMessage.value = '🚫 Cannot connect to server'
+      errorMessage.value = 'Cannot connect to server'
     } else {
-      errorMessage.value = '❌ An error occurred'
+      errorMessage.value = 'An error occurred'
     }
   } finally {
     isLoading.value = false
@@ -62,34 +52,41 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-96">
-      <h2 class="text-2xl font-bold mb-6 text-center">Đăng nhập</h2>
+  <div class="flex min-h-screen flex-col items-center justify-center bg-gray-100 px-4 py-10">
+    <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg sm:p-8">
+      <h2 class="mb-6 text-center text-2xl font-bold">Sign in</h2>
 
       <input
         v-model="username"
         placeholder="Username or email"
-        class="w-full mb-4 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+        class="mb-4 w-full rounded-md border px-4 py-3 focus:outline-none focus:ring-2 focus:ring-black"
+        autocomplete="username"
         @keyup.enter="handleLogin"
       />
       <input
         v-model="password"
         type="password"
         placeholder="Password"
-        class="w-full mb-6 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+        class="mb-6 w-full rounded-md border px-4 py-3 focus:outline-none focus:ring-2 focus:ring-black"
+        autocomplete="current-password"
         @keyup.enter="handleLogin"
       />
 
       <button
         @click="handleLogin"
         :disabled="isLoading"
-        class="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+        class="w-full rounded-full bg-black py-3 font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
-        {{ isLoading ? 'Đang đăng nhập...' : 'Đăng nhập' }}
+        {{ isLoading ? 'Signing in...' : 'Sign in' }}
       </button>
 
-      <p v-if="errorMessage" class="text-red-500 text-center mt-4">
+      <p v-if="errorMessage" class="mt-4 rounded-md bg-red-50 px-4 py-3 text-center text-sm text-red-600">
         {{ errorMessage }}
+      </p>
+
+      <p class="mt-6 text-center text-sm text-gray-600">
+        New to the store?
+        <router-link class="font-semibold text-black underline" to="/register">Create an account</router-link>
       </p>
     </div>
   </div>
