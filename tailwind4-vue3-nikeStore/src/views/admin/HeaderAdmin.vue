@@ -5,13 +5,9 @@
         <!-- Logo -->
         <router-link to="/">
           <div class="flex items-center gap-2">
-            <svg class="w-8 h-8" viewBox="0 0 40 40" fill="none">
-              <path d="M8 8L20 2L32 8V32L20 38L8 32V8Z" fill="black" />
-              <path d="M12 12L20 8L28 12V28L20 32L12 28V12Z" fill="white" />
-              <path d="M16 16L20 14L24 16V24L20 26L16 24V16Z" fill="black" />
-            </svg>
+            <img src="/assets/img/ptt-style-logo.svg" alt="PTT Style" class="h-9 w-auto max-w-[118px]" />
 
-            <span class="hidden text-xl font-bold sm:inline">Store Management</span>
+            <span class="hidden text-xl font-bold sm:inline">Management</span>
             <span class="text-lg font-bold sm:hidden">Store</span>
           </div>
         </router-link>

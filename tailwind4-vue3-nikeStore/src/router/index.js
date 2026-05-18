@@ -63,12 +63,11 @@ const routes = [
     component: Payment,
   },
   
-  // ✅ My Orders - Yêu cầu đăng nhập
+  // My Orders supports both members and secure guest lookup
   {
     path: '/my-orders',
     name: 'MyOrders',
     component: MyOrders,
-    meta: { requiresAuth: true } // ✅ Yêu cầu đăng nhập
   },
 
   // ✅ Admin Routes - Lazy loading

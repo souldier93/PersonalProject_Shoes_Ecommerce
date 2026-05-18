@@ -1,4 +1,17 @@
 const mongoose = require('mongoose');
+const fs = require('fs');
+const path = require('path');
+
+const envPath = path.resolve(__dirname, '..', '.env');
+if (fs.existsSync(envPath)) {
+  const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+  for (const line of lines) {
+    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)\s*$/);
+    if (match && !process.env[match[1]]) {
+      process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, '');
+    }
+  }
+}
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/nike-store';
 const now = new Date().toISOString();
@@ -193,6 +206,168 @@ const catalog = [
     sizeGroup: 'oneSize',
     minImages: 3,
   },
+  {
+    productId: '9023',
+    name: 'Nike P-6000',
+    category: 'men',
+    productType: 'lifestyle',
+    collection: 'P-6000',
+    price: 2875000,
+    sourceUrl: 'https://www.nike.com/t/p-6000-shoes-XkgpKW/CD6404-108',
+    maxColors: 8,
+  },
+  {
+    productId: '9024',
+    name: 'Nike Vomero Premium',
+    category: 'men',
+    productType: 'running',
+    collection: 'Vomero',
+    price: 5750000,
+    sourceUrl: 'https://www.nike.com/t/vomero-premium-mens-road-running-shoes-l11miwwa/HQ2050-101',
+    maxColors: 4,
+  },
+  {
+    productId: '9025',
+    name: 'Nike Pegasus Premium',
+    category: 'men',
+    productType: 'running',
+    collection: 'Pegasus',
+    price: 5500000,
+    sourceUrl: 'https://www.nike.com/t/pegasus-premium-mens-road-running-shoes-kWXqW9yR/HQ2592-106',
+    maxColors: 8,
+  },
+  {
+    productId: '9026',
+    name: 'Air Jordan 1 Retro Low OG Banned',
+    category: 'men',
+    productType: 'lifestyle',
+    collection: 'Air Jordan 1',
+    price: 3625000,
+    sourceUrl: 'https://www.nike.com/t/air-jordan-1-retro-low-og-banned-mens-shoes-9ceTZAxR/IW6276-001',
+    maxColors: 2,
+  },
+  {
+    productId: '9027',
+    name: 'Nike ACG Zegama',
+    category: 'men',
+    productType: 'running',
+    collection: 'ACG',
+    price: 4500000,
+    sourceUrl: 'https://www.nike.com/t/acg-zegama-mens-trail-running-shoes-R6m2RvQq/HV8113-103',
+    maxColors: 4,
+  },
+  {
+    productId: '9028',
+    name: 'Nike Air Max Moto 2K',
+    category: 'men',
+    productType: 'lifestyle',
+    collection: 'Air Max',
+    price: 3750000,
+    sourceUrl: 'https://www.nike.com/t/air-max-moto-2k-mens-shoes-sHpe9Gv4/IO9279-101',
+    maxColors: 6,
+  },
+  {
+    productId: '9029',
+    name: 'Nike Air Max 270',
+    category: 'women',
+    productType: 'lifestyle',
+    collection: 'Air Max',
+    price: 4250000,
+    sourceUrl: 'https://www.nike.com/t/air-max-270-womens-shoes-Pgb94t/HJ3222-500',
+    maxColors: 7,
+  },
+  {
+    productId: '9030',
+    name: 'Nike Ava Rover',
+    category: 'women',
+    productType: 'lifestyle',
+    collection: 'Ava Rover',
+    price: 3625000,
+    sourceUrl: 'https://www.nike.com/t/ava-rover-shoes-Ow09rOwc/DX4215-102',
+    maxColors: 5,
+  },
+  {
+    productId: '9031',
+    name: 'Nike Dunk Low',
+    category: 'women',
+    productType: 'lifestyle',
+    collection: 'Dunk',
+    price: 3000000,
+    sourceUrl: 'https://www.nike.com/t/dunk-low-womens-shoes-ppQwKZ/IV2040-600',
+    maxColors: 8,
+  },
+  {
+    productId: '9032',
+    name: 'Nike 24.7 PerfectStretch',
+    category: 'men',
+    productType: 'apparel',
+    collection: '24.7',
+    price: 2500000,
+    sourceUrl: 'https://www.nike.com/t/247-perfectstretch-mens-dri-fit-uv-button-up-shirt-VRTJxuVa/IF2734-451',
+    maxColors: 5,
+    sizeGroup: 'apparel',
+    minImages: 4,
+  },
+  {
+    productId: '9033',
+    name: 'Nike Sportswear T-Shirt',
+    category: 'men',
+    productType: 'apparel',
+    collection: 'Sportswear',
+    price: 1050000,
+    sourceUrl: 'https://www.nike.com/t/sportswear-mens-t-shirt-7CoxMH11/IR6913-101',
+    maxColors: 4,
+    sizeGroup: 'apparel',
+    minImages: 4,
+  },
+  {
+    productId: '9034',
+    name: 'Nike Club Fleece Shorts',
+    category: 'men',
+    productType: 'apparel',
+    collection: 'Club',
+    price: 1625000,
+    sourceUrl: 'https://www.nike.com/t/club-mens-fleece-shorts-fKfOAroW/IQ5903-657',
+    maxColors: 4,
+    sizeGroup: 'apparel',
+    minImages: 4,
+  },
+  {
+    productId: '9035',
+    name: 'Nike Tech Helios Jacket',
+    category: 'men',
+    productType: 'apparel',
+    collection: 'Tech Helios',
+    price: 3750000,
+    sourceUrl: 'https://www.nike.com/t/tech-helios-mens-dri-fit-full-zip-jacket-Wtb98Qim/IM1333-382',
+    maxColors: 4,
+    sizeGroup: 'extendedApparel',
+    minImages: 4,
+  },
+  {
+    productId: '9036',
+    name: 'Nike Varsity Elite Backpack',
+    category: 'men',
+    productType: 'accessories',
+    collection: 'Varsity Elite',
+    price: 2375000,
+    sourceUrl: 'https://www.nike.com/t/varsity-elite-backpack-32l-ktBkrm/HM9965-819',
+    maxColors: 6,
+    sizeGroup: 'oneSize',
+    minImages: 3,
+  },
+  {
+    productId: '9037',
+    name: 'Nike Caddy Golf Towel',
+    category: 'men',
+    productType: 'accessories',
+    collection: 'Golf',
+    price: 900000,
+    sourceUrl: 'https://www.nike.com/t/caddy-golf-towel-LFCyfppx/N1013741-740',
+    maxColors: 3,
+    sizeGroup: 'oneSize',
+    minImages: 2,
+  },
 ];
 
 const stockFor = (sizes, start = 10) =>
@@ -212,11 +387,16 @@ const sizesFor = (config) => {
   return menSizes;
 };
 
-const cleanText = (value = '') =>
-  String(value)
+const cleanText = (value = '') => {
+  if (value && typeof value === 'object') {
+    value = value.text || value.value || value.markdown || value.description || '';
+  }
+
+  return String(value)
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+};
 
 const extractNextData = (html, sourceUrl) => {
   const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);

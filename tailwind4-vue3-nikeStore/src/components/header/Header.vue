@@ -2,15 +2,21 @@
 import './Header.css'
 import { useRouter } from 'vue-router'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import axios from 'axios'
 import { clearTransientCheckout, getBag } from '../../utils/bagStorage'
+import { API_BASE } from '../../utils/apiBase'
+import { WISHLIST_UPDATED_EVENT } from '../../utils/wishlist'
 
 const router = useRouter()
 const bagCount = ref(0)
+const wishlistCount = ref(0)
 const showMiniCart = ref(false)
 const lastAddedItem = ref(null)
 const showProfileMenu = ref(false)
+const showHelpMenu = ref(false)
 const showMobileMenu = ref(false)
 const profileRef = ref(null)
+const helpRef = ref(null)
 const searchTerm = ref('')
 let miniCartTimeout = null
 
@@ -19,7 +25,17 @@ const navItems = [
   { label: 'Men', query: { category: 'men' } },
   { label: 'Women', query: { category: 'women' } },
   { label: 'Kids', query: { category: 'kids' } },
+  { label: 'Sport', query: { productType: 'running' } },
+  { label: 'Collections', query: { sort: 'featured' } },
   { label: 'Sale', query: { sort: 'price-asc' } },
+]
+
+const helpItems = [
+  { label: 'Order Status', action: () => router.push('/my-orders') },
+  { label: 'Shipping and Delivery', action: () => router.push('/checkout') },
+  { label: 'Returns', action: () => router.push('/my-orders') },
+  { label: 'Size Charts', action: () => router.push('/products?size=42') },
+  { label: 'Contact Us', action: () => window.dispatchEvent(new Event('openChatWidget')) },
 ]
 
 const isLoggedIn = computed(() => !!localStorage.getItem('user'))
@@ -34,6 +50,7 @@ const isAdmin = computed(() => currentUser.value?.role === 'admin')
 const closeMenus = () => {
   showMobileMenu.value = false
   showProfileMenu.value = false
+  showHelpMenu.value = false
 }
 
 const goToLogin = () => {
@@ -41,8 +58,29 @@ const goToLogin = () => {
   router.push('/login')
 }
 
+const goToRegister = () => {
+  closeMenus()
+  router.push('/register')
+}
+
+const openStoreLocator = () => {
+  closeMenus()
+  window.open('https://www.google.com/maps/search/fashion+shoe+store', '_blank', 'noopener')
+}
+
+const runHelpAction = (item) => {
+  closeMenus()
+  item.action()
+}
+
 const toggleProfileMenu = () => {
   showProfileMenu.value = !showProfileMenu.value
+  showHelpMenu.value = false
+}
+
+const toggleHelpMenu = () => {
+  showHelpMenu.value = !showHelpMenu.value
+  showProfileMenu.value = false
 }
 
 const toggleMobileMenu = () => {
@@ -77,6 +115,22 @@ const handleLogout = () => {
 const updateBagCount = () => {
   const bag = getBag()
   bagCount.value = bag.reduce((sum, item) => sum + item.quantity, 0)
+}
+
+const updateWishlistCount = async () => {
+  const user = currentUser.value
+  if (!user?._id) {
+    wishlistCount.value = 0
+    return
+  }
+
+  try {
+    const response = await axios.get(`${API_BASE}/wishlist/user/${user._id}`)
+    wishlistCount.value = response.data.total ?? response.data.items?.length ?? 0
+  } catch (error) {
+    console.error('Failed to update wishlist count:', error)
+    wishlistCount.value = 0
+  }
 }
 
 const handleBagAdded = () => {
@@ -136,13 +190,19 @@ const handleClickOutside = (event) => {
   if (profileRef.value && !profileRef.value.contains(event.target)) {
     showProfileMenu.value = false
   }
+
+  if (helpRef.value && !helpRef.value.contains(event.target)) {
+    showHelpMenu.value = false
+  }
 }
 
 onMounted(() => {
   updateBagCount()
+  updateWishlistCount()
   window.addEventListener('storage', updateBagCount)
   window.addEventListener('bagUpdated', handleBagAdded)
   window.addEventListener('bagCountUpdated', handleBagCountUpdated)
+  window.addEventListener(WISHLIST_UPDATED_EVENT, updateWishlistCount)
   document.addEventListener('click', handleClickOutside)
 })
 
@@ -150,6 +210,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('storage', updateBagCount)
   window.removeEventListener('bagUpdated', handleBagAdded)
   window.removeEventListener('bagCountUpdated', handleBagCountUpdated)
+  window.removeEventListener(WISHLIST_UPDATED_EVENT, updateWishlistCount)
   document.removeEventListener('click', handleClickOutside)
   if (miniCartTimeout) clearTimeout(miniCartTimeout)
 })
@@ -157,6 +218,45 @@ onBeforeUnmount(() => {
 
 <template>
   <nav class="fixed left-0 top-0 z-50 w-full bg-white shadow-sm">
+    <div class="hidden bg-gray-100 md:block">
+      <div class="mx-auto flex h-9 max-w-7xl items-center justify-between px-6 text-xs font-semibold text-gray-900 lg:px-10">
+        <div class="flex items-center gap-3">
+          <button type="button" @click="goToProducts({ sort: 'featured' })" class="rounded-full px-2 py-1 hover:bg-white">PTT Style</button>
+          <span class="h-4 w-px bg-gray-300"></span>
+          <button type="button" @click="goToProducts({ productType: 'accessories' })" class="rounded-full px-2 py-1 hover:bg-white">Accessories</button>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <button type="button" @click="openStoreLocator" class="px-2 py-1 hover:text-gray-600">Find a Store</button>
+          <span class="text-gray-300">|</span>
+
+          <div ref="helpRef" class="relative">
+            <button type="button" @click.stop="toggleHelpMenu" class="px-2 py-1 hover:text-gray-600">Help</button>
+            <transition enter-active-class="transition ease-out duration-150" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-100" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
+              <div v-if="showHelpMenu" class="absolute right-0 top-8 w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-xl">
+                <button
+                  v-for="item in helpItems"
+                  :key="item.label"
+                  type="button"
+                  @click="runHelpAction(item)"
+                  class="block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  {{ item.label }}
+                </button>
+              </div>
+            </transition>
+          </div>
+
+          <span class="text-gray-300">|</span>
+          <button v-if="!isLoggedIn" type="button" @click="goToRegister" class="px-2 py-1 hover:text-gray-600">Join Us</button>
+          <button v-else type="button" @click="goToMyOrders" class="px-2 py-1 hover:text-gray-600">Orders</button>
+          <span class="text-gray-300">|</span>
+          <button v-if="!isLoggedIn" type="button" @click="goToLogin" class="px-2 py-1 hover:text-gray-600">Sign In</button>
+          <button v-else type="button" @click="goToProfile" class="px-2 py-1 hover:text-gray-600">Account</button>
+        </div>
+      </div>
+    </div>
+
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
       <div class="flex min-w-0 items-center gap-3">
         <button
@@ -173,12 +273,12 @@ onBeforeUnmount(() => {
         </button>
 
         <router-link to="/" @click="closeMenus" class="shrink-0">
-          <img src="/assets/img/Logo_NIKE.svg.png" alt="Nike" class="w-10 cursor-pointer transition hover:opacity-80" />
+          <img src="/assets/img/ptt-style-logo.svg" alt="PTT Style" class="h-10 w-auto max-w-[132px] cursor-pointer transition hover:opacity-80" />
         </router-link>
 
-        <ul class="hidden items-center space-x-8 font-semibold text-gray-900 md:flex">
+        <ul class="hidden items-center space-x-7 font-semibold text-gray-900 md:flex">
           <li v-for="item in navItems" :key="item.label">
-            <button type="button" @click="goToProducts(item.query)" class="hover:text-gray-600">{{ item.label }}</button>
+            <button type="button" @click="goToProducts(item.query)" class="whitespace-nowrap hover:text-gray-600">{{ item.label }}</button>
           </li>
         </ul>
       </div>
@@ -199,14 +299,17 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <router-link to="/wishlist" class="hidden transition hover:scale-110 sm:block" @click="closeMenus">
+        <router-link to="/wishlist" class="relative hidden transition hover:scale-110 sm:block" @click="closeMenus" aria-label="Wishlist">
           <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
           </svg>
+          <span v-if="wishlistCount > 0" class="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
+            {{ wishlistCount }}
+          </span>
         </router-link>
 
         <div class="relative">
-          <router-link to="/bag" class="relative" @click="showMobileMenu = false">
+          <router-link to="/bag" class="relative" @click="showMobileMenu = false" aria-label="Shopping bag">
             <svg class="h-6 w-6 transition hover:scale-110" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
             </svg>
@@ -216,7 +319,7 @@ onBeforeUnmount(() => {
           </router-link>
 
           <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
-            <div v-if="showMiniCart && lastAddedItem" class="fixed left-4 right-4 top-20 z-50 rounded-lg border border-gray-200 bg-white p-4 shadow-2xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-96 sm:p-6">
+            <div v-if="showMiniCart && lastAddedItem" class="fixed left-4 right-4 top-28 z-50 rounded-lg border border-gray-200 bg-white p-4 shadow-2xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-96 sm:p-6">
               <div class="mb-4 flex items-start justify-between">
                 <div class="flex items-center gap-2">
                   <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -293,19 +396,33 @@ onBeforeUnmount(() => {
         </button>
       </div>
     </div>
-  </nav>
 
-  <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
-    <div v-if="showMobileMenu" class="fixed left-0 right-0 top-16 z-40 border-b border-gray-200 bg-white px-4 py-4 shadow-lg md:hidden">
-      <div class="flex flex-col gap-1 font-semibold text-gray-900">
-        <button v-for="item in navItems" :key="item.label" type="button" @click="goToProducts(item.query)" class="rounded-lg px-3 py-3 text-left hover:bg-gray-100">{{ item.label }}</button>
-        <router-link to="/wishlist" @click="closeMenus" class="rounded-lg px-3 py-3 hover:bg-gray-100">Wishlist</router-link>
+    <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
+      <div v-if="showMobileMenu" class="fixed left-0 right-0 top-[104px] z-40 border-b border-gray-200 bg-white px-4 py-4 shadow-lg md:hidden">
+        <div class="mb-3 flex items-center rounded-full bg-gray-100 px-4 py-2 text-gray-500">
+          <button type="button" @click="searchProducts" aria-label="Search products">
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z" />
+            </svg>
+          </button>
+          <input v-model="searchTerm" @keyup.enter="searchProducts" class="ml-2 w-full bg-transparent text-sm font-medium text-gray-700 outline-none" placeholder="Search products" />
+        </div>
+
+        <div class="flex flex-col gap-1 font-semibold text-gray-900">
+          <button v-for="item in navItems" :key="item.label" type="button" @click="goToProducts(item.query)" class="rounded-lg px-3 py-3 text-left hover:bg-gray-100">{{ item.label }}</button>
+          <button type="button" @click="openStoreLocator" class="rounded-lg px-3 py-3 text-left hover:bg-gray-100">Find a Store</button>
+          <router-link to="/wishlist" @click="closeMenus" class="flex items-center justify-between rounded-lg px-3 py-3 hover:bg-gray-100">
+            <span>Wishlist</span>
+            <span v-if="wishlistCount > 0" class="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">{{ wishlistCount }}</span>
+          </router-link>
+          <button v-if="!isLoggedIn" type="button" @click="goToRegister" class="rounded-lg px-3 py-3 text-left hover:bg-gray-100">Join Us</button>
+        </div>
       </div>
-    </div>
-  </transition>
+    </transition>
 
-  <div class="mt-16 bg-gray-100 px-4 py-3 text-center text-xs sm:text-sm">
-    Free Standard Delivery & 30-Day Free Returns ·
-    <a href="#" class="underline">Join Now</a>
-  </div>
+    <div class="bg-gray-100 px-4 py-3 text-center text-xs sm:text-sm">
+      Free Standard Delivery & 30-Day Free Returns -
+      <button type="button" @click="goToRegister" class="underline">Join Now</button>
+    </div>
+  </nav>
 </template>

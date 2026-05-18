@@ -129,15 +129,15 @@
       </div>
     </div>
 
-    <!-- ✅ Order Details Modal -->
+    <!-- ✅ Order Details Panel -->
     <div 
       v-if="showOrderModal" 
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      class="fixed inset-0 z-50 flex justify-end overflow-hidden bg-white/75 p-0 backdrop-blur-sm sm:p-4"
       @click.self="showOrderModal = false"
     >
-      <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+      <div class="flex h-full w-full max-w-3xl flex-col overflow-hidden bg-white shadow-2xl ring-1 ring-gray-200 sm:h-[calc(100vh-2rem)] sm:rounded-xl">
+        <!-- Panel Header -->
+        <div class="border-b bg-white px-6 py-4 flex items-center justify-between">
           <div>
             <h2 class="text-2xl font-bold">Order Details</h2>
             <p class="text-sm text-gray-500">Order #{{ selectedOrder?.orderCode }}</p>
@@ -152,8 +152,8 @@
           </button>
         </div>
 
-        <!-- Modal Content -->
-        <div class="p-6 space-y-6">
+        <!-- Panel Content -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
           <!-- Order Status -->
           <div class="bg-gray-50 rounded-lg p-4">
             <div class="flex items-center justify-between">
@@ -280,8 +280,8 @@
           </div>
         </div>
 
-        <!-- Modal Footer -->
-        <div class="sticky bottom-0 bg-gray-50 border-t px-6 py-4 flex justify-end gap-3">
+        <!-- Panel Footer -->
+        <div class="border-t bg-gray-50 px-6 py-4 flex justify-end gap-3">
           <button 
             @click="showOrderModal = false"
             class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition"

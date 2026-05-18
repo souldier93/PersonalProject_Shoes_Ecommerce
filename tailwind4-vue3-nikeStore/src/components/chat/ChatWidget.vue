@@ -108,6 +108,14 @@ const openChat = async () => {
   scrollToBottom()
 }
 
+const handleOpenChatWidget = async (event) => {
+  await openChat()
+  const suggestedText = event?.detail?.text
+  if (suggestedText) {
+    draft.value = suggestedText
+  }
+}
+
 const ensureConversation = async () => {
   if (conversation.value) return
 
@@ -115,6 +123,8 @@ const ensureConversation = async () => {
   try {
     const response = await axios.post(`${API_BASE}/chat/conversations`, buildChatIdentity())
     conversation.value = response.data
+  } catch (error) {
+    console.error('Failed to start chat:', error)
   } finally {
     loading.value = false
   }
@@ -152,6 +162,7 @@ const sendMessage = async () => {
   if (!text || sending.value) return
 
   await ensureConversation()
+  if (!conversation.value?._id) return
   sending.value = true
   draft.value = ''
 
@@ -204,11 +215,13 @@ const formatTime = (value) => {
 }
 
 onMounted(async () => {
+  window.addEventListener('openChatWidget', handleOpenChatWidget)
   await ensureConversation()
   pollTimer = window.setInterval(refreshConversation, 6000)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('openChatWidget', handleOpenChatWidget)
   if (pollTimer) window.clearInterval(pollTimer)
 })
 </script>

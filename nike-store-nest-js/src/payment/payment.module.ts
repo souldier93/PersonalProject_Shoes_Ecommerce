@@ -9,6 +9,7 @@ import { PaymentService } from './payment.service';
 import { BillSchema } from './bill.schema';
 import { ShoeDetailSchema } from '../shoes/shoe-detail.schema';
 import { CouponsModule } from '../coupons/coupons.module';
+import { OrderEmailService } from './order-email.service';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { CouponsModule } from '../coupons/coupons.module';
     ]),
   ],
   controllers: [PaymentController],
-  providers: [PaymentService],
+  providers: [PaymentService, OrderEmailService],
   exports: [PaymentService],
 })
 export class PaymentModule {}

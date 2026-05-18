@@ -6,6 +6,8 @@ export interface BillDocument extends Document {
   orderId: string;
   orderCode: number;
   paymentLinkId: string;
+  paymentProvider?: 'payos' | 'stripe';
+  stripePaymentIntentId?: string;
   amount: number;
   subtotal?: number;
   deliveryFee?: number;
@@ -67,6 +69,13 @@ export const BillSchema = new Schema<BillDocument>({
   orderId: { type: String, required: true },
   orderCode: { type: Number, required: true, unique: true },
   paymentLinkId: { type: String, required: true },
+  paymentProvider: {
+    type: String,
+    enum: ['payos', 'stripe'],
+    default: 'payos',
+    index: true,
+  },
+  stripePaymentIntentId: { type: String, index: true },
   amount: { type: Number, required: true },
   subtotal: { type: Number, default: 0 },
   deliveryFee: { type: Number, default: 0 },

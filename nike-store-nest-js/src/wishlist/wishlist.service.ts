@@ -29,15 +29,22 @@ export class WishlistService {
           detail?.colors?.find(colorItem => colorItem.colorName === item.colorName) ||
           detail?.colors?.[0];
         const sizeStock = color?.sizes?.find(size => size.size === item.size)?.stock ?? 0;
+        const hasSelectedSize = !!item.size;
 
         return {
           ...item,
+          colorName: item.colorName || color?.colorName || '',
           productName: detail?.name || '',
           category: detail?.category || '',
+          productType: color?.productType || detail?.productType || '',
+          styleCode: color?.styleCode || '',
           price: color?.price || detail?.price || 0,
           thumbnail: color?.thumbnail || color?.images?.[0] || '',
+          image: color?.images?.[0] || color?.thumbnail || '',
           stock: sizeStock,
-          isAvailable: item.size ? sizeStock > 0 : !!color?.sizes?.some(size => size.stock > 0),
+          isAvailable: hasSelectedSize
+            ? sizeStock > 0
+            : !!color?.sizes?.some(size => size.stock > 0),
         };
       }),
     );

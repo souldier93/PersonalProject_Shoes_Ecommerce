@@ -1,17 +1,21 @@
-// payment.controller.ts
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
-import { PaymentService } from './payment.service.js';
+import type { RawBodyRequest } from '@nestjs/common';
+import type { Request } from 'express';
 import type { CreatePaymentDto } from './dto/CreatePaymentDto.js';
 import { PaymentWebhookGuard } from './guards/payment-webhook.guard.js';
-import { WebhookResponse } from './payment.interface.js'; // ✅ Import interface
+import { WebhookResponse } from './payment.interface.js';
+import { PaymentService } from './payment.service.js';
 
 @Controller('payments')
 export class PaymentController {
@@ -19,17 +23,44 @@ export class PaymentController {
 
   @Post()
   async createPayment(@Body() body: CreatePaymentDto): Promise<any> {
-    console.log('📥 Payment request received:', JSON.stringify(body, null, 2));
+    console.log('Payment request received:', {
+      orderId: body?.orderId,
+      itemCount: body?.items?.length || 0,
+      paymentType: body?.userId ? 'registered' : 'guest',
+    });
     return this.paymentService.createPayment(body);
+  }
+
+  @Post('stripe/create-intent')
+  async createStripePayment(@Body() body: CreatePaymentDto): Promise<any> {
+    return this.paymentService.createStripePaymentIntent(body);
+  }
+
+  @Post('stripe/confirm')
+  async confirmStripePayment(
+    @Body() body: { paymentIntentId: string },
+  ): Promise<any> {
+    return this.paymentService.confirmStripePayment(body.paymentIntentId);
+  }
+
+  @Post('stripe/webhook')
+  handleStripeWebhook(
+    @Req() req: RawBodyRequest<Request>,
+    @Headers('stripe-signature') signature: string,
+  ): Promise<any> {
+    if (!req.rawBody) {
+      throw new BadRequestException('Missing raw body for Stripe webhook');
+    }
+
+    return this.paymentService.handleStripeWebhook(req.rawBody, signature);
   }
 
   @Post('webhook')
   @UseGuards(PaymentWebhookGuard)
-  handleWebhook(@Body() body: any): Promise<WebhookResponse> { // ✅ Fix: Thêm return type
+  handleWebhook(@Body() body: any): Promise<WebhookResponse> {
     return this.paymentService.handleWebhook(body);
   }
 
-  // ✅ API check status by paymentLinkId
   @Get('check/:paymentLinkId')
   async checkPaymentStatus(@Param('paymentLinkId') paymentLinkId: string) {
     return this.paymentService.checkPaymentStatus(paymentLinkId);
@@ -43,7 +74,8 @@ export class PaymentController {
   @Patch('orders/:orderCode/fulfillment')
   async updateFulfillmentStatus(
     @Param('orderCode') orderCode: string,
-    @Body() body: {
+    @Body()
+    body: {
       fulfillmentStatus: any;
       carrier?: string;
       trackingCode?: string;
@@ -53,20 +85,23 @@ export class PaymentController {
     return this.paymentService.updateFulfillmentStatus(Number(orderCode), body);
   }
 
-  // ✅ API check status by orderCode
   @Get('check-order/:orderCode')
   async checkPaymentByOrderCode(@Param('orderCode') orderCode: string) {
     return this.paymentService.checkPaymentByOrderCode(Number(orderCode));
   }
-  // ✅ Get orders by userId
-@Get('user/:userId/orders')
-async getUserOrders(@Param('userId') userId: string) {
-  return this.paymentService.getUserOrders(userId);
-}
 
-// ✅ Get orders by email (for guest)
-@Get('guest/:email/orders')
-async getGuestOrders(@Param('email') email: string) {
-  return this.paymentService.getGuestOrders(email);
-}
+  @Get('user/:userId/orders')
+  async getUserOrders(@Param('userId') userId: string) {
+    return this.paymentService.getUserOrders(userId);
+  }
+
+  @Post('guest/orders/lookup')
+  async lookupGuestOrder(@Body() body: { email: string; orderCode: string }) {
+    return this.paymentService.lookupGuestOrder(body);
+  }
+
+  @Get('guest/:email/orders')
+  async getGuestOrders(@Param('email') email: string) {
+    return this.paymentService.getGuestOrders(email);
+  }
 }

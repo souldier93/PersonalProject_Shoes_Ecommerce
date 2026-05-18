@@ -2,7 +2,7 @@
 
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import type { CreatePaymentDto } from './dto/CreatePaymentDto';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
@@ -14,16 +14,68 @@ import { Bill } from './bill.schema';
 import { ShoeDetail } from '../shoes/shoe-detail.schema';
 import { StockCheckResult, WebhookResponse } from './payment.interface';
 import { CouponsService } from '../coupons/coupons.service';
+import Stripe from 'stripe';
+import { OrderEmailService } from './order-email.service';
+
+type StripeClient = InstanceType<typeof Stripe>;
+type StripePaymentIntent = Awaited<
+  ReturnType<StripeClient['paymentIntents']['retrieve']>
+>;
 
 @Injectable()
 export class PaymentService {
+  private stripeClient?: StripeClient;
+
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     private readonly couponsService: CouponsService,
+    private readonly orderEmailService: OrderEmailService,
     @InjectModel('Bill') private billModel: Model<Bill>,
     @InjectModel('ShoeDetail') private shoeDetailModel: Model<ShoeDetail>,
   ) {}
+
+  private getStripeClient() {
+    if (!this.stripeClient) {
+      this.stripeClient = new Stripe(
+        this.configService.getOrThrow<string>('STRIPE_SECRET_KEY'),
+      );
+    }
+
+    return this.stripeClient;
+  }
+
+  private normalizeUserId(userId?: string | null) {
+    if (!userId || !Types.ObjectId.isValid(userId)) {
+      return null;
+    }
+
+    return new Types.ObjectId(userId);
+  }
+
+  private normalizeEmail(email?: string | null) {
+    return String(email || '').trim().toLowerCase();
+  }
+
+  private assertValidEmail(email: string) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new BadRequestException('Invalid email');
+    }
+  }
+
+  private assertValidOrderCode(orderCode: number) {
+    if (!Number.isSafeInteger(orderCode) || orderCode <= 0) {
+      throw new BadRequestException('Invalid order code');
+    }
+  }
+
+  private escapeRegExp(value: string) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private buildPaymentDescription(orderCode: number) {
+    return `PTT ${orderCode}`.slice(0, 25);
+  }
 
   // ✅ CREATE PAYMENT - Hỗ trợ cả guest và logged-in user
   async createPayment(body: CreatePaymentDto): Promise<any> {
@@ -32,7 +84,10 @@ export class PaymentService {
       throw new Error('❌ Items are required! Cannot create payment without items.');
     }
 
-    if (!body.customerEmail) {
+    const customerEmail = this.normalizeEmail(body.customerEmail);
+    this.assertValidEmail(customerEmail);
+
+    if (!customerEmail) {
       throw new Error('❌ Customer email is required!');
     }
 
@@ -40,10 +95,16 @@ export class PaymentService {
       throw new Error('❌ Customer info is required!');
     }
 
-    const isGuest = !body.userId;
-    console.log('📦 Creating payment for:', isGuest ? 'GUEST' : `USER ${body.userId}`);
-    console.log('📧 Email:', body.customerEmail);
-    console.log('📦 Items:', JSON.stringify(body.items, null, 2));
+    const normalizedUserId = this.normalizeUserId(body.userId);
+    const isGuest = !normalizedUserId;
+    const orderCode = Number(body.orderId);
+    this.assertValidOrderCode(orderCode);
+    const paymentDescription = this.buildPaymentDescription(orderCode);
+    console.log('Creating PayOS payment:', {
+      orderCode,
+      itemCount: body.items.length,
+      paymentType: isGuest ? 'guest' : 'registered',
+    });
 
     // ✅ Call PayOS API
     const itemsSubtotal = body.items.reduce(
@@ -85,9 +146,9 @@ export class PaymentService {
       `${frontendUrl}/payment`;
 
     const dataForSignature = {
-      orderCode: Number(body.orderId),
+      orderCode,
       amount: finalAmount,
-      description: body.description,
+      description: paymentDescription,
       cancelUrl,
       returnUrl,
     };
@@ -113,16 +174,17 @@ export class PaymentService {
       orderId: body.orderId,
       orderCode: paymentData.orderCode,
       paymentLinkId: paymentData.paymentLinkId,
+      paymentProvider: 'payos',
       amount: paymentData.amount,
       subtotal: itemsSubtotal,
       deliveryFee,
       couponCode,
       discountAmount,
-      description: paymentData.description,
+      description: paymentDescription,
       
       // ✅ User & Customer data
-      userId: body.userId || null,           // null = guest
-      customerEmail: body.customerEmail,
+      userId: normalizedUserId,           // null = guest
+      customerEmail,
       customerInfo: body.customerInfo,
       
       items: body.items,
@@ -138,13 +200,393 @@ export class PaymentService {
 
     console.log('✅ Bill created:', bill._id);
     console.log('👤 Customer type:', isGuest ? 'Guest' : 'Registered User');
+    void this.orderEmailService.sendOrderCreatedEmail(bill.toObject());
 
     return response.data;
   }
 
+  async createStripePaymentIntent(body: CreatePaymentDto): Promise<any> {
+    if (!body.items || body.items.length === 0) {
+      throw new BadRequestException('Items are required');
+    }
+
+    const customerEmail = this.normalizeEmail(body.customerEmail);
+    this.assertValidEmail(customerEmail);
+
+    if (!customerEmail || !body.customerInfo) {
+      throw new BadRequestException('Customer information is required');
+    }
+
+    const orderCode = Number(body.orderId);
+    this.assertValidOrderCode(orderCode);
+    const paymentDescription = this.buildPaymentDescription(orderCode);
+
+    await this.ensureItemsStockAvailable(body.items);
+
+    const itemsSubtotal = body.items.reduce(
+      (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+      0,
+    );
+    const deliveryFee = Number(
+      body.deliveryFee ?? Math.max(0, Number(body.amount || 0) - itemsSubtotal),
+    );
+    const orderBeforeDiscount = itemsSubtotal + deliveryFee;
+    let discountAmount = 0;
+    let couponCode = '';
+    let finalAmount = Number(body.amount || orderBeforeDiscount);
+
+    if (body.couponCode) {
+      const couponResult = await this.couponsService.validate(
+        body.couponCode,
+        orderBeforeDiscount,
+      );
+      discountAmount = couponResult.discountAmount;
+      couponCode = couponResult.coupon.code;
+      finalAmount = couponResult.finalAmount;
+    }
+
+    if (!Number.isFinite(finalAmount) || finalAmount <= 0) {
+      throw new BadRequestException('Invalid payment amount');
+    }
+
+    const currency = (
+      this.configService.get<string>('STRIPE_CURRENCY') || 'vnd'
+    ).toLowerCase();
+    const paymentIntent = await this.getStripeClient().paymentIntents.create({
+      amount: this.toStripeAmount(finalAmount, currency),
+      currency,
+      payment_method_types: ['card'],
+      description: paymentDescription,
+      receipt_email: customerEmail,
+      metadata: {
+        provider: 'stripe',
+        orderId: body.orderId,
+        orderCode: String(orderCode),
+        customerEmail,
+      },
+    });
+
+    const bill = await this.billModel.create({
+      orderId: body.orderId,
+      orderCode,
+      paymentLinkId: paymentIntent.id,
+      paymentProvider: 'stripe',
+      stripePaymentIntentId: paymentIntent.id,
+      amount: finalAmount,
+      subtotal: itemsSubtotal,
+      deliveryFee,
+      couponCode,
+      discountAmount,
+      description: paymentDescription,
+      userId: this.normalizeUserId(body.userId),
+      customerEmail,
+      customerInfo: body.customerInfo,
+      items: body.items,
+      status: 'PENDING',
+      fulfillmentStatus: 'AWAITING_PAYMENT',
+      statusHistory: [
+        {
+          status: 'AWAITING_PAYMENT',
+          note: 'Stripe order created and waiting for payment',
+          changedAt: new Date(),
+        },
+      ],
+      transactionData: {
+        stripePaymentIntentId: paymentIntent.id,
+        currency,
+      },
+      createdAt: new Date(),
+    });
+    void this.orderEmailService.sendOrderCreatedEmail(bill.toObject());
+
+    return {
+      code: '00',
+      data: {
+        provider: 'stripe',
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        orderCode: bill.orderCode,
+        amount: bill.amount,
+        currency,
+        status: 'PENDING',
+      },
+    };
+  }
+
+  async confirmStripePayment(paymentIntentId: string) {
+    if (!paymentIntentId) {
+      throw new BadRequestException('Payment intent id is required');
+    }
+
+    const paymentIntent =
+      await this.getStripeClient().paymentIntents.retrieve(paymentIntentId);
+
+    return this.settleStripePaymentIntent(paymentIntent, 'client-confirm');
+  }
+
+  async handleStripeWebhook(rawBody: Buffer, signature?: string) {
+    const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+    if (!webhookSecret) {
+      throw new BadRequestException('Stripe webhook secret is not configured');
+    }
+
+    const event = this.getStripeClient().webhooks.constructEvent(
+      rawBody,
+      signature || '',
+      webhookSecret,
+    );
+
+    if (event.type === 'payment_intent.succeeded') {
+      return this.settleStripePaymentIntent(
+        event.data.object as StripePaymentIntent,
+        'stripe-webhook',
+      );
+    }
+
+    if (
+      event.type === 'payment_intent.payment_failed' ||
+      event.type === 'payment_intent.canceled'
+    ) {
+      const paymentIntent = event.data.object as StripePaymentIntent;
+      const bill = await this.billModel.findOne({
+        stripePaymentIntentId: paymentIntent.id,
+      });
+
+      if (bill && bill.status === 'PENDING') {
+        bill.status = 'FAILED';
+        bill.fulfillmentStatus = 'CANCELLED';
+        bill.transactionData = {
+          ...(bill.transactionData || {}),
+          stripePaymentIntentId: paymentIntent.id,
+          stripeStatus: paymentIntent.status,
+          failureReason:
+            paymentIntent.last_payment_error?.message || event.type,
+        };
+        bill.statusHistory = [
+          ...(bill.statusHistory || []),
+          {
+            status: 'CANCELLED',
+            note: `Stripe ${event.type}`,
+            changedAt: new Date(),
+          },
+        ];
+        await bill.save();
+      }
+    }
+
+    return { received: true };
+  }
+
+  private toStripeAmount(amount: number, currency: string) {
+    const zeroDecimalCurrencies = new Set([
+      'bif',
+      'clp',
+      'djf',
+      'gnf',
+      'jpy',
+      'kmf',
+      'krw',
+      'mga',
+      'pyg',
+      'rwf',
+      'ugx',
+      'vnd',
+      'vuv',
+      'xaf',
+      'xof',
+      'xpf',
+    ]);
+
+    return Math.round(
+      Number(amount) *
+        (zeroDecimalCurrencies.has(currency.toLowerCase()) ? 1 : 100),
+    );
+  }
+
+  private async ensureItemsStockAvailable(items: CreatePaymentDto['items']) {
+    const stockCheckResults: StockCheckResult[] = [];
+
+    for (const item of items) {
+      stockCheckResults.push(
+        await this.checkStockBeforeDecrease(
+          item.productId,
+          item.colorName,
+          item.size,
+          item.quantity,
+        ),
+      );
+    }
+
+    const unavailableItems = stockCheckResults.filter(
+      (result) => !result.isAvailable,
+    );
+    if (unavailableItems.length > 0) {
+      throw new BadRequestException({
+        message: 'Some items are out of stock',
+        items: unavailableItems,
+      });
+    }
+  }
+
+  private async settleStripePaymentIntent(
+    paymentIntent: StripePaymentIntent,
+    source: string,
+  ) {
+    const bill = await this.billModel.findOne({
+      $or: [
+        { stripePaymentIntentId: paymentIntent.id },
+        { paymentLinkId: paymentIntent.id },
+      ],
+    });
+
+    if (!bill) {
+      throw new NotFoundException('Bill not found for Stripe payment');
+    }
+
+    if (bill.status === 'PAID') {
+      return {
+        success: true,
+        received: true,
+        status: 'PAID',
+        order: this.formatOrder(bill.toObject()),
+      };
+    }
+
+    if (paymentIntent.status !== 'succeeded') {
+      return {
+        success: false,
+        received: true,
+        status: paymentIntent.status,
+        order: this.formatOrder(bill.toObject()),
+      };
+    }
+
+    const expectedAmount = this.toStripeAmount(
+      bill.amount,
+      paymentIntent.currency || 'vnd',
+    );
+    if (expectedAmount !== paymentIntent.amount) {
+      throw new BadRequestException('Stripe amount does not match order amount');
+    }
+
+    if (!bill.items || bill.items.length === 0) {
+      bill.status = 'FAILED';
+      bill.fulfillmentStatus = 'CANCELLED';
+      bill.paidAt = new Date();
+      bill.transactionData = {
+        ...(bill.transactionData || {}),
+        stripePaymentIntentId: paymentIntent.id,
+        failureReason: 'NO_ITEMS',
+        source,
+      };
+      bill.statusHistory = [
+        ...(bill.statusHistory || []),
+        {
+          status: 'CANCELLED',
+          note: 'Payment failed because the order has no items',
+          changedAt: new Date(),
+        },
+      ];
+      await bill.save();
+
+      return { success: false, received: true, status: 'FAILED' };
+    }
+
+    const stockCheckResults: StockCheckResult[] = [];
+    for (const item of bill.items) {
+      stockCheckResults.push(
+        await this.checkStockBeforeDecrease(
+          item.productId,
+          item.colorName,
+          item.size,
+          item.quantity,
+        ),
+      );
+    }
+
+    const hasInsufficientStock = stockCheckResults.some(
+      (result) => !result.isAvailable,
+    );
+    if (hasInsufficientStock) {
+      bill.status = 'FAILED';
+      bill.fulfillmentStatus = 'CANCELLED';
+      bill.paidAt = new Date();
+      bill.transactionData = {
+        ...(bill.transactionData || {}),
+        stripePaymentIntentId: paymentIntent.id,
+        failureReason: 'INSUFFICIENT_STOCK',
+        stockCheckResults,
+        source,
+      };
+      bill.statusHistory = [
+        ...(bill.statusHistory || []),
+        {
+          status: 'CANCELLED',
+          note: 'Payment failed because stock is insufficient',
+          changedAt: new Date(),
+        },
+      ];
+      await bill.save();
+
+      return {
+        success: false,
+        received: true,
+        status: 'FAILED',
+        reason: 'Insufficient stock',
+        details: stockCheckResults.filter((result) => !result.isAvailable),
+      };
+    }
+
+    for (const item of bill.items) {
+      await this.decreaseStock(
+        item.productId,
+        item.colorName,
+        item.size,
+        item.quantity,
+      );
+    }
+
+    bill.status = 'PAID';
+    bill.fulfillmentStatus = 'CONFIRMED';
+    bill.paidAt = new Date();
+    bill.transactionData = {
+      ...(bill.transactionData || {}),
+      stripePaymentIntentId: paymentIntent.id,
+      stripeStatus: paymentIntent.status,
+      amountReceived: paymentIntent.amount_received,
+      paymentMethod: paymentIntent.payment_method,
+      source,
+    };
+    bill.statusHistory = [
+      ...(bill.statusHistory || []),
+      {
+        status: 'CONFIRMED',
+        note: 'Stripe payment completed',
+        changedAt: new Date(),
+      },
+    ];
+    await bill.save();
+
+    if (bill.couponCode) {
+      await this.couponsService.incrementUsage(bill.couponCode);
+    }
+    void this.orderEmailService.sendPaymentConfirmedEmail(bill.toObject());
+
+    return {
+      success: true,
+      received: true,
+      status: 'PAID',
+      order: this.formatOrder(bill.toObject()),
+    };
+  }
+
   // ✅ WEBHOOK HANDLER - Xử lý thanh toán và trừ stock
   async handleWebhook(body: PayosWebhookBodyPayload): Promise<WebhookResponse> {
-    console.log('🔔 Webhook received:', body);
+    console.log('PayOS webhook received:', {
+      orderCode: body?.data?.orderCode,
+      code: body?.code,
+      success: body?.success,
+    });
 
     const { orderCode, paymentLinkId, ...transactionData } = body.data;
 
@@ -159,7 +601,10 @@ export class PaymentService {
 
       console.log('📦 Bill found:', bill._id);
       console.log('👤 Customer:', bill.userId ? `User ${bill.userId}` : 'Guest');
-      console.log('📧 Email:', bill.customerEmail);
+
+      if (bill.status === 'PAID') {
+        return { received: true, updated: false, status: 'PAID' };
+      }
 
       // ✅ Kiểm tra items
       if (!bill.items || bill.items.length === 0) {
@@ -264,6 +709,7 @@ export class PaymentService {
       if (bill.couponCode) {
         await this.couponsService.incrementUsage(bill.couponCode);
       }
+      void this.orderEmailService.sendPaymentConfirmedEmail(bill.toObject());
 
       return { received: true, updated: true, status: 'PAID' };
 
@@ -456,6 +902,8 @@ async getUserOrders(userId: string) {
     orders: orders.map(order => ({
       orderCode: order.orderCode,
       paymentLinkId: order.paymentLinkId,
+      paymentProvider: order.paymentProvider || 'payos',
+      stripePaymentIntentId: order.stripePaymentIntentId,
       amount: order.amount,
       subtotal: order.subtotal || 0,
       deliveryFee: order.deliveryFee || 0,
@@ -483,48 +931,46 @@ async getUserOrders(userId: string) {
 }
 
 // ✅ Get guest orders (by email)
-async getGuestOrders(email: string) {
-  const orders = await this.billModel
-    .find({
+async lookupGuestOrder(body: { email: string; orderCode: string }) {
+  const email = this.normalizeEmail(body.email);
+  this.assertValidEmail(email);
+
+  const orderCode = Number(String(body.orderCode || '').replace(/\D/g, ''));
+  this.assertValidOrderCode(orderCode);
+
+  const order = await this.billModel
+    .findOne({
       userId: null,
-      customerEmail: email
+      orderCode,
+      customerEmail: {
+        $regex: `^${this.escapeRegExp(email)}$`,
+        $options: 'i',
+      },
     })
-    .sort({ createdAt: -1 })
     .lean()
     .exec();
 
+  if (!order) {
+    return {
+      success: false,
+      total: 0,
+      orders: [],
+      message: 'Order not found for that email and order code',
+    };
+  }
+
   return {
     success: true,
-    email,
     isGuest: true,
-    total: orders.length,
-    orders: orders.map(order => ({
-      orderCode: order.orderCode,
-      paymentLinkId: order.paymentLinkId,
-      amount: order.amount,
-      subtotal: order.subtotal || 0,
-      deliveryFee: order.deliveryFee || 0,
-      couponCode: order.couponCode || '',
-      discountAmount: order.discountAmount || 0,
-      description: order.description,
-      status: order.status,
-      fulfillmentStatus: order.fulfillmentStatus || 'AWAITING_PAYMENT',
-      carrier: order.carrier || '',
-      trackingCode: order.trackingCode || '',
-      statusHistory: order.statusHistory || [],
-      deliveredAt: order.deliveredAt,
-      items: order.items,
-      
-      // ✅ Customer data
-      userId: order.userId,
-      customerEmail: order.customerEmail,
-      customerInfo: order.customerInfo,
-      
-      transactionData: order.transactionData,
-      createdAt: order.createdAt,
-      paidAt: order.paidAt,
-    }))
+    total: 1,
+    orders: [this.formatOrder(order)],
   };
+}
+
+async getGuestOrders(email: string) {
+  throw new BadRequestException(
+    'Guest order lookup requires email and order code',
+  );
 }
 
 async getAllOrders() {
@@ -606,6 +1052,8 @@ private formatOrder(order: any) {
   return {
     orderCode: order.orderCode,
     paymentLinkId: order.paymentLinkId,
+    paymentProvider: order.paymentProvider || 'payos',
+    stripePaymentIntentId: order.stripePaymentIntentId,
     amount: order.amount,
     subtotal: order.subtotal || 0,
     deliveryFee: order.deliveryFee || 0,

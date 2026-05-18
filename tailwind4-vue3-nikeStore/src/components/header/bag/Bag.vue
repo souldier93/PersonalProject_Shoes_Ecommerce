@@ -187,7 +187,7 @@
                     />
                   </svg>
                   <div>
-                    <h4 class="font-semibold text-sm mb-1">Nike Member Benefits</h4>
+                    <h4 class="font-semibold text-sm mb-1">PTT Style Member Benefits</h4>
                     <p class="text-xs text-gray-600">
                       Fast checkout, order tracking, and exclusive access
                     </p>

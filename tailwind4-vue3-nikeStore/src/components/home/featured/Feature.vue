@@ -1,25 +1,25 @@
 <script setup>
 const features = [
   {
-    title: "Nike Killshot",
+    title: "Court Classics",
     subtitle: "Courtside Attitude with a Modern Touch",
     img: "/assets/img/nike-just-do-it.jpg",
     query: { search: "Killshot" },
   },
   {
-    title: "Nike United",
+    title: "United Style",
     subtitle: "Wicked Game",
     img: "/assets/img/nike-just-do-it-2.jpg",
     query: { search: "Nike United" },
   },
   {
-    title: "Jordan",
+    title: "Street Icons",
     subtitle: "New Season, Same Energy",
     img: "/assets/img/nike-just-do-it-3.jpg",
     query: { search: "Jordan" },
   },
   {
-    title: "Nike Sportswear",
+    title: "Sportswear Edit",
     subtitle: "Winter Essentials",
     img: "/assets/img/nike-just-do-it-4.jpg",
     query: { productType: "apparel" },

@@ -142,7 +142,7 @@ watch(currentSlide, (newVal) => {
         <img
           v-else
           :src="slide.src"
-          :alt="`Nike Slide ${index + 1}`"
+          :alt="`PTT Style slide ${index + 1}`"
           class="w-full h-full object-cover"
           @error="(e) => console.error('Image error:', e)"
         />

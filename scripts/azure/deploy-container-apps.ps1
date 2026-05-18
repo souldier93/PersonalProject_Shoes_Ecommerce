@@ -5,7 +5,8 @@ param(
   [string]$EnvironmentName = "shoes-env",
   [string]$BackendAppName = "shoes-backend",
   [string]$FrontendAppName = "shoes-frontend",
-  [string]$BackendEnvPath = ".\nike-store-nest-js\.env"
+  [string]$BackendEnvPath = ".\nike-store-nest-js\.env",
+  [string]$FrontendEnvPath = ".\tailwind4-vue3-nikeStore\.env"
 )
 
 $ErrorActionPreference = "Stop"
@@ -70,6 +71,10 @@ Assert-Command docker
 $script:AzCli = Resolve-AzCli
 
 $envValues = Read-EnvFile $BackendEnvPath
+$frontendEnvValues = @{}
+if (Test-Path $FrontendEnvPath) {
+  $frontendEnvValues = Read-EnvFile $FrontendEnvPath
+}
 if (-not $envValues.ContainsKey("MONGO_DB_NAME") -or [string]::IsNullOrWhiteSpace($envValues["MONGO_DB_NAME"])) {
   $envValues["MONGO_DB_NAME"] = "nike-store"
 }
@@ -163,6 +168,20 @@ $envArgs = @(
   "R2_PUBLIC_URL=secretref:r2-public-url"
 )
 
+if ($envValues.ContainsKey("STRIPE_SECRET_KEY") -and -not [string]::IsNullOrWhiteSpace($envValues["STRIPE_SECRET_KEY"])) {
+  $secretArgs += "stripe-secret-key=$($envValues["STRIPE_SECRET_KEY"])"
+  $envArgs += "STRIPE_SECRET_KEY=secretref:stripe-secret-key"
+}
+
+if ($envValues.ContainsKey("STRIPE_WEBHOOK_SECRET") -and -not [string]::IsNullOrWhiteSpace($envValues["STRIPE_WEBHOOK_SECRET"])) {
+  $secretArgs += "stripe-webhook-secret=$($envValues["STRIPE_WEBHOOK_SECRET"])"
+  $envArgs += "STRIPE_WEBHOOK_SECRET=secretref:stripe-webhook-secret"
+}
+
+if ($envValues.ContainsKey("STRIPE_CURRENCY") -and -not [string]::IsNullOrWhiteSpace($envValues["STRIPE_CURRENCY"])) {
+  $envArgs += "STRIPE_CURRENCY=$($envValues["STRIPE_CURRENCY"])"
+}
+
 if ($backendExists) {
   Invoke-Az containerapp secret set `
     --name $BackendAppName `
@@ -195,10 +214,15 @@ $backendFqdn = Invoke-Az containerapp show `
   --query "properties.configuration.ingress.fqdn" `
   --output tsv
 $backendUrl = "https://$backendFqdn"
+$stripePublishableKey = $env:VITE_STRIPE_PUBLISHABLE_KEY
+if ($frontendEnvValues.ContainsKey("VITE_STRIPE_PUBLISHABLE_KEY") -and -not [string]::IsNullOrWhiteSpace($frontendEnvValues["VITE_STRIPE_PUBLISHABLE_KEY"])) {
+  $stripePublishableKey = $frontendEnvValues["VITE_STRIPE_PUBLISHABLE_KEY"]
+}
 
 Write-Host "Building and pushing frontend image for $backendUrl ..." -ForegroundColor Cyan
 docker build `
   --build-arg "VITE_API_BASE_URL=$backendUrl" `
+  --build-arg "VITE_STRIPE_PUBLISHABLE_KEY=$stripePublishableKey" `
   -t "$registryServer/shoes-frontend:latest" `
   .\tailwind4-vue3-nikeStore
 docker push "$registryServer/shoes-frontend:latest"

@@ -1,84 +1,70 @@
 <template>
-  <footer class="w-full bg-black text-white mt-20">
-    <div class="w-full max-w-7xl mx-auto px-4 py-12">
-      <!-- Main Footer Content -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-        <!-- Resources Column -->
-        <div>
-          <h3 class="font-semibold text-sm mb-6">Resources</h3>
-          <ul class="space-y-3">
-            <li v-for="item in resources" :key="item">
-              <a href="#" class="text-gray-400 hover:text-white text-sm transition">
-                {{ item }}
-              </a>
-            </li>
-          </ul>
-        </div>
+  <footer class="mt-20 w-full bg-neutral-950 text-white">
+    <div class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-10">
+      <div class="grid gap-10 lg:grid-cols-[1.35fr_2fr]">
+        <div class="max-w-sm">
+          <router-link to="/" class="inline-flex rounded-md bg-white p-2 transition hover:opacity-90" aria-label="PTT Style home">
+            <img src="/assets/img/ptt-style-logo.svg" alt="PTT Style" class="h-11 w-auto" />
+          </router-link>
 
-        <!-- Help Column -->
-        <div>
-          <h3 class="font-semibold text-sm mb-6">Help</h3>
-          <ul class="space-y-3">
-            <li v-for="item in help" :key="item">
-              <a href="#" class="text-gray-400 hover:text-white text-sm transition">
-                {{ item }}
-              </a>
-            </li>
-          </ul>
-        </div>
+          <p class="mt-5 text-sm leading-6 text-neutral-300">
+            Footwear, apparel, and everyday fashion pieces curated for clean fits, easy movement, and confident personal style.
+          </p>
 
-        <!-- Company Column -->
-        <div>
-          <h3 class="font-semibold text-sm mb-6">Company</h3>
-          <ul class="space-y-3">
-            <li v-for="item in company" :key="item">
-              <a href="#" class="text-gray-400 hover:text-white text-sm transition">
-                {{ item }}
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Location -->
-        <div class="flex justify-start md:justify-end">
-          <button class="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd"/>
+          <button class="mt-6 inline-flex items-center gap-2 text-sm font-medium text-neutral-300 transition hover:text-white">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21s7-5.33 7-12a7 7 0 10-14 0c0 6.67 7 12 7 12z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
             </svg>
             Vietnam
           </button>
         </div>
+
+        <div class="grid grid-cols-1 gap-8 sm:grid-cols-3">
+          <div>
+            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-white">Shop</h3>
+            <ul class="space-y-3">
+              <li v-for="item in shopLinks" :key="item.label">
+                <router-link :to="item.to" class="text-sm text-neutral-400 transition hover:text-white">
+                  {{ item.label }}
+                </router-link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-white">Support</h3>
+            <ul class="space-y-3">
+              <li v-for="item in supportLinks" :key="item.label">
+                <router-link :to="item.to" class="text-sm text-neutral-400 transition hover:text-white">
+                  {{ item.label }}
+                </router-link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-white">Company</h3>
+            <ul class="space-y-3">
+              <li v-for="item in companyLinks" :key="item.label">
+                <a href="#" class="text-sm text-neutral-400 transition hover:text-white">
+                  {{ item.label }}
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
 
-      <!-- Bottom Footer -->
-      <div class="border-t border-gray-800 pt-6">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <!-- Copyright -->
-          <p class="text-xs text-gray-400">
-            © 2025 Nike, Inc. All rights reserved
-          </p>
+      <div class="mt-10 flex flex-col gap-4 border-t border-white/10 pt-6 md:flex-row md:items-center md:justify-between">
+        <p class="text-xs text-neutral-500">
+          (c) 2025 PTT Style. All rights reserved.
+        </p>
 
-          <!-- Footer Links -->
-          <div class="flex flex-wrap gap-6">
-            <button class="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition">
-              Guides
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-              </svg>
-            </button>
-            <a href="#" class="text-xs text-gray-400 hover:text-white transition">
-              Terms of Sale
-            </a>
-            <a href="#" class="text-xs text-gray-400 hover:text-white transition">
-              Terms of Use
-            </a>
-            <a href="#" class="text-xs text-gray-400 hover:text-white transition">
-              Nike Privacy Policy
-            </a>
-            <a href="#" class="text-xs text-gray-400 hover:text-white transition">
-              Privacy Settings
-            </a>
-          </div>
+        <div class="flex flex-wrap gap-x-6 gap-y-3">
+          <a v-for="item in legalLinks" :key="item" href="#" class="text-xs text-neutral-500 transition hover:text-white">
+            {{ item }}
+          </a>
         </div>
       </div>
     </div>
@@ -90,35 +76,31 @@ export default {
   name: 'FooterComponent',
   data() {
     return {
-      resources: [
-        'Find A Store',
-        'Become A Member',
-        'Running Shoe Finder',
-        'Nike Coaching',
-        'Send Us Feedback'
+      shopLinks: [
+        { label: 'New Arrivals', to: '/products?sort=featured' },
+        { label: 'Men', to: '/products?category=men' },
+        { label: 'Women', to: '/products?category=women' },
+        { label: 'Accessories', to: '/products?productType=accessories' },
       ],
-      help: [
-        'Get Help',
-        'Order Status',
-        'Delivery',
-        'Returns',
-        'Payment Options',
-        'Contact Us'
+      supportLinks: [
+        { label: 'Order Status', to: '/my-orders' },
+        { label: 'Delivery', to: '/checkout' },
+        { label: 'Returns', to: '/my-orders' },
+        { label: 'Payment Options', to: '/bag' },
       ],
-      company: [
-        'About Nike',
-        'News',
-        'Careers',
-        'Investors',
-        'Sustainability',
-        'Impact',
-        'Report a Concern'
-      ]
+      companyLinks: [
+        { label: 'About PTT Style' },
+        { label: 'Careers' },
+        { label: 'Sustainability' },
+        { label: 'Contact Us' },
+      ],
+      legalLinks: [
+        'Terms of Sale',
+        'Terms of Use',
+        'Privacy Policy',
+        'Privacy Settings',
+      ],
     }
-  }
+  },
 }
 </script>
-
-<style scoped>
-/* Additional custom styles if needed */
-</style>

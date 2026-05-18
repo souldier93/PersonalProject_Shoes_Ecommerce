@@ -38,7 +38,7 @@
               ]"
             />
             <p v-if="!isLoggedIn" class="text-xs text-gray-600 mt-2">
-              Become a Nike Member to get Nike Member Benefits.
+              Become a PTT Style Member to get member benefits.
               <router-link to="/login" class="underline hover:text-black">Log in</router-link> or
               <router-link to="/register" class="underline hover:text-black">Sign up now</router-link>
             </p>
@@ -143,6 +143,40 @@
             />
             <label for="billing-match" class="text-sm cursor-pointer select-none">
               Billing matches shipping address
+            </label>
+          </div>
+
+          <div class="space-y-3 rounded-lg border border-gray-200 p-4">
+            <p class="text-sm font-semibold">Payment method</p>
+            <label
+              class="flex cursor-pointer items-center justify-between rounded-md border p-3 transition"
+              :class="selectedPaymentMethod === 'payos' ? 'border-black bg-gray-50' : 'border-gray-200'"
+            >
+              <span>
+                <span class="block text-sm font-medium">QR / Bank transfer</span>
+                <span class="block text-xs text-gray-500">Pay with PayOS banking QR.</span>
+              </span>
+              <input
+                v-model="selectedPaymentMethod"
+                type="radio"
+                value="payos"
+                class="h-4 w-4"
+              />
+            </label>
+            <label
+              class="flex cursor-pointer items-center justify-between rounded-md border p-3 transition"
+              :class="selectedPaymentMethod === 'stripe' ? 'border-black bg-gray-50' : 'border-gray-200'"
+            >
+              <span>
+                <span class="block text-sm font-medium">Visa card / Apple Pay</span>
+                <span class="block text-xs text-gray-500">Secure card checkout powered by Stripe.</span>
+              </span>
+              <input
+                v-model="selectedPaymentMethod"
+                type="radio"
+                value="stripe"
+                class="h-4 w-4"
+              />
             </label>
           </div>
 
@@ -297,6 +331,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBag, saveBag } from '../../../utils/bagStorage'
 import { API_BASE } from '../../../utils/apiBase'
+import { saveGuestOrderAccess } from '../../../utils/guestOrders'
 
 const router = useRouter()
 
@@ -325,6 +360,12 @@ const couponCode = ref('')
 const appliedCoupon = ref(null)
 const couponError = ref('')
 const applyingCoupon = ref(false)
+const selectedPaymentMethod = ref('payos')
+
+const getCurrentUserId = () => {
+  const userId = currentUser.value?._id
+  return typeof userId === 'string' && /^[a-f\d]{24}$/i.test(userId) ? userId : null
+}
 
 onMounted(async () => {
   const savedUser = localStorage.getItem('user')
@@ -561,6 +602,8 @@ const handleSubmit = async () => {
   }
 
   try {
+    const orderId = Date.now().toString()
+    const customerEmail = form.value.email.trim().toLowerCase()
     const items = bagItems.value.map(item => ({
       productId: item.productId,
       name: item.name,
@@ -571,17 +614,18 @@ const handleSubmit = async () => {
     }))
 
     const orderData = {
-      orderId: Date.now().toString(),
-      description: `Order ${bagItems.value.length} items`,
+      orderId,
+      description: `PTT ${orderId}`,
       amount: total.value,
       subtotal: subtotal.value,
       deliveryFee: deliveryFee.value,
       couponCode: appliedCoupon.value?.code || '',
       discountAmount: discountAmount.value,
       items: items,
-      userId: currentUser.value?._id || null,
-      customerEmail: form.value.email,
+      userId: getCurrentUserId(),
+      customerEmail,
       customerInfo: {
+        email: customerEmail,
         firstName: form.value.firstName,
         lastName: form.value.lastName,
         phone: form.value.phone,
@@ -603,7 +647,11 @@ const handleSubmit = async () => {
       headers['Authorization'] = `Bearer ${token}`
     }
 
-    const response = await fetch(`${API_BASE}/payments`, {
+    const paymentEndpoint = selectedPaymentMethod.value === 'stripe'
+      ? `${API_BASE}/payments/stripe/create-intent`
+      : `${API_BASE}/payments`
+
+    const response = await fetch(paymentEndpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify(orderData)
@@ -614,6 +662,7 @@ const handleSubmit = async () => {
     if (paymentData.code === '00') {
       const completeOrderData = {
         customerInfo: form.value,
+        customerEmail,
         items: bagItems.value,
         subtotal: subtotal.value,
         deliveryFee: deliveryFee.value,
@@ -621,8 +670,16 @@ const handleSubmit = async () => {
         discountAmount: discountAmount.value,
         total: total.value,
         paymentData: paymentData.data,
-        userId: currentUser.value?._id || null,
+        paymentProvider: selectedPaymentMethod.value,
+        userId: getCurrentUserId(),
         isGuest: !currentUser.value
+      }
+
+      if (!currentUser.value && paymentData.data?.orderCode) {
+        saveGuestOrderAccess({
+          email: customerEmail,
+          orderCode: paymentData.data.orderCode,
+        })
       }
 
       localStorage.setItem('pendingOrder', JSON.stringify(completeOrderData))

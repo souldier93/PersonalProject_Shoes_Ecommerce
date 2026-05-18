@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PayosWebhookBodyPayload } from '../dto/payos-webhook-body.payload';
-import { createHmac } from 'node:crypto';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { convertObjToQueryStr, sortObjDataByKey } from '../payos-utils';
 
 @Injectable()
@@ -23,7 +23,9 @@ export class PaymentWebhookGuard implements CanActivate {
     const dataToSignature = createHmac('sha256', checksumKey)
       .update(dataQueryStr)
       .digest('hex');
-    return dataToSignature == currentSignature;
+    const expected = Buffer.from(dataToSignature, 'hex');
+    const received = Buffer.from(currentSignature, 'hex');
+    return expected.length === received.length && timingSafeEqual(expected, received);
   }
 
   canActivate(context: ExecutionContext): boolean {
@@ -39,7 +41,11 @@ export class PaymentWebhookGuard implements CanActivate {
         body.signature,
         CHECKSUM_KEY,
       );
-      console.log({ CHECKSUM_KEY, isValidPayload, body });
+      console.log({
+        isValidPayload,
+        orderCode: body.data?.orderCode,
+        paymentLinkId: body.data?.paymentLinkId,
+      });
       if (!isValidPayload) {
         throw new UnauthorizedException('Invalid payload');
       }
