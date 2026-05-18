@@ -85,6 +85,19 @@ export class PaymentController {
     return this.paymentService.updateFulfillmentStatus(Number(orderCode), body);
   }
 
+  @Post('orders/:orderCode/cancel-refund')
+  async cancelAndRefundOrder(
+    @Param('orderCode') orderCode: string,
+    @Body()
+    body: {
+      userId?: string;
+      email?: string;
+      reason?: string;
+    },
+  ) {
+    return this.paymentService.cancelAndRefundOrder(Number(orderCode), body);
+  }
+
   @Get('check-order/:orderCode')
   async checkPaymentByOrderCode(@Param('orderCode') orderCode: string) {
     return this.paymentService.checkPaymentByOrderCode(Number(orderCode));

@@ -101,9 +101,9 @@
                     class="px-2 py-1 rounded-full text-xs font-medium"
                     :class="{
                       'bg-green-100 text-green-600': order.status === 'PAID',
-                      'bg-yellow-100 text-yellow-600': order.status === 'PENDING',
+                      'bg-yellow-100 text-yellow-600': order.status === 'PENDING' || order.status === 'REFUND_PENDING',
                       'bg-red-100 text-red-600': order.status === 'FAILED',
-                      'bg-gray-100 text-gray-600': order.status === 'CANCELLED'
+                      'bg-gray-100 text-gray-600': order.status === 'CANCELLED' || order.status === 'REFUNDED'
                     }">
                     {{ order.status }}
                   </span>
@@ -163,9 +163,9 @@
                   class="inline-flex px-3 py-1 rounded-full text-sm font-semibold"
                   :class="{
                     'bg-green-100 text-green-700': selectedOrder?.status === 'PAID',
-                    'bg-yellow-100 text-yellow-700': selectedOrder?.status === 'PENDING',
+                    'bg-yellow-100 text-yellow-700': selectedOrder?.status === 'PENDING' || selectedOrder?.status === 'REFUND_PENDING',
                     'bg-red-100 text-red-700': selectedOrder?.status === 'FAILED',
-                    'bg-gray-100 text-gray-700': selectedOrder?.status === 'CANCELLED'
+                    'bg-gray-100 text-gray-700': selectedOrder?.status === 'CANCELLED' || selectedOrder?.status === 'REFUNDED'
                   }">
                   {{ selectedOrder?.status }}
                 </span>

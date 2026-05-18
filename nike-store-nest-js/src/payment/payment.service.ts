@@ -77,6 +77,39 @@ export class PaymentService {
     return `PTT ${orderCode}`.slice(0, 25);
   }
 
+  private sanitizeNote(value?: string) {
+    return String(value || '').trim().slice(0, 300);
+  }
+
+  private isCancellationEligible(order: Bill) {
+    return (
+      order.status === 'PAID' &&
+      ['CONFIRMED', 'PACKING'].includes(order.fulfillmentStatus || '')
+    );
+  }
+
+  private assertCancellationOwner(
+    order: Bill,
+    body: { userId?: string; email?: string },
+  ) {
+    const orderUserId = order.userId ? String(order.userId) : '';
+
+    if (orderUserId) {
+      const requesterUserId = String(body.userId || '');
+      if (!requesterUserId || requesterUserId !== orderUserId) {
+        throw new BadRequestException('Order ownership could not be verified');
+      }
+      return;
+    }
+
+    const email = this.normalizeEmail(body.email);
+    this.assertValidEmail(email);
+
+    if (email !== this.normalizeEmail(order.customerEmail)) {
+      throw new BadRequestException('Order ownership could not be verified');
+    }
+  }
+
   // ✅ CREATE PAYMENT - Hỗ trợ cả guest và logged-in user
   async createPayment(body: CreatePaymentDto): Promise<any> {
     // ✅ Validation
@@ -580,6 +613,129 @@ export class PaymentService {
     };
   }
 
+  private async createStripeRefund(order: Bill, reason: string) {
+    const paymentIntentId =
+      order.stripePaymentIntentId ||
+      (order.paymentProvider === 'stripe' ? order.paymentLinkId : '');
+
+    if (!paymentIntentId) {
+      throw new BadRequestException('Stripe payment intent is missing');
+    }
+
+    const refund = await this.getStripeClient().refunds.create({
+      payment_intent: paymentIntentId,
+      reason: 'requested_by_customer',
+      metadata: {
+        orderCode: String(order.orderCode),
+        reason: reason || 'Customer cancelled before shipping',
+      },
+    });
+
+    return {
+      provider: 'stripe',
+      refundId: refund.id,
+      status: refund.status,
+      amount: refund.amount,
+      currency: refund.currency,
+    };
+  }
+
+  async cancelAndRefundOrder(
+    orderCode: number,
+    body: { userId?: string; email?: string; reason?: string },
+  ) {
+    this.assertValidOrderCode(orderCode);
+
+    const bill = await this.billModel.findOne({ orderCode }).exec();
+    if (!bill) {
+      throw new NotFoundException(`Order ${orderCode} not found`);
+    }
+
+    this.assertCancellationOwner(bill, body);
+
+    if (bill.status === 'REFUNDED' || bill.status === 'REFUND_PENDING') {
+      throw new BadRequestException('This order already has a refund request');
+    }
+
+    if (bill.status !== 'PAID') {
+      throw new BadRequestException('Only paid orders can be cancelled and refunded');
+    }
+
+    if (!this.isCancellationEligible(bill)) {
+      throw new BadRequestException(
+        'Orders can only be cancelled while they are being prepared',
+      );
+    }
+
+    const reason = this.sanitizeNote(body.reason) || 'Customer cancelled before shipping';
+    const refundData =
+      bill.paymentProvider === 'stripe'
+        ? await this.createStripeRefund(bill, reason)
+        : {
+            provider: bill.paymentProvider || 'payos',
+            status: 'PENDING_MANUAL',
+            manualRequired: true,
+          };
+
+    let stockRestored = true;
+    let stockRestoreError = '';
+    try {
+      await this.restoreOrderStock(bill.items || []);
+    } catch (error) {
+      stockRestored = false;
+      stockRestoreError = error?.message || 'Stock restore failed';
+      console.error('Failed to restore stock after cancellation:', {
+        orderCode,
+        message: stockRestoreError,
+      });
+    }
+
+    bill.status =
+      refundData.provider === 'stripe' && refundData.status !== 'failed'
+        ? 'REFUNDED'
+        : 'REFUND_PENDING';
+    bill.fulfillmentStatus = 'CANCELLED';
+    bill.transactionData = {
+      ...(bill.transactionData || {}),
+      refund: {
+        ...refundData,
+        requestedAt: new Date(),
+        reason,
+        stockRestored,
+        stockRestoreError: stockRestoreError || undefined,
+      },
+    };
+    bill.statusHistory = [
+      ...(bill.statusHistory || []),
+      {
+        status: 'CANCELLED',
+        note: reason,
+        changedAt: new Date(),
+      },
+      {
+        status: bill.status,
+        note:
+          bill.status === 'REFUNDED'
+            ? 'Refund created successfully'
+            : 'Bank transfer refund requires manual processing',
+        changedAt: new Date(),
+      },
+    ];
+    await bill.save();
+
+    void this.orderEmailService.sendOrderCancelledEmail(bill.toObject());
+
+    return {
+      success: true,
+      message:
+        bill.status === 'REFUNDED'
+          ? 'Order cancelled and refund created'
+          : 'Order cancelled. Refund is pending manual bank transfer processing',
+      refund: bill.transactionData.refund,
+      order: this.formatOrder(bill.toObject()),
+    };
+  }
+
   // ✅ WEBHOOK HANDLER - Xử lý thanh toán và trừ stock
   async handleWebhook(body: PayosWebhookBodyPayload): Promise<WebhookResponse> {
     console.log('PayOS webhook received:', {
@@ -849,6 +1005,36 @@ export class PaymentService {
     console.log(`✅ Stock updated: ${productId} - ${colorName} - ${size} → ${sizeObj.stock}`);
   }
 
+  private async restoreOrderStock(items: Bill['items']) {
+    for (const item of items || []) {
+      await this.increaseStock(
+        item.productId,
+        item.colorName,
+        item.size,
+        item.quantity,
+      );
+    }
+  }
+
+  private async increaseStock(
+    productId: string,
+    colorName: string,
+    size: string,
+    quantity: number,
+  ) {
+    const shoeDetail = await this.shoeDetailModel.findOne({ productId });
+    if (!shoeDetail) throw new Error(`Product ${productId} not found`);
+
+    const color = shoeDetail.colors.find(c => c.colorName === colorName);
+    if (!color) throw new Error(`Color ${colorName} not found`);
+
+    const sizeObj = color.sizes.find(s => s.size === size);
+    if (!sizeObj) throw new Error(`Size ${size} not found`);
+
+    sizeObj.stock = (sizeObj.stock || 0) + Number(quantity || 0);
+    await shoeDetail.save();
+  }
+
   // ✅ Check payment status by paymentLinkId
   async checkPaymentStatus(paymentLinkId: string) {
     const bill = await this.billModel.findOne({ paymentLinkId });
@@ -1015,7 +1201,10 @@ async updateFulfillmentStatus(
     throw new NotFoundException(`Order ${orderCode} not found`);
   }
 
-  if (bill.status !== 'PAID' && body.fulfillmentStatus !== 'CANCELLED') {
+  if (
+    !['PAID', 'REFUND_PENDING', 'REFUNDED'].includes(bill.status) &&
+    !['CANCELLED', 'REFUNDED'].includes(body.fulfillmentStatus)
+  ) {
     throw new BadRequestException('Only paid orders can move through fulfillment');
   }
 
@@ -1029,6 +1218,18 @@ async updateFulfillmentStatus(
 
   if (body.fulfillmentStatus === 'CANCELLED') {
     bill.status = 'CANCELLED';
+  }
+
+  if (body.fulfillmentStatus === 'REFUNDED') {
+    bill.status = 'REFUNDED';
+    bill.transactionData = {
+      ...(bill.transactionData || {}),
+      refund: {
+        ...(bill.transactionData?.refund || {}),
+        status: 'MANUAL_COMPLETED',
+        completedAt: new Date(),
+      },
+    };
   }
 
   bill.statusHistory = [

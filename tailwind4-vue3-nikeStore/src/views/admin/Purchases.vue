@@ -70,7 +70,7 @@
               <td class="px-5 py-4">
                 <select
                   v-model="order.fulfillmentStatus"
-                  :disabled="order.status !== 'PAID' && order.fulfillmentStatus !== 'CANCELLED'"
+                  :disabled="!['PAID', 'REFUND_PENDING', 'REFUNDED'].includes(order.status) && order.fulfillmentStatus !== 'CANCELLED'"
                   class="border rounded-lg px-3 py-2 bg-white disabled:bg-gray-100"
                 >
                   <option v-for="status in fulfillmentStatuses" :key="status" :value="status">
@@ -185,6 +185,7 @@ const statusFilters = [
   { value: 'CONFIRMED', label: 'Confirmed' },
   { value: 'SHIPPING', label: 'Shipping' },
   { value: 'DELIVERED', label: 'Delivered' },
+  { value: 'REFUNDED', label: 'Refunded' },
 ]
 
 const filteredOrders = computed(() => {
@@ -257,9 +258,9 @@ function countByStatus(status) {
 function paymentBadge(status) {
   return {
     'bg-green-100 text-green-700': status === 'PAID',
-    'bg-yellow-100 text-yellow-700': status === 'PENDING',
+    'bg-yellow-100 text-yellow-700': status === 'PENDING' || status === 'REFUND_PENDING',
     'bg-red-100 text-red-700': status === 'FAILED',
-    'bg-gray-100 text-gray-700': status === 'CANCELLED',
+    'bg-gray-100 text-gray-700': status === 'CANCELLED' || status === 'REFUNDED',
   }
 }
 

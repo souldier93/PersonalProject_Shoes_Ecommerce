@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
-type OrderEmailKind = 'created' | 'paid';
+type OrderEmailKind = 'created' | 'paid' | 'cancelled';
 
 @Injectable()
 export class OrderEmailService {
@@ -16,6 +16,10 @@ export class OrderEmailService {
 
   async sendPaymentConfirmedEmail(order: any) {
     await this.sendOrderEmail(order, 'paid');
+  }
+
+  async sendOrderCancelledEmail(order: any) {
+    await this.sendOrderEmail(order, 'cancelled');
   }
 
   private async sendOrderEmail(order: any, kind: OrderEmailKind) {
@@ -42,7 +46,9 @@ export class OrderEmailService {
         ? notificationEmail
         : undefined;
     const subject =
-      kind === 'paid'
+      kind === 'cancelled'
+        ? `PTT Style - Cancellation update for order #${order.orderCode}`
+        : kind === 'paid'
         ? `PTT Style - Payment confirmed for order #${order.orderCode}`
         : `PTT Style - Order #${order.orderCode} received`;
 
@@ -90,7 +96,9 @@ export class OrderEmailService {
         'there',
     );
     const statusText =
-      kind === 'paid'
+      kind === 'cancelled'
+        ? this.getCancellationMessage(order)
+        : kind === 'paid'
         ? 'Your payment has been confirmed and the order is now being prepared.'
         : 'We received your order and are waiting for payment confirmation.';
     const orderUrl = `${this.getFrontendUrl()}/my-orders`;
@@ -166,7 +174,9 @@ export class OrderEmailService {
 
   private buildOrderText(order: any, kind: OrderEmailKind) {
     const statusText =
-      kind === 'paid'
+      kind === 'cancelled'
+        ? this.getCancellationMessage(order)
+        : kind === 'paid'
         ? 'Payment confirmed. Your order is being prepared.'
         : 'Order received. We are waiting for payment confirmation.';
     const items = (order.items || [])
@@ -195,6 +205,14 @@ export class OrderEmailService {
     return (
       this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173'
     ).replace(/\/$/, '');
+  }
+
+  private getCancellationMessage(order: any) {
+    if (order.status === 'REFUNDED') {
+      return 'Your order has been cancelled and the refund has been started.';
+    }
+
+    return 'Your order has been cancelled. The store team will process the bank transfer refund manually.';
   }
 
   private normalizeEmail(email?: string | null) {

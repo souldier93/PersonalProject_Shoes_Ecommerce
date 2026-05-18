@@ -40,7 +40,7 @@ export interface BillDocument extends Document {
   }[];
   
   // ✅ Payment Status
-  status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED';
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'REFUND_PENDING' | 'REFUNDED';
   fulfillmentStatus:
     | 'AWAITING_PAYMENT'
     | 'CONFIRMED'
@@ -116,7 +116,7 @@ export const BillSchema = new Schema<BillDocument>({
   // ✅ Payment status
   status: { 
     type: String, 
-    enum: ['PENDING', 'PAID', 'FAILED', 'CANCELLED'],
+    enum: ['PENDING', 'PAID', 'FAILED', 'CANCELLED', 'REFUND_PENDING', 'REFUNDED'],
     default: 'PENDING',
     index: true
   },

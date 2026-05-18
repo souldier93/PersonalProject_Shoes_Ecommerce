@@ -43,6 +43,13 @@
         </p>
       </div>
 
+      <p v-if="orderActionMessage" class="mb-6 rounded-md bg-green-50 p-3 text-sm text-green-700">
+        {{ orderActionMessage }}
+      </p>
+      <p v-if="orderActionError" class="mb-6 rounded-md bg-red-50 p-3 text-sm text-red-700">
+        {{ orderActionError }}
+      </p>
+
       <div v-if="loading" class="flex h-64 items-center justify-center">
         <div class="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-900"></div>
       </div>
@@ -86,9 +93,18 @@
                 {{ order.fulfillmentStatus || 'AWAITING_PAYMENT' }}
               </span>
             </div>
-            <button @click="viewOrderDetail(order)" class="text-sm font-medium text-blue-600 hover:text-blue-800">
-              View Details
-            </button>
+            <div class="flex flex-wrap items-center gap-3">
+              <button
+                v-if="canCancelOrder(order)"
+                @click="openCancelModal(order)"
+                class="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:border-red-600 hover:bg-red-50"
+              >
+                Cancel & Refund
+              </button>
+              <button @click="viewOrderDetail(order)" class="text-sm font-medium text-blue-600 hover:text-blue-800">
+                View Details
+              </button>
+            </div>
           </div>
 
           <div class="p-6">
@@ -168,6 +184,35 @@
               <h3 class="mb-1 text-sm text-gray-600">Order Date</h3>
               <p class="font-medium">{{ formatDate(selectedOrder.createdAt) }}</p>
             </div>
+          </div>
+
+          <div v-if="selectedOrder.status === 'REFUND_PENDING'" class="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+            Refund is pending manual bank transfer processing by the store team.
+          </div>
+
+          <div v-else-if="selectedOrder.status === 'REFUNDED'" class="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+            This order has been cancelled and refunded.
+          </div>
+
+          <div v-else-if="canCancelOrder(selectedOrder)" class="rounded-lg border border-red-100 bg-red-50 p-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 class="font-semibold text-red-800">Cancel this order</h3>
+                <p class="mt-1 text-sm text-red-700">
+                  Orders can be cancelled only while they are being prepared.
+                </p>
+              </div>
+              <button
+                @click="openCancelModal(selectedOrder)"
+                class="rounded-full bg-red-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+              >
+                Cancel & Refund
+              </button>
+            </div>
+          </div>
+
+          <div v-else-if="cancelBlockedReason(selectedOrder)" class="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
+            {{ cancelBlockedReason(selectedOrder) }}
           </div>
 
           <div v-if="selectedOrder.customerInfo">
@@ -362,6 +407,50 @@
         </div>
       </div>
     </div>
+
+    <div
+      v-if="cancelModal.open"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      @click.self="closeCancelModal"
+    >
+      <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+        <div class="mb-5 flex items-start justify-between">
+          <div>
+            <h2 class="text-2xl font-bold">Cancel & Refund</h2>
+            <p class="text-sm text-gray-500">Order #{{ cancelModal.order?.orderCode }}</p>
+          </div>
+          <button @click="closeCancelModal" class="text-gray-400 hover:text-gray-600" aria-label="Close cancel modal">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="rounded-lg bg-gray-50 p-4 text-sm text-gray-700">
+          You can cancel only before the order ships. Stripe card payments are refunded automatically; bank transfer refunds are processed manually by the store team.
+        </div>
+
+        <textarea
+          v-model="cancelReason"
+          rows="4"
+          class="mt-4 w-full rounded-lg border p-3 focus:outline-none focus:ring-2 focus:ring-black"
+          placeholder="Reason for cancellation"
+        ></textarea>
+
+        <div class="mt-5 flex justify-end gap-3">
+          <button @click="closeCancelModal" class="rounded-lg bg-gray-100 px-4 py-2 hover:bg-gray-200">
+            Keep order
+          </button>
+          <button
+            @click="submitCancelRefund"
+            :disabled="cancelSubmitting"
+            class="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:bg-red-300"
+          >
+            {{ cancelSubmitting ? 'Cancelling...' : 'Confirm cancel' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -387,6 +476,14 @@ const guestLookup = ref({
 const guestLookupError = ref('')
 const guestLookupSuccess = ref('')
 const guestLookupLoading = ref(false)
+const orderActionMessage = ref('')
+const orderActionError = ref('')
+const cancelSubmitting = ref(false)
+const cancelReason = ref('')
+const cancelModal = ref({
+  open: false,
+  order: null,
+})
 const reviewSubmitting = ref(false)
 const reviewModal = ref({
   open: false,
@@ -616,6 +713,95 @@ const viewOrderDetail = (order) => {
   selectedOrder.value = order
 }
 
+const canCancelOrder = (order) => {
+  return (
+    order?.status === 'PAID' &&
+    ['CONFIRMED', 'PACKING'].includes(order.fulfillmentStatus || '')
+  )
+}
+
+const cancelBlockedReason = (order) => {
+  if (!order || canCancelOrder(order)) return ''
+  if (['SHIPPING', 'DELIVERED'].includes(order.fulfillmentStatus || '')) {
+    return 'This order has already shipped and can no longer be cancelled or refunded.'
+  }
+  if (['REFUND_PENDING', 'REFUNDED'].includes(order.status || '')) {
+    return ''
+  }
+  if (order.status === 'PAID') {
+    return 'This order is not currently in the preparation stage.'
+  }
+  return ''
+}
+
+const openCancelModal = (order) => {
+  cancelModal.value = {
+    open: true,
+    order,
+  }
+  cancelReason.value = ''
+  orderActionError.value = ''
+  orderActionMessage.value = ''
+}
+
+const closeCancelModal = () => {
+  cancelModal.value = {
+    open: false,
+    order: null,
+  }
+  cancelReason.value = ''
+}
+
+const replaceOrder = (updatedOrder) => {
+  const index = orders.value.findIndex(order => order.orderCode === updatedOrder.orderCode)
+  if (index !== -1) {
+    orders.value[index] = updatedOrder
+  }
+  if (selectedOrder.value?.orderCode === updatedOrder.orderCode) {
+    selectedOrder.value = updatedOrder
+  }
+}
+
+const submitCancelRefund = async () => {
+  const order = cancelModal.value.order
+  if (!order) return
+
+  cancelSubmitting.value = true
+  orderActionError.value = ''
+  orderActionMessage.value = ''
+
+  try {
+    const body = {
+      reason: cancelReason.value,
+    }
+
+    if (currentUser.value?._id) {
+      body.userId = currentUser.value._id
+    } else {
+      body.email = order.customerEmail || guestLookup.value.email
+    }
+
+    const response = await axios.post(
+      `${API_BASE}/payments/orders/${order.orderCode}/cancel-refund`,
+      body,
+      {
+        headers: {
+          ...getRequestHeaders(),
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    replaceOrder(response.data.order)
+    orderActionMessage.value = response.data.message || 'Order cancelled.'
+    closeCancelModal()
+  } catch (error) {
+    orderActionError.value = error.response?.data?.message || 'Could not cancel this order.'
+  } finally {
+    cancelSubmitting.value = false
+  }
+}
+
 const openReviewModal = (order, item) => {
   reviewModal.value = {
     open: true,
@@ -727,6 +913,10 @@ const paymentBadgeClass = (status) => {
     case 'FAILED':
     case 'CANCELLED':
       return 'bg-red-100 text-red-700'
+    case 'REFUND_PENDING':
+      return 'bg-yellow-100 text-yellow-700'
+    case 'REFUNDED':
+      return 'bg-gray-100 text-gray-700'
     default:
       return 'bg-gray-100 text-gray-700'
   }
