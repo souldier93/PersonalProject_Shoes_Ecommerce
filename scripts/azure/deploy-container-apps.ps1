@@ -78,9 +78,13 @@ if (Test-Path $FrontendEnvPath) {
 if (-not $envValues.ContainsKey("MONGO_DB_NAME") -or [string]::IsNullOrWhiteSpace($envValues["MONGO_DB_NAME"])) {
   $envValues["MONGO_DB_NAME"] = "nike-store"
 }
+if (-not $envValues.ContainsKey("REDIS_PRODUCTS_TTL_SECONDS") -or [string]::IsNullOrWhiteSpace($envValues["REDIS_PRODUCTS_TTL_SECONDS"])) {
+  $envValues["REDIS_PRODUCTS_TTL_SECONDS"] = "300"
+}
 
 $requiredKeys = @(
   "MONGO_URI",
+  "REDIS_URL",
   "JWT_SECRET",
   "PAYOS_CLIENT_ID",
   "PAYOS_API_KEY",
@@ -142,6 +146,7 @@ $backendExists = Invoke-Az containerapp list `
 
 $secretArgs = @(
   "mongo-uri=$($envValues["MONGO_URI"])",
+  "redis-url=$($envValues["REDIS_URL"])",
   "jwt-secret=$($envValues["JWT_SECRET"])",
   "payos-client-id=$($envValues["PAYOS_CLIENT_ID"])",
   "payos-api-key=$($envValues["PAYOS_API_KEY"])",
@@ -158,6 +163,8 @@ $envArgs = @(
   "DEPLOY_VERSION=$(Get-Date -Format yyyyMMddHHmmss)",
   "MONGO_URI=secretref:mongo-uri",
   "MONGO_DB_NAME=$($envValues["MONGO_DB_NAME"])",
+  "REDIS_URL=secretref:redis-url",
+  "REDIS_PRODUCTS_TTL_SECONDS=$($envValues["REDIS_PRODUCTS_TTL_SECONDS"])",
   "JWT_SECRET=secretref:jwt-secret",
   "PAYOS_CLIENT_ID=secretref:payos-client-id",
   "PAYOS_API_KEY=secretref:payos-api-key",

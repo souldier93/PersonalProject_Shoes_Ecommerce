@@ -19,6 +19,15 @@ services:
     volumes:
       - mongo-ms-data:/data/db
 
+  redis:
+    image: redis:7-alpine
+    container_name: shoes-redis-ms
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-ms-data:/data
+
   backend:
     build:
       context: ./nike-store-nest-js
@@ -31,8 +40,11 @@ services:
       PORT: 3000
       MONGO_URI: mongodb://mongo:27017/nike-store
       MONGO_DB_NAME: nike-store
+      REDIS_URL: redis://redis:6379/0
+      REDIS_PRODUCTS_TTL_SECONDS: 300
     depends_on:
       - mongo
+      - redis
 
   frontend:
     build:
@@ -47,3 +59,4 @@ services:
 
 volumes:
   mongo-ms-data:
+  redis-ms-data:

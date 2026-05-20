@@ -6,8 +6,10 @@ import { Shoe, ShoeSchema } from './shoes.schema';
 import { ShoeDetail, ShoeDetailSchema } from './shoe-detail.schema';
 import { Counter, CounterSchema } from './counter.schema'; // THÃŠM
 import { Bill, BillSchema } from '../payment/bill.schema';
+import { RedisModule } from '../redis/redis.module';
 @Module({
   imports: [
+    RedisModule,
     MongooseModule.forFeature([
       { name: Shoe.name, schema: ShoeSchema },
       { name: ShoeDetail.name, schema: ShoeDetailSchema },

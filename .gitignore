@@ -18,3 +18,6 @@ npm-debug.log*
 
 # OS files
 .DS_Store
+
+# Local Codex/frontend preview metadata
+.last-frontend-*

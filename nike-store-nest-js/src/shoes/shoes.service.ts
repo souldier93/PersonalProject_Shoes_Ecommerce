@@ -5,6 +5,7 @@ import { Shoe, ShoeDocument } from './shoes.schema';
 import { ShoeDetail, ShoeDetailDocument } from './shoe-detail.schema';
 import { Counter, CounterDocument } from './counter.schema';
 import { Bill } from '../payment/bill.schema';
+import { RedisCacheService } from '../redis/redis-cache.service';
 @Injectable()
 export class ShoesService {
   constructor(
@@ -12,12 +13,39 @@ export class ShoesService {
   @InjectModel(ShoeDetail.name) private shoeDetailModel: Model<ShoeDetailDocument>,
   @InjectModel(Counter.name) private counterModel: Model<CounterDocument>,
   @InjectModel('Bill') private billModel: Model<Bill>, // ✅ Thêm Bill model
+  private readonly redisCache: RedisCacheService,
 ) {}
+
+  private readonly shoesCacheTtlSeconds = Number(
+    process.env.REDIS_PRODUCTS_TTL_SECONDS || 300,
+  );
+
+  private buildCacheKey(scope: string, value?: unknown): string {
+    if (value === undefined) return `shoes:${scope}`;
+    if (typeof value === 'string') return `shoes:${scope}:${value}`;
+
+    const ordered = Object.keys(value as Record<string, unknown>)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = (value as Record<string, unknown>)[key];
+        return acc;
+      }, {} as Record<string, unknown>);
+
+    return `shoes:${scope}:${Buffer.from(JSON.stringify(ordered)).toString('base64url')}`;
+  }
+
+  private async invalidateShoeCache(): Promise<void> {
+    await this.redisCache.delPattern('shoes:*');
+  }
 
   // ==================== COLLECTION shoes (LISTING) ====================
 
  // shoes.service.ts
 async findAll() {
+  const cacheKey = this.buildCacheKey('list:all');
+  const cached = await this.redisCache.getJson<any[]>(cacheKey);
+  if (cached) return cached;
+
   const shoes = await this.shoeModel
     .find()
     .select('productId name category productType collection price color thumbnail')
@@ -54,6 +82,7 @@ async findAll() {
     })
   );
 
+  await this.redisCache.setJson(cacheKey, shoesWithStock, this.shoesCacheTtlSeconds);
   return shoesWithStock;
 }
 
@@ -68,6 +97,10 @@ async findWithFilters(query: {
   color?: string;
   sort?: string;
 }) {
+  const cacheKey = this.buildCacheKey('list:filters', query);
+  const cached = await this.redisCache.getJson<any[]>(cacheKey);
+  if (cached) return cached;
+
   const details = await this.shoeDetailModel.find().lean().exec();
   const search = (query.search || '').trim().toLowerCase();
   const category = (query.category || '').trim().toLowerCase();
@@ -142,6 +175,7 @@ async findWithFilters(query: {
     return Number(a.productId) - Number(b.productId);
   });
 
+  await this.redisCache.setJson(cacheKey, products, this.shoesCacheTtlSeconds);
   return products;
 }
 
@@ -156,6 +190,10 @@ async findWithFilters(query: {
   }
 
   async findByProductId(productId: string) {
+    const cacheKey = this.buildCacheKey('product', productId);
+    const cached = await this.redisCache.getJson(cacheKey);
+    if (cached) return cached;
+
     const shoe = await this.shoeModel
       .findOne({ productId })
       .select('productId name category productType collection price color thumbnail')
@@ -168,12 +206,17 @@ async findWithFilters(query: {
       );
     }
 
+    await this.redisCache.setJson(cacheKey, shoe, this.shoesCacheTtlSeconds);
     return shoe;
   }
 
   // ==================== COLLECTION shoesDetail (DETAIL PAGE) ====================
 
   async findDetailByProductId(productId: string) {
+    const cacheKey = this.buildCacheKey('detail', productId);
+    const cached = await this.redisCache.getJson(cacheKey);
+    if (cached) return cached;
+
     const detail = await this.shoeDetailModel
       .findOne({ productId })
       .lean()
@@ -183,6 +226,7 @@ async findWithFilters(query: {
         `Shoe detail with productId "${productId}" not found`,
       );
     }
+    await this.redisCache.setJson(cacheKey, detail, this.shoesCacheTtlSeconds);
     return detail;
   }
 
@@ -203,11 +247,23 @@ async findWithFilters(query: {
   }
 
   async findAllDetails() {
-    return this.shoeDetailModel.find().lean().exec();
+    const cacheKey = this.buildCacheKey('details:all');
+    const cached = await this.redisCache.getJson(cacheKey);
+    if (cached) return cached;
+
+    const details = await this.shoeDetailModel.find().lean().exec();
+    await this.redisCache.setJson(cacheKey, details, this.shoesCacheTtlSeconds);
+    return details;
   }
 
   async findDetailsByCategory(category: string) {
-    return this.shoeDetailModel.find({ category }).lean().exec();
+    const cacheKey = this.buildCacheKey('details:category', category);
+    const cached = await this.redisCache.getJson(cacheKey);
+    if (cached) return cached;
+
+    const details = await this.shoeDetailModel.find({ category }).lean().exec();
+    await this.redisCache.setJson(cacheKey, details, this.shoesCacheTtlSeconds);
+    return details;
   }
 
   // ==================== AUTO INCREMENT PRODUCT ID ====================
@@ -297,6 +353,8 @@ async findWithFilters(query: {
 
     const shoe = new this.shoeModel(shoeData);
     await shoe.save();
+
+    await this.invalidateShoeCache();
 
     return {
       productId,
@@ -401,6 +459,8 @@ async findWithFilters(query: {
       );
     }
 
+    await this.invalidateShoeCache();
+
     return {
       detail: updatedDetail,
       message: '✅ Updated successfully',
@@ -414,6 +474,7 @@ async findWithFilters(query: {
         `Shoe with productId "${productId}" not found`,
       );
     }
+    await this.invalidateShoeCache();
     return { message: 'Deleted successfully' };
   }
 
@@ -422,6 +483,7 @@ async findWithFilters(query: {
     const resultDetail = await this.shoeDetailModel
       .deleteOne({ productId })
       .exec();
+    await this.invalidateShoeCache();
     return {
       message: `Deleted ${resultShoe.deletedCount} shoe and ${resultDetail.deletedCount} detail`,
     };
@@ -485,6 +547,8 @@ async findWithFilters(query: {
       (sum, color) => sum + (color.sizes?.length || 0),
       0,
     );
+
+    await this.invalidateShoeCache();
 
     return {
       success: true,

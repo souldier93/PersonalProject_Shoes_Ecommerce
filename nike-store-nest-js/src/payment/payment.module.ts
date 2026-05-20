@@ -10,12 +10,14 @@ import { BillSchema } from './bill.schema';
 import { ShoeDetailSchema } from '../shoes/shoe-detail.schema';
 import { CouponsModule } from '../coupons/coupons.module';
 import { OrderEmailService } from './order-email.service';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
   imports: [
     HttpModule,
     ConfigModule,
     CouponsModule,
+    RedisModule,
     MongooseModule.forFeature([
       { name: 'Bill', schema: BillSchema },
       { name: 'ShoeDetail', schema: ShoeDetailSchema },

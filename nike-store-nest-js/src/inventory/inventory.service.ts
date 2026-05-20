@@ -3,12 +3,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ShoeDetail, ShoeDetailDocument } from '../shoes/shoe-detail.schema';
 import { StockMovement, StockMovementDocument } from './stock-movement.schema';
+import { RedisCacheService } from '../redis/redis-cache.service';
 
 @Injectable()
 export class InventoryService {
   constructor(
     @InjectModel(ShoeDetail.name) private shoeDetailModel: Model<ShoeDetailDocument>,
     @InjectModel(StockMovement.name) private movementModel: Model<StockMovementDocument>,
+    private readonly redisCache: RedisCacheService,
   ) {}
 
   async getOverview() {
@@ -86,6 +88,7 @@ export class InventoryService {
 
     sizeObj.stock = afterStock;
     await detail.save();
+    await this.redisCache.delPattern('shoes:*');
 
     const movement = await this.movementModel.create({
       productId: detail.productId,

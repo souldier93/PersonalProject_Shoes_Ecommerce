@@ -16,6 +16,7 @@ import { StockCheckResult, WebhookResponse } from './payment.interface';
 import { CouponsService } from '../coupons/coupons.service';
 import Stripe from 'stripe';
 import { OrderEmailService } from './order-email.service';
+import { RedisCacheService } from '../redis/redis-cache.service';
 
 type StripeClient = InstanceType<typeof Stripe>;
 type StripePaymentIntent = Awaited<
@@ -33,7 +34,12 @@ export class PaymentService {
     private readonly orderEmailService: OrderEmailService,
     @InjectModel('Bill') private billModel: Model<Bill>,
     @InjectModel('ShoeDetail') private shoeDetailModel: Model<ShoeDetail>,
+    private readonly redisCache: RedisCacheService,
   ) {}
+
+  private async invalidateShoeCache(): Promise<void> {
+    await this.redisCache.delPattern('shoes:*');
+  }
 
   private getStripeClient() {
     if (!this.stripeClient) {
@@ -1001,6 +1007,7 @@ export class PaymentService {
 
     sizeObj.stock = currentStock - quantity;
     await shoeDetail.save();
+    await this.invalidateShoeCache();
 
     console.log(`✅ Stock updated: ${productId} - ${colorName} - ${size} → ${sizeObj.stock}`);
   }
@@ -1033,6 +1040,7 @@ export class PaymentService {
 
     sizeObj.stock = (sizeObj.stock || 0) + Number(quantity || 0);
     await shoeDetail.save();
+    await this.invalidateShoeCache();
   }
 
   // ✅ Check payment status by paymentLinkId

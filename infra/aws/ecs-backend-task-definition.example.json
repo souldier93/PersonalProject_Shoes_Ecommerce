@@ -18,10 +18,12 @@
       ],
       "environment": [
         { "name": "NODE_ENV", "value": "production" },
-        { "name": "PORT", "value": "3000" }
+        { "name": "PORT", "value": "3000" },
+        { "name": "REDIS_PRODUCTS_TTL_SECONDS", "value": "300" }
       ],
       "secrets": [
         { "name": "MONGO_URI", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/MONGO_URI" },
+        { "name": "REDIS_URL", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/REDIS_URL" },
         { "name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/JWT_SECRET" },
         { "name": "PAYOS_CLIENT_ID", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/PAYOS_CLIENT_ID" },
         { "name": "PAYOS_API_KEY", "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:shoes/PAYOS_API_KEY" },

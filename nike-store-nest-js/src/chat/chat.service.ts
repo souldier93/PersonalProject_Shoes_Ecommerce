@@ -6,6 +6,8 @@ import {
   ChatConversationDocument,
 } from './chat.schema';
 import { ShoeDetail, ShoeDetailDocument } from '../shoes/shoe-detail.schema';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 
 type SenderType = 'user' | 'manager' | 'bot';
 
@@ -16,6 +18,7 @@ export class ChatService {
     private chatModel: Model<ChatConversationDocument>,
     @InjectModel(ShoeDetail.name)
     private shoeDetailModel: Model<ShoeDetailDocument>,
+    private configService: ConfigService,
   ) {}
 
   async createOrGetConversation(body: {
@@ -128,7 +131,7 @@ export class ChatService {
     }
 
     if (senderType === 'user' && body.botEnabled !== false) {
-      const botReply = await this.buildBotReply(text);
+      const botReply = await this.buildBotReply(text, conversation.messages);
       conversation.messages.push({
         senderType: 'bot',
         senderName: 'Store Assistant',
@@ -189,7 +192,127 @@ export class ChatService {
     return 'Customer';
   }
 
-  private async buildBotReply(text: string) {
+  private async buildBotReply(text: string, history: any[] = []) {
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    if (!apiKey) {
+      console.warn('GEMINI_API_KEY is not configured. Falling back to rule-based static chatbot.');
+      return this.buildStaticBotReply(text);
+    }
+
+    try {
+      // 1. Logic RAG - Tìm sản phẩm liên quan từ DB
+      const searchKeywords = this.extractKeywords(text);
+      let productContext = '';
+      if (searchKeywords.length > 0) {
+        const products = await this.shoeDetailModel.find().lean().exec();
+        const scored = products
+          .map((product) => {
+            const haystack = this.normalize(
+              [
+                product.name,
+                product.category,
+                product.productType,
+                product.collection,
+                ...(product.colors || []).map((color) => color.colorName),
+              ].join(' '),
+            );
+            const score = searchKeywords.filter((word) => haystack.includes(word)).length;
+            return { product, score };
+          })
+          .filter((item) => item.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3);
+
+        if (scored.length > 0) {
+          productContext = scored
+            .map(({ product }) => {
+              const colorsText = (product.colors || []).map((color: any) => {
+                const sizesText = (color.sizes || [])
+                  .map((size: any) => `Size ${size.size}: còn ${size.stock} đôi`)
+                  .join(', ');
+                return `- Màu ${color.colorName}: ${sizesText}. Mô tả: ${color.description || ''}`;
+              }).join('\n');
+              return `Sản phẩm: ${product.name}\n- Giá: ${product.price.toLocaleString('vi-VN')} VND\n- Danh mục: ${product.category}\n- Tồn kho:\n${colorsText}`;
+            })
+            .join('\n\n');
+        }
+      }
+
+      // 2. Format Lịch sử hội thoại (lấy tối đa 10 tin nhắn gần nhất)
+      const recentMessages = (history || []).slice(-10);
+      const historyText = recentMessages
+        .map((msg) => {
+          const sender =
+            msg.senderType === 'user'
+              ? 'Khách hàng'
+              : msg.senderType === 'manager'
+              ? 'Nhân viên hỗ trợ'
+              : 'Store Assistant';
+          return `${sender}: ${msg.text}`;
+        })
+        .join('\n');
+
+      // 3. Xây dựng prompt cho Gemini
+      const systemInstruction = `Bạn là Store Assistant, trợ lý ảo 24/7 nhiệt tình, chuyên nghiệp của cửa hàng giày thể thao Nike-Ecommerce.
+Nhiệm vụ của bạn:
+1. Trả lời các thắc mắc của khách hàng về sản phẩm, size giày, tình trạng tồn kho dựa trên THÔNG TIN SẢN PHẨM dưới đây một cách tự nhiên, lịch sự. Ký tên là "Store Assistant".
+2. Nếu khách hàng muốn gặp quản lý, nhân viên hỗ trợ, hoặc bạn không có đủ thông tin và cần người thật hỗ trợ, hãy thiết lập "needsManager" thành true trong kết quả trả về.
+3. Luôn trả lời bằng Tiếng Việt.
+
+YÊU CẦU ĐỊNH DẠNG KẾT QUẢ TRẢ VỀ:
+Bạn BẮT BUỘC phải trả về kết quả ở định dạng JSON duy nhất, tuân thủ đúng cấu trúc JSON sau đây (không kèm text thừa ngoài JSON):
+{
+  "text": "Nội dung câu trả lời gửi cho khách hàng bằng tiếng Việt",
+  "needsManager": true hoặc false,
+  "meta": {
+    "intent": "Phân loại ý định khách hàng: 'greeting' | 'product_lookup' | 'manager' | 'return' | 'order' | 'coupon' | 'fallback'"
+  }
+}`;
+
+      const prompt = `THÔNG TIN SẢN PHẨM KHỚP VỚI CÂU HỎI (NẾU CÓ):
+${productContext || 'Không tìm thấy sản phẩm nào phù hợp.'}
+
+LỊCH SỬ CUỘC TRÒ CHUYỆN GẦN ĐÂY:
+${historyText || 'Không có lịch sử trước đó.'}
+
+CÂU HỎI MỚI NHẤT CỦA KHÁCH HÀNG:
+"${text}"
+
+Hãy trả về phản hồi định dạng JSON cấu trúc như yêu cầu.`;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+      const response = await axios.post(url, {
+        contents: [{
+          role: 'user',
+          parts: [{ text: prompt }]
+        }],
+        systemInstruction: {
+          parts: [{ text: systemInstruction }]
+        },
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.7
+        }
+      });
+
+      const responseText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (responseText) {
+        const result = JSON.parse(responseText.trim());
+        return {
+          text: result.text || 'Dạ, tôi có thể giúp gì thêm cho bạn ạ?',
+          needsManager: !!result.needsManager,
+          meta: result.meta || { intent: 'fallback' }
+        };
+      }
+    } catch (error) {
+      console.error('Error calling Gemini API in ChatService, falling back to static logic:', error);
+    }
+
+    return this.buildStaticBotReply(text);
+  }
+
+  private async buildStaticBotReply(text: string) {
     const normalized = this.normalize(text);
 
     if (this.hasAny(normalized, ['quan ly', 'nhan vien', 'nguoi that', 'tu van vien', 'support', 'admin', 'gap nguoi'])) {
@@ -250,13 +373,16 @@ export class ChatService {
     };
   }
 
-  private async answerProductQuestion(text: string) {
+  private extractKeywords(text: string): string[] {
     const normalized = this.normalize(text);
-    const keywords = normalized
+    return normalized
       .split(/\s+/)
       .filter((word) => word.length >= 3 && !this.stopWords().has(word))
       .slice(0, 8);
+  }
 
+  private async answerProductQuestion(text: string) {
+    const keywords = this.extractKeywords(text);
     if (!keywords.length) return null;
 
     const products = await this.shoeDetailModel.find().lean().exec();

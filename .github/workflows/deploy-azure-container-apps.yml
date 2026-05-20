@@ -118,6 +118,7 @@ jobs:
               --resource-group "${{ inputs.resource_group }}" \
               --secrets \
                 mongo-uri="${{ secrets.MONGO_URI }}" \
+                redis-url="${{ secrets.REDIS_URL }}" \
                 jwt-secret="${{ secrets.JWT_SECRET }}" \
                 payos-client-id="${{ secrets.PAYOS_CLIENT_ID }}" \
                 payos-api-key="${{ secrets.PAYOS_API_KEY }}" \
@@ -137,6 +138,8 @@ jobs:
                 DEPLOY_VERSION="${{ github.sha }}" \
                 MONGO_URI=secretref:mongo-uri \
                 MONGO_DB_NAME="${{ secrets.MONGO_DB_NAME || 'nike-store' }}" \
+                REDIS_URL=secretref:redis-url \
+                REDIS_PRODUCTS_TTL_SECONDS=300 \
                 JWT_SECRET=secretref:jwt-secret \
                 PAYOS_CLIENT_ID=secretref:payos-client-id \
                 PAYOS_API_KEY=secretref:payos-api-key \
@@ -158,6 +161,7 @@ jobs:
               --registry-password "$ACR_PASSWORD" \
               --secrets \
                 mongo-uri="${{ secrets.MONGO_URI }}" \
+                redis-url="${{ secrets.REDIS_URL }}" \
                 jwt-secret="${{ secrets.JWT_SECRET }}" \
                 payos-client-id="${{ secrets.PAYOS_CLIENT_ID }}" \
                 payos-api-key="${{ secrets.PAYOS_API_KEY }}" \
@@ -172,6 +176,8 @@ jobs:
                 DEPLOY_VERSION="${{ github.sha }}" \
                 MONGO_URI=secretref:mongo-uri \
                 MONGO_DB_NAME="${{ secrets.MONGO_DB_NAME || 'nike-store' }}" \
+                REDIS_URL=secretref:redis-url \
+                REDIS_PRODUCTS_TTL_SECONDS=300 \
                 JWT_SECRET=secretref:jwt-secret \
                 PAYOS_CLIENT_ID=secretref:payos-client-id \
                 PAYOS_API_KEY=secretref:payos-api-key \

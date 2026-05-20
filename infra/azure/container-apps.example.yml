@@ -7,6 +7,8 @@ backend:
     NODE_ENV: production
     PORT: "3000"
     MONGO_URI: secretref:mongo-uri
+    REDIS_URL: secretref:redis-url
+    REDIS_PRODUCTS_TTL_SECONDS: "300"
     JWT_SECRET: secretref:jwt-secret
     PAYOS_CLIENT_ID: secretref:payos-client-id
     PAYOS_API_KEY: secretref:payos-api-key

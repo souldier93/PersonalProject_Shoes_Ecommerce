@@ -4,9 +4,11 @@ import { ShoeDetail, ShoeDetailSchema } from '../shoes/shoe-detail.schema';
 import { InventoryController } from './inventory.controller';
 import { InventoryService } from './inventory.service';
 import { StockMovement, StockMovementSchema } from './stock-movement.schema';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
   imports: [
+    RedisModule,
     MongooseModule.forFeature([
       { name: ShoeDetail.name, schema: ShoeDetailSchema },
       { name: StockMovement.name, schema: StockMovementSchema },
