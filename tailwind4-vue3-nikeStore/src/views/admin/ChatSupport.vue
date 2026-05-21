@@ -19,33 +19,41 @@
       </div>
     </div>
 
+    <!-- Error banner -->
+    <div v-if="errorMessage" class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-center justify-between">
+      <span>{{ errorMessage }}</span>
+      <button @click="errorMessage = ''" class="ml-4 text-red-500 hover:text-red-700">&times;</button>
+    </div>
+
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
       <aside class="overflow-hidden rounded-xl border border-gray-200 bg-white xl:col-span-4">
         <div v-if="loadingList" class="p-8 text-center text-gray-500">Loading...</div>
-        <button
-          v-for="item in conversations"
-          v-else
-          :key="item._id"
-          @click="selectConversation(item._id)"
-          class="w-full text-left p-4 border-b border-gray-100 hover:bg-gray-50"
-          :class="selectedId === item._id ? 'bg-gray-100' : ''">
-          <div class="flex items-center justify-between gap-3">
-            <h3 class="font-semibold truncate">{{ item.customerName || 'Guest' }}</h3>
-            <span class="text-[11px] px-2 py-1 rounded-full" :class="statusClass(item.status)">
-              {{ statusLabel(item.status) }}
-            </span>
-          </div>
-          <p class="text-xs text-gray-500 mt-1">{{ item.customerEmail || item.userId || item.guestId }}</p>
-          <p class="text-sm text-gray-600 mt-2 line-clamp-2">{{ item.lastMessage }}</p>
-          <div class="mt-2 flex items-center justify-between text-xs text-gray-400">
-            <span>{{ formatDate(item.updatedAt) }}</span>
-            <span v-if="item.unreadForManager" class="bg-red-600 text-white rounded-full min-w-5 h-5 px-1 flex items-center justify-center">
-              {{ item.unreadForManager }}
-            </span>
-          </div>
-        </button>
 
-        <div v-if="!loadingList && conversations.length === 0" class="p-8 text-center text-gray-500">
+        <template v-else-if="conversations.length > 0">
+          <button
+            v-for="item in conversations"
+            :key="item._id"
+            @click="selectConversation(item._id)"
+            class="w-full text-left p-4 border-b border-gray-100 hover:bg-gray-50"
+            :class="selectedId === item._id ? 'bg-gray-100' : ''">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-semibold truncate">{{ item.customerName || 'Guest' }}</h3>
+              <span class="text-[11px] px-2 py-1 rounded-full" :class="statusClass(item.status)">
+                {{ statusLabel(item.status) }}
+              </span>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">{{ item.customerEmail || item.userId || item.guestId }}</p>
+            <p class="text-sm text-gray-600 mt-2 line-clamp-2">{{ item.lastMessage }}</p>
+            <div class="mt-2 flex items-center justify-between text-xs text-gray-400">
+              <span>{{ formatDate(item.updatedAt) }}</span>
+              <span v-if="item.unreadForManager" class="bg-red-600 text-white rounded-full min-w-5 h-5 px-1 flex items-center justify-center">
+                {{ item.unreadForManager }}
+              </span>
+            </div>
+          </button>
+        </template>
+
+        <div v-else class="p-8 text-center text-gray-500">
           No conversations yet.
         </div>
       </aside>
@@ -133,6 +141,7 @@ const loadingList = ref(false)
 const sending = ref(false)
 const draft = ref('')
 const messagesRef = ref(null)
+const errorMessage = ref('')
 let pollTimer = null
 
 const cannedReplies = [
@@ -151,8 +160,17 @@ const fetchConversations = async () => {
 
     if (selectedId.value) {
       const stillSelected = conversations.value.find((item) => item._id === selectedId.value)
-      if (stillSelected) await fetchSelected()
+      if (stillSelected) {
+        await fetchSelected()
+      } else {
+        // Selected conversation no longer in list (e.g. status changed by filter)
+        selectedConversation.value = null
+        selectedId.value = ''
+      }
     }
+  } catch (error) {
+    console.error('Failed to fetch conversations:', error)
+    errorMessage.value = 'Không thể tải danh sách hội thoại. Vui lòng thử lại.'
   } finally {
     loadingList.value = false
   }
@@ -160,23 +178,37 @@ const fetchConversations = async () => {
 
 const selectConversation = async (id) => {
   selectedId.value = id
-  await fetchSelected()
-  await markManagerRead()
-  scrollToBottom()
+  try {
+    await fetchSelected()
+    await markManagerRead()
+    scrollToBottom()
+  } catch (error) {
+    console.error('Failed to select conversation:', error)
+    errorMessage.value = 'Không thể mở hội thoại. Vui lòng thử lại.'
+  }
 }
 
 const fetchSelected = async () => {
   if (!selectedId.value) return
   const response = await axios.get(`${API_BASE}/chat/conversations/${selectedId.value}`)
+  const prevCount = selectedConversation.value?.messages?.length || 0
   selectedConversation.value = response.data
+  // Scroll to bottom if new messages arrived
+  if (selectedConversation.value?.messages?.length !== prevCount) {
+    scrollToBottom()
+  }
 }
 
 const markManagerRead = async () => {
   if (!selectedId.value) return
-  const response = await axios.patch(`${API_BASE}/chat/conversations/${selectedId.value}/read`, {
-    target: 'manager',
-  })
-  selectedConversation.value = response.data
+  try {
+    const response = await axios.patch(`${API_BASE}/chat/conversations/${selectedId.value}/read`, {
+      target: 'manager',
+    })
+    selectedConversation.value = response.data
+  } catch (error) {
+    console.error('Failed to mark as read:', error)
+  }
 }
 
 const sendManagerReply = async () => {
@@ -197,6 +229,11 @@ const sendManagerReply = async () => {
     selectedConversation.value = response.data
     await fetchConversations()
     scrollToBottom()
+  } catch (error) {
+    console.error('Failed to send reply:', error)
+    errorMessage.value = 'Không thể gửi tin nhắn. Vui lòng thử lại.'
+    // Restore draft so user doesn't lose their message
+    draft.value = text
   } finally {
     sending.value = false
   }
@@ -204,11 +241,16 @@ const sendManagerReply = async () => {
 
 const updateStatus = async (status) => {
   if (!selectedConversation.value?._id) return
-  const response = await axios.patch(`${API_BASE}/chat/conversations/${selectedConversation.value._id}/status`, {
-    status,
-  })
-  selectedConversation.value = response.data
-  await fetchConversations()
+  try {
+    const response = await axios.patch(`${API_BASE}/chat/conversations/${selectedConversation.value._id}/status`, {
+      status,
+    })
+    selectedConversation.value = response.data
+    await fetchConversations()
+  } catch (error) {
+    console.error('Failed to update status:', error)
+    errorMessage.value = 'Không thể cập nhật trạng thái. Vui lòng thử lại.'
+  }
 }
 
 const scrollToBottom = () => {
