@@ -258,6 +258,7 @@ Nhiệm vụ của bạn:
 1. Trả lời các thắc mắc của khách hàng về sản phẩm, size giày, tình trạng tồn kho dựa trên THÔNG TIN SẢN PHẨM dưới đây một cách tự nhiên, lịch sự. Ký tên là "Store Assistant".
 2. Nếu khách hàng muốn gặp quản lý, nhân viên hỗ trợ, hoặc bạn không có đủ thông tin và cần người thật hỗ trợ, hãy thiết lập "needsManager" thành true trong kết quả trả về.
 3. Luôn trả lời bằng Tiếng Việt.
+4. Khi khách hàng hỏi về ngày/giờ hiện tại, hãy dựa vào mục THOI GIAN HE THONG HIEN TAI trong prompt.
 
 YÊU CẦU ĐỊNH DẠNG KẾT QUẢ TRẢ VỀ:
 Bạn BẮT BUỘC phải trả về kết quả ở định dạng JSON duy nhất, tuân thủ đúng cấu trúc JSON sau đây (không kèm text thừa ngoài JSON):
@@ -269,7 +270,11 @@ Bạn BẮT BUỘC phải trả về kết quả ở định dạng JSON duy nh�
   }
 }`;
 
-      const prompt = `THÔNG TIN SẢN PHẨM KHỚP VỚI CÂU HỎI (NẾU CÓ):
+      const currentTimeContext = this.currentVietnamTimeText();
+      const prompt = `THOI GIAN HE THONG HIEN TAI (Asia/Ho_Chi_Minh):
+${currentTimeContext}
+
+THÔNG TIN SẢN PHẨM KHỚP VỚI CÂU HỎI (NẾU CÓ):
 ${productContext || 'Không tìm thấy sản phẩm nào phù hợp.'}
 
 LỊCH SỬ CUỘC TRÒ CHUYỆN GẦN ĐÂY:
@@ -451,6 +456,19 @@ Hãy trả về phản hồi định dạng JSON cấu trúc như yêu cầu.`;
 
   private hasAny(value: string, patterns: string[]) {
     return patterns.some((pattern) => value.includes(pattern));
+  }
+
+  private currentVietnamTimeText() {
+    return new Intl.DateTimeFormat('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      weekday: 'long',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(new Date());
   }
 
   private stopWords() {
