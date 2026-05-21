@@ -193,8 +193,8 @@ export class ChatService {
   }
 
   private async buildBotReply(text: string, history: any[] = []) {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-    if (!apiKey) {
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY')?.trim();
+    if (!apiKey || apiKey.startsWith('your-')) {
       console.warn('GEMINI_API_KEY is not configured. Falling back to rule-based static chatbot.');
       return this.buildStaticBotReply(text);
     }
@@ -280,7 +280,10 @@ CÂU HỎI MỚI NHẤT CỦA KHÁCH HÀNG:
 
 Hãy trả về phản hồi định dạng JSON cấu trúc như yêu cầu.`;
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const configuredModel =
+        this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash';
+      const model = configuredModel.replace(/^models\//, '').trim();
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
       const response = await axios.post(url, {
         contents: [{
@@ -306,7 +309,14 @@ Hãy trả về phản hồi định dạng JSON cấu trúc như yêu cầu.`;
         };
       }
     } catch (error) {
-      console.error('Error calling Gemini API in ChatService, falling back to static logic:', error);
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+      const details = axios.isAxiosError(error)
+        ? error.response?.data || error.message
+        : (error as Error).message;
+      console.error(
+        `Error calling Gemini API in ChatService${status ? ` (${status})` : ''}, falling back to static logic:`,
+        details,
+      );
     }
 
     return this.buildStaticBotReply(text);
