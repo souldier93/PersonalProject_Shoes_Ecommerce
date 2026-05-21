@@ -27,5 +27,5 @@ frontend:
   targetPort: 80
   ingress: external
   buildArgs:
-    VITE_API_BASE_URL: /api
+    VITE_API_BASE_URL: https://<backend-container-app-fqdn>
     VITE_STRIPE_PUBLISHABLE_KEY: <stripe-publishable-key>

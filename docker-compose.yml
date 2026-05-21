@@ -44,6 +44,8 @@ services:
         VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY:-}
     container_name: shoes-frontend
     restart: unless-stopped
+    environment:
+      BACKEND_PROXY_URL: http://backend:3000
     depends_on:
       - backend
     ports:

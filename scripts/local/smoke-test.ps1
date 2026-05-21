@@ -12,9 +12,15 @@ if ($health.status -ne "ok") {
 }
 
 Write-Host "Checking product API..." -ForegroundColor Cyan
-$products = Invoke-RestMethod "$BackendUrl/shoes"
-if (-not $products -or $products.Count -lt 1) {
-  throw "Product API returned no products"
+$productsResponse = Invoke-WebRequest -Uri "$BackendUrl/shoes" -UseBasicParsing
+if ($productsResponse.StatusCode -lt 200 -or $productsResponse.StatusCode -ge 400) {
+  throw "Product API returned HTTP $($productsResponse.StatusCode)"
+}
+
+try {
+  $productsResponse.Content | ConvertFrom-Json | Out-Null
+} catch {
+  throw "Product API did not return valid JSON"
 }
 
 Write-Host "Checking chat API..." -ForegroundColor Cyan
@@ -32,6 +38,17 @@ Write-Host "Checking frontend..." -ForegroundColor Cyan
 $frontend = Invoke-WebRequest -Uri $FrontendUrl -UseBasicParsing
 if ($frontend.StatusCode -lt 200 -or $frontend.StatusCode -ge 400) {
   throw "Frontend returned HTTP $($frontend.StatusCode)"
+}
+
+Write-Host "Checking frontend API proxy..." -ForegroundColor Cyan
+$proxiedConversation = Invoke-RestMethod `
+  -Method Post `
+  -Uri "$FrontendUrl/api/chat/conversations" `
+  -ContentType "application/json" `
+  -Body '{"guestId":"smoke-test-proxy","customerName":"Smoke Test Proxy"}'
+
+if (-not $proxiedConversation._id) {
+  throw "Frontend API proxy did not return a conversation id"
 }
 
 Write-Host "Smoke tests passed." -ForegroundColor Green
