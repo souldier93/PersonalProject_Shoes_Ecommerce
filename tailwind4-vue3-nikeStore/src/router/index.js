@@ -1,56 +1,45 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 // ✅ Import components
-import Home from "../components/home/Home.vue";
-import AllShoes from "../components/home/allShoes/AllShoes.vue";
-import Login from "../components/header/Login/Login.vue";
-import Register from "../components/header/Register/Register.vue";
-import ShoesDetail from "../components/shoesDetail/ShoesDetail.vue";
-import Bag from "../components/header/bag/Bag.vue";
-import GuestCheckout from "../components/header/bag/GuestCheckout.vue";
-import Payment from "../components/header/bag/Payment.vue";
-import Wishlist from '../components/header/Wishlist.vue'
-import Profile from '../components/header/Profile.vue'
-import MyOrders from '../components/header/MyOrders.vue' // ✅ Import
 
 const routes = [
   // ✅ Public Routes
   {
     path: "/",
     name: "Home",
-    component: Home,
+    component: () => import("../components/home/Home.vue"),
   },
   {
     path: "/products",
     name: "Products",
-    component: AllShoes,
+    component: () => import("../components/home/allShoes/AllShoes.vue"),
   },
   {
     path: "/login",
     name: "Login",
-    component: Login,
+    component: () => import("../components/header/Login/Login.vue"),
   },
   {
     path: "/register",
     name: "Register",
-    component: Register,
+    component: () => import("../components/header/Register/Register.vue"),
   },
   {
     path: "/shoes/:id",
     name: "ShoesDetail",
-    component: ShoesDetail,
+    component: () => import("../components/shoesDetail/ShoesDetail.vue"),
   },
   
   // ✅ Shopping Cart & Checkout Routes
   {
     path: "/bag",
     name: "Bag",
-    component: Bag,
+    component: () => import("../components/header/bag/Bag.vue"),
   },
   {
     path: "/checkout",
     name: "GuestCheckout",
-    component: GuestCheckout,
+    component: () => import("../components/header/bag/GuestCheckout.vue"),
   },
   // Redirect cho phòng trường hợp user vào /bag/checkout
   {
@@ -60,27 +49,27 @@ const routes = [
   {
     path: "/payment",
     name: "Payment",
-    component: Payment,
+    component: () => import("../components/header/bag/Payment.vue"),
   },
   
   // My Orders supports both members and secure guest lookup
   {
     path: '/my-orders',
     name: 'MyOrders',
-    component: MyOrders,
+    component: () => import('../components/header/MyOrders.vue'),
   },
 
   // ✅ Admin Routes - Lazy loading
   {
     path: '/wishlist',
     name: 'Wishlist',
-    component: Wishlist,
+    component: () => import('../components/header/Wishlist.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/profile',
     name: 'Profile',
-    component: Profile,
+    component: () => import('../components/header/Profile.vue'),
     meta: { requiresAuth: true }
   },
   {

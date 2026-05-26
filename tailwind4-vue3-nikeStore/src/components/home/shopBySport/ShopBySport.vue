@@ -39,6 +39,8 @@
             <img 
               :src="sport.image" 
               :alt="sport.name"
+              loading="lazy"
+              decoding="async"
               class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             >
             <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>

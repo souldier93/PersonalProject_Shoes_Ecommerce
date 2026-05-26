@@ -21,7 +21,7 @@
           <h3 class="font-semibold leading-tight">Support Chat</h3>
           <p class="text-xs text-gray-300">Chatbot + quản lý cửa hàng</p>
         </div>
-        <button @click="isOpen = false" class="p-2 rounded-lg hover:bg-white/10" aria-label="Close support chat">
+        <button @click="closeChat" class="p-2 rounded-lg hover:bg-white/10" aria-label="Close support chat">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -106,6 +106,14 @@ const openChat = async () => {
   await ensureConversation()
   await markRead()
   scrollToBottom()
+  if (isOpen.value) {
+    startPolling()
+  }
+}
+
+const closeChat = () => {
+  isOpen.value = false
+  stopPolling()
 }
 
 const handleOpenChatWidget = async (event) => {
@@ -194,6 +202,17 @@ const scrollToBottom = () => {
   })
 }
 
+const startPolling = () => {
+  if (pollTimer) return
+  pollTimer = window.setInterval(refreshConversation, 6000)
+}
+
+const stopPolling = () => {
+  if (!pollTimer) return
+  window.clearInterval(pollTimer)
+  pollTimer = null
+}
+
 const bubbleClass = (senderType) => {
   if (senderType === 'user') return 'bg-gray-950 text-white rounded-br-sm'
   if (senderType === 'manager') return 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm'
@@ -214,14 +233,12 @@ const formatTime = (value) => {
   }).format(new Date(value))
 }
 
-onMounted(async () => {
+onMounted(() => {
   window.addEventListener('openChatWidget', handleOpenChatWidget)
-  await ensureConversation()
-  pollTimer = window.setInterval(refreshConversation, 6000)
 })
 
 onUnmounted(() => {
   window.removeEventListener('openChatWidget', handleOpenChatWidget)
-  if (pollTimer) window.clearInterval(pollTimer)
+  stopPolling()
 })
 </script>

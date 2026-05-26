@@ -1,9 +1,10 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import Header from './components/header/Header.vue'
-import HeaderAdmin from './views/admin/HeaderAdmin.vue'
 import ChatWidget from './components/chat/ChatWidget.vue'
+
+const HeaderAdmin = defineAsyncComponent(() => import('./views/admin/HeaderAdmin.vue'))
 
 const route = useRoute()
 

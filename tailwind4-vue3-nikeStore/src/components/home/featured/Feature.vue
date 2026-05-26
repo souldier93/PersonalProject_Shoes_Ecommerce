@@ -42,6 +42,8 @@ const features = [
           <img
             :src="item.img"
             :alt="item.title"
+            loading="lazy"
+            decoding="async"
             class="w-full h-[350px] object-cover transform group-hover:scale-105 transition duration-700"
           />
           <div

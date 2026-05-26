@@ -146,7 +146,7 @@
             class="group text-left"
           >
             <div class="mb-4 flex aspect-square items-center justify-center overflow-hidden rounded-md bg-gray-100">
-              <img :src="product.image" :alt="product.name" class="h-full w-full object-contain transition duration-300 group-hover:scale-105">
+              <img :src="product.image" :alt="product.name" loading="lazy" decoding="async" class="h-full w-full object-contain transition duration-300 group-hover:scale-105">
             </div>
             <div class="space-y-1">
               <p v-if="productBadge(product)" class="text-sm font-semibold text-orange-600">{{ productBadge(product) }}</p>
