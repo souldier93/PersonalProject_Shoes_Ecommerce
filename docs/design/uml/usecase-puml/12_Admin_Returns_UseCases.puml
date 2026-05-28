@@ -1,0 +1,41 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Admin" as Admin
+actor "Manager" as Manager
+actor "System" as SystemActor
+Admin --|> Manager
+
+rectangle "Admin - Returns" {
+  usecase "UC-46\nView Return Requests" as UC_46
+  usecase "UC-47\nView Return Request Detail" as UC_47
+  usecase "UC-48\nApprove Return Request" as UC_48
+  usecase "UC-49\nReject Return Request" as UC_49
+  usecase "UC-50\nProcess Return Request" as UC_50
+  usecase "UC-51\nComplete Return Request" as UC_51
+  usecase "UC-52\nNotify User Return Status" as UC_52
+}
+Admin --> UC_46
+Manager --> UC_46
+Admin --> UC_47
+Manager --> UC_47
+Admin --> UC_48
+Manager --> UC_48
+Admin --> UC_49
+Manager --> UC_49
+Admin --> UC_50
+Manager --> UC_50
+Admin --> UC_51
+Manager --> UC_51
+UC_52 --> SystemActor
+UC_47 ..> UC_48 : <<include>>
+UC_47 ..> UC_49 : <<include>>
+UC_48 ..> UC_50 : <<extend>>
+UC_50 ..> UC_51 : <<extend>>
+UC_48 ..> UC_52 : <<include>>
+UC_49 ..> UC_52 : <<include>>
+UC_51 ..> UC_52 : <<include>>
+@enduml

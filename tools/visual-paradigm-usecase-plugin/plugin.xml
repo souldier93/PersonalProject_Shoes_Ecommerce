@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+  id="shoes.usecase.generator"
+  name="Shoes Ecommerce Use Case Generator"
+  description="Creates the overall Shoes Ecommerce use case diagram."
+  provider="Codex"
+  class="com.shoes.vp.ShoesUseCasePlugin">
+  <runtime>
+    <library path="lib/shoes-usecase-generator.jar" relativePath="true"/>
+  </runtime>
+</plugin>

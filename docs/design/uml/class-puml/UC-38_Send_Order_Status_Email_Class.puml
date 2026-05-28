@@ -1,0 +1,27 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-38 Send Order Status Email
+
+class "My Orders / Admin Purchases UI" as UI <<boundary>>
+class "PaymentController" as Controller <<controller>>
+class "PaymentService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "StatusHistory" as StatusHistory <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : OrderEmailService.send*Email
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> StatusHistory : uses
+Service --> OrderEmailService : uses
+Service --> "Gmail SMTP" : email notification
+
+note right of UI
+UC-38 - Send Order Status Email
+Actors: System
+Pre: Order status thay đổi
+Post: Email được gửi cho khách hàng
+end note
+@enduml

@@ -1,0 +1,36 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Guest" as Guest
+actor "PayOS Gateway" as PayOS_Gateway
+actor "Stripe Gateway" as Stripe_Gateway
+actor "User" as User
+User --|> Guest
+
+rectangle "Checkout & Payment" {
+  usecase "UC-09\nGuest Checkout" as UC_09
+  usecase "UC-10\nPayOS Payment Processing" as UC_10
+  usecase "UC-11\nStripe Payment Processing" as UC_11
+  usecase "UC-12\nReceive Payment Webhook" as UC_12
+  usecase "UC-18\nUser (Logged-in) Checkout" as UC_18
+}
+Guest --> UC_09
+Guest --> UC_10
+User --> UC_10
+UC_10 --> PayOS_Gateway
+Guest --> UC_11
+User --> UC_11
+UC_11 --> Stripe_Gateway
+UC_12 --> PayOS_Gateway
+UC_12 --> Stripe_Gateway
+User --> UC_18
+UC_09 ..> UC_10 : <<extend>>
+UC_09 ..> UC_11 : <<extend>>
+UC_18 ..> UC_10 : <<extend>>
+UC_18 ..> UC_11 : <<extend>>
+UC_10 ..> UC_12 : <<include>>
+UC_11 ..> UC_12 : <<include>>
+@enduml

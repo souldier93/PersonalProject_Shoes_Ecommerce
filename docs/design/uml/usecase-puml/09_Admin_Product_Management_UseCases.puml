@@ -1,0 +1,31 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Admin" as Admin
+
+rectangle "Admin - Product Management" {
+  usecase "UC-25\nCreate New Product" as UC_25
+  usecase "UC-26\nUpdate Product" as UC_26
+  usecase "UC-27\nSoft Delete Product" as UC_27
+  usecase "UC-28\nManage Colors & Sizes" as UC_28
+  usecase "UC-29\nUpload Product Images" as UC_29
+  usecase "UC-30\nBrowse R2 Media" as UC_30
+  usecase "UC-31\nSet Discount Price" as UC_31
+}
+Admin --> UC_25
+Admin --> UC_26
+Admin --> UC_27
+Admin --> UC_28
+Admin --> UC_29
+Admin --> UC_30
+Admin --> UC_31
+UC_25 ..> UC_28 : <<include>>
+UC_25 ..> UC_29 : <<include>>
+UC_26 ..> UC_28 : <<include>>
+UC_26 ..> UC_29 : <<include>>
+UC_29 ..> UC_30 : <<include>>
+UC_25 ..> UC_31 : <<include>>
+@enduml

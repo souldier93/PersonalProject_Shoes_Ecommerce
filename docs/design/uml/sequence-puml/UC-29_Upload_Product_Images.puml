@@ -1,0 +1,41 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-29 - Upload Product Images
+
+actor "Admin" as Actor
+boundary "Admin Products UI" as FE
+control "ShoesController" as API
+control "ShoesService" as Service
+database "MongoDB: shoes, shoesDetail, counters" as DB
+
+Actor -> FE: Start UC-29
+FE -> API: R2 media workflow; upload endpoint recommended
+API -> Service: Execute Upload Product Images
+Service -> DB: Read/write shoes, shoesDetail, counters
+DB --> Service: Domain data
+participant "Cloudflare R2" as R2
+Service -> R2: List or store media objects
+R2 --> Service: Public media URLs
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Ảnh được upload lên R2
+
+alt Alternative / exception flow
+  note over FE,Service: File không hợp lệ -> validation error
+  note over FE,Service: R2 lỗi -> retry hoặc thông báo lỗi
+end
+
+note over Actor,DB
+Pre: Đang tạo/sửa sản phẩm
+Post: Ảnh được upload lên R2
+Main flow:
+1. Admin chọn ảnh từ máy tính
+2. System validate: type (jpeg/png/webp), size (max 5MB)
+3. System gọi API R2 admin media pipeline; upload endpoint recommended
+4. System upload ảnh lên Cloudflare R2
+5. System trả về public URL
+6. System cập nhật shoesDetail với URLs mới
+end note
+@enduml

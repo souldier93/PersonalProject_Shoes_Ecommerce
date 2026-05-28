@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-55 - Delete Coupon
+
+actor "Admin" as Actor
+boundary "Admin Settings UI" as FE
+control "CouponsController" as API
+control "CouponsService" as Service
+database "MongoDB: coupons" as DB
+
+Actor -> FE: Start UC-55
+FE -> API: PATCH /coupons/:id active=false
+API -> Service: Execute Delete Coupon
+Service -> DB: Read/write coupons
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Coupon bị xóa hoặc vô hiệu
+
+note over Actor,DB
+Pre: Coupon tồn tại
+Post: Coupon bị xóa hoặc vô hiệu
+Main flow:
+1. Admin chọn coupon
+2. Admin bấm Delete
+3. System gọi API DELETE /coupons/:id
+4. Coupon bị xóa hoặc set isActive = false
+end note
+@enduml

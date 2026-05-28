@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-75 Close Conversation
+
+class "Chat Widget / Admin Chat UI" as UI <<boundary>>
+class "ChatController" as Controller <<controller>>
+class "ChatService" as Service <<service>>
+class "ChatConversation" as ChatConversation <<domain>>
+class "ChatMessage" as ChatMessage <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+
+UI --> Controller : PATCH /chat/conversations/:id/status
+Controller --> Service : delegates
+Service --> ChatConversation : uses
+Service --> ChatMessage : uses
+Service --> ShoeDetail : uses
+
+note right of UI
+UC-75 - Close Conversation
+Actors: Admin, Manager
+Pre: Conversation đang mở
+Post: Conversation status = CLOSED
+end note
+@enduml

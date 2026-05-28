@@ -1,0 +1,36 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Admin" as Admin
+actor "Manager" as Manager
+Admin --|> Manager
+
+rectangle "Admin - Inventory" {
+  usecase "UC-40\nView Inventory Overview" as UC_40
+  usecase "UC-41\nView Low Stock Alert" as UC_41
+  usecase "UC-42\nView Stock by Product" as UC_42
+  usecase "UC-43\nAdjust Stock (IN/OUT/ADJUST)" as UC_43
+  usecase "UC-44\nView Stock Movements" as UC_44
+  usecase "UC-45\nExport Inventory Report" as UC_45
+}
+Admin --> UC_40
+Manager --> UC_40
+Admin --> UC_41
+Manager --> UC_41
+Admin --> UC_42
+Manager --> UC_42
+Admin --> UC_43
+Manager --> UC_43
+Admin --> UC_44
+Manager --> UC_44
+Admin --> UC_45
+Manager --> UC_45
+UC_40 ..> UC_41 : <<include>>
+UC_40 ..> UC_42 : <<extend>>
+UC_42 ..> UC_43 : <<extend>>
+UC_43 ..> UC_44 : <<include>>
+UC_40 ..> UC_45 : <<extend>>
+@enduml

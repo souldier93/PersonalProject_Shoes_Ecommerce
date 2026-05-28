@@ -1,0 +1,27 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-52 Notify User Return Status
+
+class "Admin Purchases / Returns UI" as UI <<boundary>>
+class "ReturnsController" as Controller <<controller>>
+class "ReturnsService" as Service <<service>>
+class "ReturnRequest" as ReturnRequest <<domain>>
+class "Bill" as Bill <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : Return status notification service recommended
+Controller --> Service : delegates
+Service --> ReturnRequest : uses
+Service --> Bill : uses
+Service --> OrderEmailService : uses
+Service --> "Gmail SMTP" : email notification
+
+note right of UI
+UC-52 - Notify User Return Status
+Actors: System
+Pre: Return status thay đổi
+Post: Email được gửi cho user
+end note
+@enduml

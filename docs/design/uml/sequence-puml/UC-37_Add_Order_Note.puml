@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-37 - Add Order Note
+
+actor "Admin" as Actor
+boundary "My Orders / Admin Purchases UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills" as DB
+
+Actor -> FE: Start UC-37
+FE -> API: PATCH /payments/orders/:orderCode/fulfillment
+API -> Service: Execute Add Order Note
+Service -> DB: Read/write bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Ghi chú được thêm vào order
+
+note over Actor,DB
+Pre: Đang xem chi tiết đơn hàng
+Post: Ghi chú được thêm vào order
+Main flow:
+1. Admin nhập note vào ô text
+2. Admin bấm Add Note
+3. System gọi API PATCH /payments/orders/:orderCode/fulfillment
+4. Note được thêm vào bill.notes[]
+end note
+@enduml

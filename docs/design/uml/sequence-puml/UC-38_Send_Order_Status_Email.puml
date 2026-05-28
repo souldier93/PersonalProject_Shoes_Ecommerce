@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-38 - Send Order Status Email
+
+actor "System" as Actor
+boundary "My Orders / Admin Purchases UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills" as DB
+participant "Gmail SMTP" as Gmail
+
+Actor -> Service: Domain status changed
+Service -> DB: Read/write bills
+DB --> Service: Domain data
+Service -> Gmail: Send notification email when configured
+Gmail --> Service: Delivery accepted or warning logged
+Service --> Actor: Notification flow completed
+
+alt Alternative / exception flow
+  note over FE,Service: Gửi thất bại -> log lỗi, không block luồng chính
+end
+
+note over Actor,DB
+Pre: Order status thay đổi
+Post: Email được gửi cho khách hàng
+Main flow:
+1. Hệ thống phát hiện status thay đổi
+2. System xác định template email phù hợp (confirmed, shipped, delivered)
+3. System gọi Nodemailer transporter.sendMail()
+4. Email được gửi đến email khách hàng
+5. System log kết quả
+end note
+@enduml

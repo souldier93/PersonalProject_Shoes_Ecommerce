@@ -1,0 +1,32 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-25 Create New Product
+
+class "Admin Products UI" as UI <<boundary>>
+class "ShoesController" as Controller <<controller>>
+class "ShoesService" as Service <<service>>
+class "Shoe" as Shoe <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "ColorVariant" as ColorVariant <<domain>>
+class "SizeStock" as SizeStock <<domain>>
+class "Counter" as Counter <<domain>>
+class "R2Service" as R2Service <<domain>>
+
+UI --> Controller : POST /shoes/product
+Controller --> Service : delegates
+Service --> Shoe : uses
+Service --> ShoeDetail : uses
+Service --> ColorVariant : uses
+Service --> SizeStock : uses
+Service --> Counter : uses
+Service --> R2Service : uses
+
+note right of UI
+UC-25 - Create New Product
+Actors: Admin
+Pre: Đã đăng nhập với role admin
+Post: Sản phẩm xuất hiện trên store
+end note
+@enduml

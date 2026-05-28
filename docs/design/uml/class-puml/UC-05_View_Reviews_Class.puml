@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-05 View Reviews
+
+class "Product UI" as UI <<boundary>>
+class "ShoesController / ReviewsController" as Controller <<controller>>
+class "ShoesService / ReviewsService" as Service <<service>>
+class "Shoe" as Shoe <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "Review" as Review <<domain>>
+
+UI --> Controller : GET /reviews/product/:productId
+Controller --> Service : delegates
+Service --> Shoe : uses
+Service --> ShoeDetail : uses
+Service --> Review : uses
+
+note right of UI
+UC-05 - View Reviews
+Actors: Guest, User, Manager, Admin
+Pre: Đang ở trang product detail
+Post: Danh sách reviews hiển thị
+end note
+@enduml

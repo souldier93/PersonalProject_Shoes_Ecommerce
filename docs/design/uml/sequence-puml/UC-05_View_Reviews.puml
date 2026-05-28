@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-05 - View Reviews
+
+actor "Guest" as Actor
+boundary "Product UI" as FE
+control "ShoesController / ReviewsController" as API
+control "ShoesService / ReviewsService" as Service
+database "MongoDB: shoes, shoesDetail, reviews" as DB
+
+Actor -> FE: Start UC-05
+FE -> API: GET /reviews/product/:productId
+API -> Service: Execute View Reviews
+Service -> DB: Read/write shoes, shoesDetail, reviews
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Danh sách reviews hiển thị
+
+alt Alternative / exception flow
+  note over FE,Service: Chưa có review -> hiển thị \"Be the first to review\"
+end
+
+note over Actor,DB
+Pre: Đang ở trang product detail
+Post: Danh sách reviews hiển thị
+Main flow:
+1. User scroll xuống phần reviews của product detail
+2. System gọi API GET /reviews/product/:productId
+3. System trả về danh sách reviews (rating, comment, images, user,\ncreatedAt)
+4. UI hiển thị star rating trung bình và danh sách reviews
+end note
+@enduml

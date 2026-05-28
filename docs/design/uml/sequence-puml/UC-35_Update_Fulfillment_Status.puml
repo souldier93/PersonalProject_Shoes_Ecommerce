@@ -1,0 +1,38 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-35 - Update Fulfillment Status
+
+actor "Admin" as Actor
+boundary "My Orders / Admin Purchases UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills" as DB
+
+Actor -> FE: Start UC-35
+FE -> API: PATCH /payments/orders/:orderCode/fulfillment
+API -> Service: Execute Update Fulfillment Status
+Service -> DB: Read/write bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Fulfillment status được cập nhật
+
+alt Alternative / exception flow
+  note over FE,Service: Status transition không hợp lệ -> 400
+end
+
+note over Actor,DB
+Pre: Đơn hàng tồn tại
+Post: Fulfillment status được cập nhật
+Main flow:
+1. Admin mở chi tiết đơn hàng
+2. Admin chọn status mới: CONFIRMED -> PACKING -> SHIPPING -> DELIVERED
+3. Nếu chọn SHIPPING: nhập carrier + trackingCode
+4. Admin thêm note (optional)
+5. System gọi API PATCH /payments/orders/:orderCode/fulfillment
+6. System cập nhật fulfillmentStatus, thêm vào statusHistory[]
+7. System gửi email thông báo cho khách hàng
+end note
+@enduml

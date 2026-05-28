@@ -1,0 +1,32 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-68 - Open Chat Widget (Guest)
+
+actor "Guest" as Actor
+boundary "Chat Widget / Admin Chat UI" as FE
+control "ChatController" as API
+control "ChatService" as Service
+database "MongoDB: chatConversations" as DB
+
+Actor -> FE: Start UC-68
+FE -> API: POST /chat/conversations
+API -> Service: Execute Open Chat Widget (Guest)
+Service -> DB: Read/write chatConversations
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Chat widget mở, sẵn sàng gửi tin nhắn
+
+note over Actor,DB
+Pre: Chưa đăng nhập, mở chat widget
+Post: Chat widget mở, sẵn sàng gửi tin nhắn
+Main flow:
+1. Guest bấm vào chat icon góc phải
+2. System hiển thị form: nhập name + email
+3. Guest nhập thông tin
+4. System tạo conversation
+5. Guest có thể gửi tin nhắn đầu tiên
+end note
+@enduml

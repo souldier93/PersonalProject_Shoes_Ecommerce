@@ -1,0 +1,43 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-11 - Stripe Payment Processing
+
+actor "Guest" as Actor
+boundary "Checkout / Payment UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills, shoesDetail, coupons" as DB
+participant "Stripe Gateway" as Stripe_Gateway
+
+Actor -> FE: Start UC-11
+FE -> API: POST /payments/stripe/create-intent + POST /payments/stripe/confirm
+API -> Service: Execute Stripe Payment Processing
+Service -> DB: Read/write bills, shoesDetail, coupons
+DB --> Service: Domain data
+Service -> Stripe_Gateway: Create/confirm/refund payment
+Stripe_Gateway --> Service: Stripe result
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Payment hoàn tất
+
+alt Alternative / exception flow
+  note over FE,Service: Thanh toán bị từ chối -> hiển thị lỗi thẻ
+end
+
+note over Actor,DB
+Pre: Bill đã tạo
+Post: Payment hoàn tất
+Main flow:
+1. System tạo Stripe PaymentIntent với amount, currency, metadata
+2. Stripe trả về { clientSecret }
+3. Frontend hiển thị Stripe Elements form (thẻ tín dụng)
+4. User nhập thông tin thẻ và xác nhận
+5. Frontend gọi stripe.confirmCardPayment(clientSecret)
+6. Stripe xử lý thanh toán
+7. Stripe gửi webhook POST /payments/stripe/webhook
+8. System verify với stripe.webhooks.constructEvent()
+9. System cập nhật bill status = PAID, giảm stock, gửi email
+end note
+@enduml

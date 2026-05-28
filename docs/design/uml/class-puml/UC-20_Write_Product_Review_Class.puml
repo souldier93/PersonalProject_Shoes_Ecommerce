@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-20 Write Product Review
+
+class "My Orders / Product Review UI" as UI <<boundary>>
+class "ReviewsController" as Controller <<controller>>
+class "ReviewsService" as Service <<service>>
+class "Review" as Review <<domain>>
+class "Bill" as Bill <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+
+UI --> Controller : POST /reviews
+Controller --> Service : delegates
+Service --> Review : uses
+Service --> Bill : uses
+Service --> ShoeDetail : uses
+
+note right of UI
+UC-20 - Write Product Review
+Actors: User
+Pre: Đã đăng nhập, đã mua sản phẩm
+Post: Review được lưu, rating sản phẩm được cập nhật
+end note
+@enduml

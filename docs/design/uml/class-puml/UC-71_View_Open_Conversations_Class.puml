@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-71 View Open Conversations
+
+class "Chat Widget / Admin Chat UI" as UI <<boundary>>
+class "ChatController" as Controller <<controller>>
+class "ChatService" as Service <<service>>
+class "ChatConversation" as ChatConversation <<domain>>
+class "ChatMessage" as ChatMessage <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+
+UI --> Controller : GET /chat/conversations?status=open
+Controller --> Service : delegates
+Service --> ChatConversation : uses
+Service --> ChatMessage : uses
+Service --> ShoeDetail : uses
+
+note right of UI
+UC-71 - View Open Conversations
+Actors: Admin, Manager
+Pre: Đã đăng nhập với role admin/manager
+Post: Danh sách conversations hiển thị
+end note
+@enduml

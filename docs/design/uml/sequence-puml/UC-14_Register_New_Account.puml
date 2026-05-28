@@ -1,0 +1,38 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-14 - Register New Account
+
+actor "Guest" as Actor
+boundary "Auth / Profile UI" as FE
+control "AuthController" as API
+control "UsersService" as Service
+database "MongoDB: users, role" as DB
+
+Actor -> FE: Start UC-14
+FE -> API: POST /auth/register
+API -> Service: Execute Register New Account
+Service -> DB: Read/write users, role
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Tài khoản được tạo
+
+alt Alternative / exception flow
+  note over FE,Service: Username đã tồn tại -> Username already exists
+  note over FE,Service: Email đã tồn tại -> Email already registered
+end
+
+note over Actor,DB
+Pre: Chưa có tài khoản
+Post: Tài khoản được tạo
+Main flow:
+1. User vào trang /register
+2. User nhập: username, email, password, fullName
+3. System validate: username unique, email unique, password strength
+4. System hash password (bcrypt) và lưu user vào DB
+5. System gửi email xác thực (nếu EMAIL_VERIFICATION_REQUIRED=true)
+6. System redirect đến login hoặc auto-login
+end note
+@enduml

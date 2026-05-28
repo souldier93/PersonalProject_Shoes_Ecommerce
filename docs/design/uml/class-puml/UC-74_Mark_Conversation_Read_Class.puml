@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-74 Mark Conversation Read
+
+class "Chat Widget / Admin Chat UI" as UI <<boundary>>
+class "ChatController" as Controller <<controller>>
+class "ChatService" as Service <<service>>
+class "ChatConversation" as ChatConversation <<domain>>
+class "ChatMessage" as ChatMessage <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+
+UI --> Controller : PATCH /chat/conversations/:id/read
+Controller --> Service : delegates
+Service --> ChatConversation : uses
+Service --> ChatMessage : uses
+Service --> ShoeDetail : uses
+
+note right of UI
+UC-74 - Mark Conversation Read
+Actors: Admin, Manager
+Pre: Conversation có unreadForManager > 0
+Post: unreadForManager = 0
+end note
+@enduml

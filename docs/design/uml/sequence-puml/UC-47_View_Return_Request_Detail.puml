@@ -1,0 +1,30 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-47 - View Return Request Detail
+
+actor "Admin" as Actor
+boundary "Admin Purchases / Returns UI" as FE
+control "ReturnsController" as API
+control "ReturnsService" as Service
+database "MongoDB: returnRequests, bills" as DB
+
+Actor -> FE: Start UC-47
+FE -> API: GET /returns
+API -> Service: Execute View Return Request Detail
+Service -> DB: Read/write returnRequests, bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Chi tiết return request hiển thị
+
+note over Actor,DB
+Pre: Return request tồn tại
+Post: Chi tiết return request hiển thị
+Main flow:
+1. Admin click vào 1 return request
+2. System gọi API GET /returns or GET /returns?status=... then select by\n_id
+3. System trả về: orderCode, user info, product info, type, reason, note,\nimages, status, adminNote
+end note
+@enduml

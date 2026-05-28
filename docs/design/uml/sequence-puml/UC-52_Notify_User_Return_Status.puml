@@ -1,0 +1,29 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-52 - Notify User Return Status
+
+actor "System" as Actor
+boundary "Admin Purchases / Returns UI" as FE
+control "ReturnsController" as API
+control "ReturnsService" as Service
+database "MongoDB: returnRequests, bills" as DB
+participant "Gmail SMTP" as Gmail
+
+Actor -> Service: Domain status changed
+Service -> DB: Read/write returnRequests, bills
+DB --> Service: Domain data
+Service -> Gmail: Send notification email when configured
+Gmail --> Service: Delivery accepted or warning logged
+Service --> Actor: Notification flow completed
+
+note over Actor,DB
+Pre: Return status thay đổi
+Post: Email được gửi cho user
+Main flow:
+1. Khi return status thay đổi
+2. System xác định template (approved, rejected, processing, completed)
+3. System gửi email qua Nodemailer
+end note
+@enduml

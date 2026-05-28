@@ -1,0 +1,29 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-65 - View User Stats
+
+actor "Admin" as Actor
+boundary "Admin Analytics UI" as FE
+control "AnalyticsController" as API
+control "AnalyticsService" as Service
+database "MongoDB: bills, shoesDetail" as DB
+
+Actor -> FE: Start UC-65
+FE -> API: GET /analytics/overview
+API -> Service: Execute View User Stats
+Service -> DB: Read/write bills, shoesDetail
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Thống kê user hiển thị
+
+note over Actor,DB
+Pre: Đang ở dashboard
+Post: Thống kê user hiển thị
+Main flow:
+1. System trả về: totalUsers, newUsers by day/week, user roles breakdown
+2. Hiển thị line chart + pie chart
+end note
+@enduml

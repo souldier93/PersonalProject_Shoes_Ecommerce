@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-58 View User Detail
+
+class "Admin Users UI" as UI <<boundary>>
+class "AuthController" as Controller <<controller>>
+class "UsersService" as Service <<service>>
+class "User" as User <<domain>>
+class "Role" as Role <<domain>>
+class "RolesGuard" as RolesGuard <<domain>>
+
+UI --> Controller : GET /auth/users/:id
+Controller --> Service : delegates
+Service --> User : uses
+Service --> Role : uses
+Service --> RolesGuard : uses
+
+note right of UI
+UC-58 - View User Detail
+Actors: Admin
+Pre: User tồn tại
+Post: Chi tiết user hiển thị
+end note
+@enduml

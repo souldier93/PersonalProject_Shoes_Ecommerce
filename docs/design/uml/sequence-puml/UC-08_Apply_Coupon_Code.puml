@@ -1,0 +1,38 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-08 - Apply Coupon Code
+
+actor "Guest" as Actor
+boundary "Cart UI" as FE
+control "CouponsController" as API
+control "CouponsService" as Service
+database "MongoDB: coupons" as DB
+
+Actor -> FE: Start UC-08
+FE -> API: GET /coupons/validate?code=&amount=
+API -> Service: Execute Apply Coupon Code
+Service -> DB: Read/write coupons
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Discount được áp dụng (nếu coupon hợp lệ)
+
+alt Alternative / exception flow
+  note over FE,Service: Coupon không tồn tại -> Invalid code
+  note over FE,Service: Coupon hết hạn -> Expired
+  note over FE,Service: Amount < minOrderAmount -> Min order not met
+end
+
+note over Actor,DB
+Pre: Đang ở trang cart hoặc checkout
+Post: Discount được áp dụng (nếu coupon hợp lệ)
+Main flow:
+1. User nhập coupon code vào ô Promo Code
+2. User bấm Apply
+3. System gọi API GET /coupons/validate?code=X&amount=Y
+4. System trả về { discountPercent, discountAmount, maxDiscount,\nfinalDiscount }
+5. UI hiển thị số tiền giảm giá, tổng mới
+end note
+@enduml

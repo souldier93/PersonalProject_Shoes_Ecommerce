@@ -1,0 +1,24 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-21 Create Return Request
+
+class "My Orders / Product Review UI" as UI <<boundary>>
+class "ReturnsController" as Controller <<controller>>
+class "ReturnsService" as Service <<service>>
+class "ReturnRequest" as ReturnRequest <<domain>>
+class "Bill" as Bill <<domain>>
+
+UI --> Controller : POST /returns
+Controller --> Service : delegates
+Service --> ReturnRequest : uses
+Service --> Bill : uses
+
+note right of UI
+UC-21 - Create Return Request
+Actors: User
+Pre: Đã đăng nhập, có đơn hàng PAID
+Post: Return request PENDING
+end note
+@enduml

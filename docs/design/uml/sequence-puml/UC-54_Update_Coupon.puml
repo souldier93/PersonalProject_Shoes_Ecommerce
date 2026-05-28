@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-54 - Update Coupon
+
+actor "Admin" as Actor
+boundary "Admin Settings UI" as FE
+control "CouponsController" as API
+control "CouponsService" as Service
+database "MongoDB: coupons" as DB
+
+Actor -> FE: Start UC-54
+FE -> API: PATCH /coupons/:id
+API -> Service: Execute Update Coupon
+Service -> DB: Read/write coupons
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Coupon được cập nhật
+
+note over Actor,DB
+Pre: Coupon tồn tại
+Post: Coupon được cập nhật
+Main flow:
+1. Admin chọn coupon từ danh sách
+2. Admin chỉnh sửa thông tin
+3. System gọi API PUT /coupons/:id
+4. System validate và cập nhật
+end note
+@enduml

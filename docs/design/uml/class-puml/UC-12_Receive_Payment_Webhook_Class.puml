@@ -1,0 +1,31 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-12 Receive Payment Webhook
+
+class "Checkout / Payment UI" as UI <<boundary>>
+class "PaymentController" as Controller <<controller>>
+class "PaymentService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "Coupon" as Coupon <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : POST /payments/webhook or POST /payments/stripe/webhook
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> ShoeDetail : uses
+Service --> Coupon : uses
+Service --> OrderEmailService : uses
+Service --> "PayOS Gateway" : integrates
+Service --> "Stripe Gateway" : integrates
+Service --> "Gmail SMTP" : email notification
+
+note right of UI
+UC-12 - Receive Payment Webhook
+Actors: PayOS Gateway, Stripe Gateway
+Pre: Payment đã được khởi tạo bởi PayOS/Stripe
+Post: Order status được cập nhật
+end note
+@enduml

@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-30 - Browse R2 Media
+
+actor "Admin" as Actor
+boundary "Admin Products UI" as FE
+control "R2Controller" as API
+control "R2Service" as Service
+database "Cloudflare R2" as DB
+
+Actor -> FE: Start UC-30
+FE -> API: GET /r2/folders + GET /r2/media
+API -> Service: Execute Browse R2 Media
+Service -> DB: Read/write Cloudflare R2
+DB --> Service: Domain data
+participant "Cloudflare R2" as R2
+Service -> R2: List or store media objects
+R2 --> Service: Public media URLs
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Hiển thị danh sách ảnh từ R2
+
+note over Actor,DB
+Pre: Đang tạo/sửa sản phẩm
+Post: Hiển thị danh sách ảnh từ R2
+Main flow:
+1. Admin mở media browser trong form sản phẩm
+2. System gọi API GET /r2/folders, GET /r2/subfolders and GET /r2/media
+3. System hiển thị danh sách ảnh đã upload
+4. Admin chọn ảnh có sẵn thay vì upload mới
+5. System thêm URL vào sản phẩm
+end note
+@enduml

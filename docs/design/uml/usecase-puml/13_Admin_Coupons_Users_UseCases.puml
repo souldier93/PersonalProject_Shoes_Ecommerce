@@ -1,0 +1,33 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Admin" as Admin
+actor "Manager" as Manager
+Admin --|> Manager
+
+rectangle "Admin - Coupons & Users" {
+  usecase "UC-53\nCreate Coupon" as UC_53
+  usecase "UC-54\nUpdate Coupon" as UC_54
+  usecase "UC-55\nDelete Coupon" as UC_55
+  usecase "UC-56\nView Coupons List" as UC_56
+  usecase "UC-57\nView Users List" as UC_57
+  usecase "UC-58\nView User Detail" as UC_58
+  usecase "UC-59\nChange User Role" as UC_59
+  usecase "UC-60\nDisable User" as UC_60
+}
+Admin --> UC_53
+Manager --> UC_53
+Admin --> UC_54
+Manager --> UC_54
+Admin --> UC_55
+Manager --> UC_55
+Admin --> UC_56
+Manager --> UC_56
+Admin --> UC_57
+Admin --> UC_58
+Admin --> UC_59
+Admin --> UC_60
+@enduml

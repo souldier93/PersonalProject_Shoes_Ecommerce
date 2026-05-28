@@ -35,3 +35,5 @@ export class Shoe {
 }
 
 export const ShoeSchema = SchemaFactory.createForClass(Shoe);
+
+ShoeSchema.index({ category: 1, productType: 1 });

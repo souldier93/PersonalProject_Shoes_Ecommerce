@@ -1,0 +1,311 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Admin" as Admin
+actor "Guest" as Guest
+actor "Manager" as Manager
+actor "PayOS Gateway" as PayOS_Gateway
+actor "Stripe Gateway" as Stripe_Gateway
+actor "System" as SystemActor
+actor "User" as User
+User --|> Guest
+Manager --|> User
+Admin --|> Manager
+
+rectangle "Shoes Ecommerce System - All 76 Use Cases" {
+  package "Browsing & Discovery" {
+    usecase "UC-01\nBrowse Products" as UC_01
+    usecase "UC-02\nSearch/Filter Products" as UC_02
+    usecase "UC-03\nView Product Detail" as UC_03
+    usecase "UC-04\nCheck Stock Real-time" as UC_04
+    usecase "UC-05\nView Reviews" as UC_05
+  }
+  package "Shopping Cart" {
+    usecase "UC-06\nAdd Product to Cart" as UC_06
+    usecase "UC-07\nManage Shopping Cart" as UC_07
+    usecase "UC-08\nApply Coupon Code" as UC_08
+  }
+  package "Checkout & Payment" {
+    usecase "UC-09\nGuest Checkout" as UC_09
+    usecase "UC-10\nPayOS Payment Processing" as UC_10
+    usecase "UC-11\nStripe Payment Processing" as UC_11
+    usecase "UC-12\nReceive Payment Webhook" as UC_12
+    usecase "UC-18\nUser (Logged-in) Checkout" as UC_18
+  }
+  package "Order Tracking" {
+    usecase "UC-13\nTrack Order by Email + Order Code" as UC_13
+    usecase "UC-19\nView Order History" as UC_19
+    usecase "UC-76\nCancel Paid Order and Request Refund" as UC_76
+  }
+  package "Account Management" {
+    usecase "UC-14\nRegister New Account" as UC_14
+    usecase "UC-15\nUser Login" as UC_15
+    usecase "UC-16\nManage User Profile" as UC_16
+    usecase "UC-17\nManage Addresses" as UC_17
+  }
+  package "Reviews & Returns" {
+    usecase "UC-20\nWrite Product Review" as UC_20
+    usecase "UC-21\nCreate Return Request" as UC_21
+    usecase "UC-22\nTrack Return Status" as UC_22
+  }
+  package "Wishlist" {
+    usecase "UC-23\nManage Wishlist" as UC_23
+  }
+  package "Live Chat" {
+    usecase "UC-24\nStart Chat with Support" as UC_24
+    usecase "UC-68\nOpen Chat Widget (Guest)" as UC_68
+    usecase "UC-69\nSend Chat Message" as UC_69
+    usecase "UC-70\nReceive Chat Reply" as UC_70
+  }
+  package "Admin - Product Management" {
+    usecase "UC-25\nCreate New Product" as UC_25
+    usecase "UC-26\nUpdate Product" as UC_26
+    usecase "UC-27\nSoft Delete Product" as UC_27
+    usecase "UC-28\nManage Colors & Sizes" as UC_28
+    usecase "UC-29\nUpload Product Images" as UC_29
+    usecase "UC-30\nBrowse R2 Media" as UC_30
+    usecase "UC-31\nSet Discount Price" as UC_31
+  }
+  package "Admin - Order & Inventory" {
+    usecase "UC-32\nView All Orders" as UC_32
+    usecase "UC-33\nFilter/Search Orders" as UC_33
+    usecase "UC-34\nView Order Detail" as UC_34
+    usecase "UC-35\nUpdate Fulfillment Status" as UC_35
+    usecase "UC-36\nAdd Carrier + Tracking" as UC_36
+    usecase "UC-37\nAdd Order Note" as UC_37
+    usecase "UC-38\nSend Order Status Email" as UC_38
+    usecase "UC-39\nCancel Order" as UC_39
+  }
+  package "Admin - Inventory" {
+    usecase "UC-40\nView Inventory Overview" as UC_40
+    usecase "UC-41\nView Low Stock Alert" as UC_41
+    usecase "UC-42\nView Stock by Product" as UC_42
+    usecase "UC-43\nAdjust Stock (IN/OUT/ADJUST)" as UC_43
+    usecase "UC-44\nView Stock Movements" as UC_44
+    usecase "UC-45\nExport Inventory Report" as UC_45
+  }
+  package "Admin - Returns" {
+    usecase "UC-46\nView Return Requests" as UC_46
+    usecase "UC-47\nView Return Request Detail" as UC_47
+    usecase "UC-48\nApprove Return Request" as UC_48
+    usecase "UC-49\nReject Return Request" as UC_49
+    usecase "UC-50\nProcess Return Request" as UC_50
+    usecase "UC-51\nComplete Return Request" as UC_51
+    usecase "UC-52\nNotify User Return Status" as UC_52
+  }
+  package "Admin - Coupons & Users" {
+    usecase "UC-53\nCreate Coupon" as UC_53
+    usecase "UC-54\nUpdate Coupon" as UC_54
+    usecase "UC-55\nDelete Coupon" as UC_55
+    usecase "UC-56\nView Coupons List" as UC_56
+    usecase "UC-57\nView Users List" as UC_57
+    usecase "UC-58\nView User Detail" as UC_58
+    usecase "UC-59\nChange User Role" as UC_59
+    usecase "UC-60\nDisable User" as UC_60
+  }
+  package "Admin - Analytics" {
+    usecase "UC-61\nView Dashboard Overview" as UC_61
+    usecase "UC-62\nView Revenue Stats" as UC_62
+    usecase "UC-63\nView Order Stats" as UC_63
+    usecase "UC-64\nView Product Stats" as UC_64
+    usecase "UC-65\nView User Stats" as UC_65
+    usecase "UC-66\nFilter by Date Range" as UC_66
+    usecase "UC-67\nExport Analytics Report" as UC_67
+  }
+  package "Admin - Chat" {
+    usecase "UC-71\nView Open Conversations" as UC_71
+    usecase "UC-72\nOpen Conversation (Admin)" as UC_72
+    usecase "UC-73\nReply to Customer Chat" as UC_73
+    usecase "UC-74\nMark Conversation Read" as UC_74
+    usecase "UC-75\nClose Conversation" as UC_75
+  }
+}
+Guest --> UC_01
+User --> UC_01
+Manager --> UC_01
+Admin --> UC_01
+Guest --> UC_02
+User --> UC_02
+Manager --> UC_02
+Admin --> UC_02
+Guest --> UC_03
+User --> UC_03
+Manager --> UC_03
+Admin --> UC_03
+Guest --> UC_04
+User --> UC_04
+Manager --> UC_04
+Admin --> UC_04
+Guest --> UC_05
+User --> UC_05
+Manager --> UC_05
+Admin --> UC_05
+Guest --> UC_06
+User --> UC_06
+Guest --> UC_07
+User --> UC_07
+Guest --> UC_08
+User --> UC_08
+Guest --> UC_09
+Guest --> UC_10
+User --> UC_10
+UC_10 --> PayOS_Gateway
+Guest --> UC_11
+User --> UC_11
+UC_11 --> Stripe_Gateway
+UC_12 --> PayOS_Gateway
+UC_12 --> Stripe_Gateway
+Guest --> UC_13
+Guest --> UC_14
+Guest --> UC_15
+User --> UC_16
+User --> UC_17
+User --> UC_18
+User --> UC_19
+User --> UC_20
+User --> UC_21
+User --> UC_22
+User --> UC_23
+User --> UC_24
+Admin --> UC_25
+Admin --> UC_26
+Admin --> UC_27
+Admin --> UC_28
+Admin --> UC_29
+Admin --> UC_30
+Admin --> UC_31
+Admin --> UC_32
+Manager --> UC_32
+Admin --> UC_33
+Manager --> UC_33
+Admin --> UC_34
+Manager --> UC_34
+Admin --> UC_35
+Manager --> UC_35
+Admin --> UC_36
+Manager --> UC_36
+Admin --> UC_37
+Manager --> UC_37
+UC_38 --> SystemActor
+Admin --> UC_39
+Manager --> UC_39
+Admin --> UC_40
+Manager --> UC_40
+Admin --> UC_41
+Manager --> UC_41
+Admin --> UC_42
+Manager --> UC_42
+Admin --> UC_43
+Manager --> UC_43
+Admin --> UC_44
+Manager --> UC_44
+Admin --> UC_45
+Manager --> UC_45
+Admin --> UC_46
+Manager --> UC_46
+Admin --> UC_47
+Manager --> UC_47
+Admin --> UC_48
+Manager --> UC_48
+Admin --> UC_49
+Manager --> UC_49
+Admin --> UC_50
+Manager --> UC_50
+Admin --> UC_51
+Manager --> UC_51
+UC_52 --> SystemActor
+Admin --> UC_53
+Manager --> UC_53
+Admin --> UC_54
+Manager --> UC_54
+Admin --> UC_55
+Manager --> UC_55
+Admin --> UC_56
+Manager --> UC_56
+Admin --> UC_57
+Admin --> UC_58
+Admin --> UC_59
+Admin --> UC_60
+Admin --> UC_61
+Manager --> UC_61
+Admin --> UC_62
+Manager --> UC_62
+Admin --> UC_63
+Manager --> UC_63
+Admin --> UC_64
+Manager --> UC_64
+Admin --> UC_65
+Admin --> UC_66
+Manager --> UC_66
+Admin --> UC_67
+Guest --> UC_68
+Guest --> UC_69
+User --> UC_69
+Guest --> UC_70
+User --> UC_70
+Admin --> UC_71
+Manager --> UC_71
+Admin --> UC_72
+Manager --> UC_72
+Admin --> UC_73
+Manager --> UC_73
+Admin --> UC_74
+Manager --> UC_74
+Admin --> UC_75
+Manager --> UC_75
+Guest --> UC_76
+User --> UC_76
+UC_76 --> Stripe_Gateway
+UC_76 --> SystemActor
+UC_03 ..> UC_04 : <<include>>
+UC_03 ..> UC_05 : <<include>>
+UC_07 ..> UC_06 : <<include>>
+UC_09 ..> UC_07 : <<include>>
+UC_09 ..> UC_08 : <<include>>
+UC_18 ..> UC_07 : <<include>>
+UC_18 ..> UC_17 : <<include>>
+UC_09 ..> UC_10 : <<extend>>
+UC_09 ..> UC_11 : <<extend>>
+UC_18 ..> UC_10 : <<extend>>
+UC_18 ..> UC_11 : <<extend>>
+UC_10 ..> UC_12 : <<include>>
+UC_11 ..> UC_12 : <<include>>
+UC_12 ..> UC_38 : <<include>>
+UC_19 ..> UC_13 : <<extend>>
+UC_14 ..> UC_15 : <<include>>
+UC_21 ..> UC_19 : <<include>>
+UC_22 ..> UC_21 : <<include>>
+UC_25 ..> UC_28 : <<include>>
+UC_25 ..> UC_29 : <<include>>
+UC_26 ..> UC_28 : <<include>>
+UC_26 ..> UC_29 : <<include>>
+UC_29 ..> UC_30 : <<include>>
+UC_25 ..> UC_31 : <<include>>
+UC_32 ..> UC_33 : <<extend>>
+UC_34 ..> UC_35 : <<include>>
+UC_35 ..> UC_36 : <<extend>>
+UC_35 ..> UC_37 : <<extend>>
+UC_35 ..> UC_38 : <<include>>
+UC_39 ..> UC_38 : <<include>>
+UC_40 ..> UC_41 : <<include>>
+UC_40 ..> UC_42 : <<extend>>
+UC_42 ..> UC_43 : <<extend>>
+UC_43 ..> UC_44 : <<include>>
+UC_40 ..> UC_45 : <<extend>>
+UC_47 ..> UC_48 : <<include>>
+UC_47 ..> UC_49 : <<include>>
+UC_48 ..> UC_50 : <<extend>>
+UC_50 ..> UC_51 : <<extend>>
+UC_48 ..> UC_52 : <<include>>
+UC_49 ..> UC_52 : <<include>>
+UC_51 ..> UC_52 : <<include>>
+UC_72 ..> UC_73 : <<include>>
+UC_72 ..> UC_74 : <<include>>
+UC_72 ..> UC_75 : <<extend>>
+UC_19 ..> UC_76 : <<extend>>
+UC_76 ..> UC_38 : <<include>>
+UC_76 ..> UC_11 : <<extend>>
+@enduml

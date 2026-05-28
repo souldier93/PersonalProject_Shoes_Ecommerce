@@ -1,0 +1,32 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-51 - Complete Return Request
+
+actor "Admin" as Actor
+boundary "Admin Purchases / Returns UI" as FE
+control "ReturnsController" as API
+control "ReturnsService" as Service
+database "MongoDB: returnRequests, bills" as DB
+
+Actor -> FE: Start UC-51
+FE -> API: PATCH /returns/:id/status
+API -> Service: Execute Complete Return Request
+Service -> DB: Read/write returnRequests, bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Return status = COMPLETED
+
+note over Actor,DB
+Pre: Return status = PROCESSING
+Post: Return status = COMPLETED
+Main flow:
+1. Sau khi xử lý xong (hoàn tiền/đổi hàng)
+2. Admin bấm Complete
+3. System gọi API PATCH /returns/:id/status { status: COMPLETED }
+4. System gửi email cho user
+5. Return được đóng
+end note
+@enduml

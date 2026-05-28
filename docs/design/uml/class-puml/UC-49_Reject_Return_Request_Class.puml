@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-49 Reject Return Request
+
+class "Admin Purchases / Returns UI" as UI <<boundary>>
+class "ReturnsController" as Controller <<controller>>
+class "ReturnsService" as Service <<service>>
+class "ReturnRequest" as ReturnRequest <<domain>>
+class "Bill" as Bill <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : PATCH /returns/:id/status
+Controller --> Service : delegates
+Service --> ReturnRequest : uses
+Service --> Bill : uses
+Service --> OrderEmailService : uses
+
+note right of UI
+UC-49 - Reject Return Request
+Actors: Admin, Manager
+Pre: Return request đang ở status PENDING
+Post: Return status = REJECTED
+end note
+@enduml

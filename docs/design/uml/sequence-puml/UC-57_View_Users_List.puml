@@ -1,0 +1,30 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-57 - View Users List
+
+actor "Admin" as Actor
+boundary "Admin Users UI" as FE
+control "AuthController" as API
+control "UsersService" as Service
+database "MongoDB: users, role" as DB
+
+Actor -> FE: Start UC-57
+FE -> API: GET /auth/users
+API -> Service: Execute View Users List
+Service -> DB: Read/write users, role
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Danh sách users hiển thị
+
+note over Actor,DB
+Pre: Đã đăng nhập với role admin
+Post: Danh sách users hiển thị
+Main flow:
+1. Admin vào /admin/users
+2. System gọi API GET /auth/users
+3. System trả về: username, email, fullName, role, createdAt, isActive
+end note
+@enduml

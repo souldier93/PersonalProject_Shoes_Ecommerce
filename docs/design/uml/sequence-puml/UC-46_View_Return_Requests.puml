@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-46 - View Return Requests
+
+actor "Admin" as Actor
+boundary "Admin Purchases / Returns UI" as FE
+control "ReturnsController" as API
+control "ReturnsService" as Service
+database "MongoDB: returnRequests, bills" as DB
+
+Actor -> FE: Start UC-46
+FE -> API: GET /returns
+API -> Service: Execute View Return Requests
+Service -> DB: Read/write returnRequests, bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Danh sách return requests hiển thị
+
+note over Actor,DB
+Pre: Đã đăng nhập với role admin/manager
+Post: Danh sách return requests hiển thị
+Main flow:
+1. Admin vào /admin/returns
+2. System gọi API GET /returns
+3. System trả về: type, orderCode, productId, colorName, size, reason,\nstatus, createdAt
+4. Admin có thể lọc theo status (PENDING, APPROVED, REJECTED, PROCESSING,\nCOMPLETED)
+end note
+@enduml

@@ -1,0 +1,33 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-69 - Send Chat Message
+
+actor "Guest" as Actor
+boundary "Chat Widget / Admin Chat UI" as FE
+control "ChatController" as API
+control "ChatService" as Service
+database "MongoDB: chatConversations" as DB
+
+Actor -> FE: Start UC-69
+FE -> API: POST /chat/conversations/:id/messages
+API -> Service: Execute Send Chat Message
+Service -> DB: Read/write chatConversations
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Tin nhắn được gửi
+
+note over Actor,DB
+Pre: Chat conversation đang mở
+Post: Tin nhắn được gửi
+Main flow:
+1. User/guest nhập tin nhắn vào chat widget
+2. User bấm Send
+3. System gọi API POST /chat/conversations/:id/messages
+4. System push message vào messages[]
+5. System tăng unreadForManager
+6. Tin nhắn hiển thị trong chat widget
+end note
+@enduml

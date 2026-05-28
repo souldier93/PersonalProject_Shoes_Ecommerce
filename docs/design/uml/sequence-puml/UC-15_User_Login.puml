@@ -1,0 +1,39 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-15 - User Login
+
+actor "Guest" as Actor
+boundary "Auth / Profile UI" as FE
+control "AuthController" as API
+control "UsersService" as Service
+database "MongoDB: users, role" as DB
+
+Actor -> FE: Start UC-15
+FE -> API: POST /auth/login
+API -> Service: Execute User Login
+Service -> DB: Read/write users, role
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Đăng nhập thành công, nhận JWT token
+
+alt Alternative / exception flow
+  note over FE,Service: User không tồn tại -> Invalid credentials
+  note over FE,Service: Password sai -> Invalid credentials
+end
+
+note over Actor,DB
+Pre: Đã có tài khoản
+Post: Đăng nhập thành công, nhận JWT token
+Main flow:
+1. User vào trang /login
+2. User nhập email/username + password
+3. System tìm user trong DB
+4. System verify password với bcrypt
+5. System tạo accessToken (15min) + refreshToken (7d)
+6. System trả về { accessToken, refreshToken, user }
+7. Frontend lưu token vào localStorage
+end note
+@enduml

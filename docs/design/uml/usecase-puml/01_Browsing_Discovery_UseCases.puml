@@ -1,0 +1,44 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Admin" as Admin
+actor "Guest" as Guest
+actor "Manager" as Manager
+actor "User" as User
+User --|> Guest
+Manager --|> User
+Admin --|> Manager
+
+rectangle "Browsing & Discovery" {
+  usecase "UC-01\nBrowse Products" as UC_01
+  usecase "UC-02\nSearch/Filter Products" as UC_02
+  usecase "UC-03\nView Product Detail" as UC_03
+  usecase "UC-04\nCheck Stock Real-time" as UC_04
+  usecase "UC-05\nView Reviews" as UC_05
+}
+Guest --> UC_01
+User --> UC_01
+Manager --> UC_01
+Admin --> UC_01
+Guest --> UC_02
+User --> UC_02
+Manager --> UC_02
+Admin --> UC_02
+Guest --> UC_03
+User --> UC_03
+Manager --> UC_03
+Admin --> UC_03
+Guest --> UC_04
+User --> UC_04
+Manager --> UC_04
+Admin --> UC_04
+Guest --> UC_05
+User --> UC_05
+Manager --> UC_05
+Admin --> UC_05
+UC_03 ..> UC_04 : <<include>>
+UC_03 ..> UC_05 : <<include>>
+@enduml

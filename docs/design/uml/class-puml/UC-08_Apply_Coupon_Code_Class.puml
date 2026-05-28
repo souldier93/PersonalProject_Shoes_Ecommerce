@@ -1,0 +1,22 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-08 Apply Coupon Code
+
+class "Cart UI" as UI <<boundary>>
+class "CouponsController" as Controller <<controller>>
+class "CouponsService" as Service <<service>>
+class "Coupon" as Coupon <<domain>>
+
+UI --> Controller : GET /coupons/validate?code=&amount=
+Controller --> Service : delegates
+Service --> Coupon : uses
+
+note right of UI
+UC-08 - Apply Coupon Code
+Actors: Guest, User
+Pre: Đang ở trang cart hoặc checkout
+Post: Discount được áp dụng (nếu coupon hợp lệ)
+end note
+@enduml

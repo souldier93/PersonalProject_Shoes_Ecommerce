@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-07 Manage Shopping Cart
+
+class "Cart UI" as UI <<boundary>>
+class "Local cart utilities" as Controller <<controller>>
+class "bagStorage / bagHelper" as Service <<service>>
+class "CartItem" as CartItem <<domain>>
+class "BagStorage" as BagStorage <<domain>>
+class "BagHelper" as BagHelper <<domain>>
+
+UI --> Controller : Local cart storage
+Controller --> Service : delegates
+Service --> CartItem : uses
+Service --> BagStorage : uses
+Service --> BagHelper : uses
+
+note right of UI
+UC-07 - Manage Shopping Cart
+Actors: Guest, User
+Pre: Cart có ít nhất 1 item
+Post: Cart được cập nhật
+end note
+@enduml

@@ -1,0 +1,46 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-12 - Receive Payment Webhook
+
+actor "PayOS Gateway" as Actor
+boundary "Checkout / Payment UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills, shoesDetail, coupons" as DB
+participant "PayOS Gateway" as PayOS_Gateway
+participant "Stripe Gateway" as Stripe_Gateway
+participant "Gmail SMTP" as Gmail
+
+PayOS_Gateway -> API: Webhook event
+API -> Service: Verify and process webhook
+Service -> DB: Read/write bills, shoesDetail, coupons
+DB --> Service: Domain data
+Service -> PayOS_Gateway: Create/verify PayOS transaction
+PayOS_Gateway --> Service: PayOS result
+Service -> Stripe_Gateway: Create/confirm/refund payment
+Stripe_Gateway --> Service: Stripe result
+Service -> Gmail: Send notification email when configured
+Gmail --> Service: Delivery accepted or warning logged
+Service --> API: Webhook accepted
+API --> PayOS_Gateway: HTTP 200
+
+alt Alternative / exception flow
+  note over FE,Service: Signature không hợp lệ -> 401 Unauthorized
+  note over FE,Service: Bill đã PAID -> bỏ qua (idempotent)
+end
+
+note over Actor,DB
+Pre: Payment đã được khởi tạo bởi PayOS/Stripe
+Post: Order status được cập nhật
+Main flow:
+1. PayOS/Stripe gửi HTTP POST đến webhook endpoint
+2. System verify signature (HMAC cho PayOS, Stripe SDK cho Stripe)
+3. System kiểm tra idempotency (tránh xử lý trùng)
+4. System cập nhật bill.paymentStatus = PAID
+5. System gọi processStockAfterPayment để giảm stock
+6. System gửi email confirmation
+7. System trả về HTTP 200
+end note
+@enduml

@@ -1,0 +1,22 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-53 Create Coupon
+
+class "Admin Settings UI" as UI <<boundary>>
+class "CouponsController" as Controller <<controller>>
+class "CouponsService" as Service <<service>>
+class "Coupon" as Coupon <<domain>>
+
+UI --> Controller : POST /coupons
+Controller --> Service : delegates
+Service --> Coupon : uses
+
+note right of UI
+UC-53 - Create Coupon
+Actors: Admin, Manager
+Pre: Đã đăng nhập với role admin/manager
+Post: Coupon khả dụng cho checkout
+end note
+@enduml

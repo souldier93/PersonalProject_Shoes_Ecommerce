@@ -1,0 +1,28 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-09 Guest Checkout
+
+class "Checkout / Payment UI" as UI <<boundary>>
+class "PaymentController" as Controller <<controller>>
+class "PaymentService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "Coupon" as Coupon <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : POST /payments or POST /payments/stripe/create-intent
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> ShoeDetail : uses
+Service --> Coupon : uses
+Service --> OrderEmailService : uses
+
+note right of UI
+UC-09 - Guest Checkout
+Actors: Guest
+Pre: Cart có ít nhất 1 item
+Post: Redirect đến trang thanh toán
+end note
+@enduml

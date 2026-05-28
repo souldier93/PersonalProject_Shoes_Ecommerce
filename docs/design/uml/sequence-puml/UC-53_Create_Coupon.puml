@@ -1,0 +1,36 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-53 - Create Coupon
+
+actor "Admin" as Actor
+boundary "Admin Settings UI" as FE
+control "CouponsController" as API
+control "CouponsService" as Service
+database "MongoDB: coupons" as DB
+
+Actor -> FE: Start UC-53
+FE -> API: POST /coupons
+API -> Service: Execute Create Coupon
+Service -> DB: Read/write coupons
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Coupon khả dụng cho checkout
+
+alt Alternative / exception flow
+  note over FE,Service: Code đã tồn tại -> 409
+end
+
+note over Actor,DB
+Pre: Đã đăng nhập với role admin/manager
+Post: Coupon khả dụng cho checkout
+Main flow:
+1. Admin vào /admin/coupons
+2. Admin bấm Create Coupon
+3. Admin nhập: code, description, discountType (PERCENT/FIXED),\ndiscountValue, minOrderAmount, maxDiscount, validFrom, validTo,\nusageLimit
+4. System gọi API POST /coupons
+5. System lưu coupon
+end note
+@enduml

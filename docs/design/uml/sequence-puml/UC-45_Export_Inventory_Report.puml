@@ -1,0 +1,30 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-45 - Export Inventory Report
+
+actor "Admin" as Actor
+boundary "Admin Inventory UI" as FE
+control "InventoryController" as API
+control "InventoryService" as Service
+database "MongoDB: shoesDetail, stockMovements" as DB
+
+Actor -> FE: Start UC-45
+FE -> API: Inventory export endpoint recommended
+API -> Service: Execute Export Inventory Report
+Service -> DB: Read/write shoesDetail, stockMovements
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: File báo cáo được tải xuống
+
+note over Actor,DB
+Pre: Đang xem inventory
+Post: File báo cáo được tải xuống
+Main flow:
+1. Admin bấm Export
+2. System generate CSV/Excel từ dữ liệu inventory
+3. System trả về file download
+end note
+@enduml

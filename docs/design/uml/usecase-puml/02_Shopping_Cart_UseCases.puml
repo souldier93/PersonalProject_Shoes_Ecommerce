@@ -1,0 +1,23 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Guest" as Guest
+actor "User" as User
+User --|> Guest
+
+rectangle "Shopping Cart" {
+  usecase "UC-06\nAdd Product to Cart" as UC_06
+  usecase "UC-07\nManage Shopping Cart" as UC_07
+  usecase "UC-08\nApply Coupon Code" as UC_08
+}
+Guest --> UC_06
+User --> UC_06
+Guest --> UC_07
+User --> UC_07
+Guest --> UC_08
+User --> UC_08
+UC_07 ..> UC_06 : <<include>>
+@enduml

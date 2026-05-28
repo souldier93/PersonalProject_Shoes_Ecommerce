@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-19 View Order History
+
+class "My Orders / Admin Purchases UI" as UI <<boundary>>
+class "PaymentController" as Controller <<controller>>
+class "PaymentService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "StatusHistory" as StatusHistory <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : GET /payments/user/:userId/orders
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> StatusHistory : uses
+Service --> OrderEmailService : uses
+
+note right of UI
+UC-19 - View Order History
+Actors: User
+Pre: Đã đăng nhập
+Post: Danh sách đơn hàng hiển thị
+end note
+@enduml

@@ -140,13 +140,20 @@
 
         <div v-else class="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-5 xl:gap-x-6" :class="productGridClass">
           <button
-            v-for="product in products"
+            v-for="(product, index) in products"
             :key="product.id"
             @click="goToDetail(product)"
-            class="group text-left"
+            class="product-card group text-left"
           >
             <div class="mb-4 flex aspect-square items-center justify-center overflow-hidden rounded-md bg-gray-100">
-              <img :src="product.image" :alt="product.name" loading="lazy" decoding="async" class="h-full w-full object-contain transition duration-300 group-hover:scale-105">
+              <img
+                :src="product.image"
+                :alt="product.name"
+                :loading="index < eagerImageCount ? 'eager' : 'lazy'"
+                :fetchpriority="index < eagerImageCount ? 'high' : 'auto'"
+                decoding="async"
+                class="h-full w-full object-contain transition duration-300 group-hover:scale-105"
+              >
             </div>
             <div class="space-y-1">
               <p v-if="productBadge(product)" class="text-sm font-semibold text-orange-600">{{ productBadge(product) }}</p>
@@ -178,6 +185,10 @@ import {
 } from '../../../utils/productMeta'
 import { API_BASE } from '../../../utils/apiBase'
 
+const PRODUCTS_CACHE_PREFIX = 'ptt-products'
+const PRODUCTS_CACHE_TTL_MS = 60 * 1000
+const DEFAULT_SORT = 'featured'
+
 export default {
   name: 'AllShoes',
   data() {
@@ -185,6 +196,8 @@ export default {
       loading: true,
       showFilters: true,
       products: [],
+      activeRequestId: 0,
+      eagerImageCount: 6,
       categoryOptions: CATEGORY_OPTIONS,
       productTypeOptions: PRODUCT_TYPE_OPTIONS,
       filters: {
@@ -195,7 +208,7 @@ export default {
         color: '',
         minPrice: '',
         maxPrice: '',
-        sort: 'featured',
+        sort: DEFAULT_SORT,
       },
       colorFilters: [
         { label: 'Black', value: 'Black', swatch: '#111111' },
@@ -322,41 +335,103 @@ export default {
         color: query.color || '',
         minPrice: query.minPrice || '',
         maxPrice: query.maxPrice || '',
-        sort: query.sort || 'featured',
+        sort: query.sort || DEFAULT_SORT,
       }
 
       Object.assign(this.filters, routeFilters)
     },
 
-    async fetchProducts() {
-      this.loading = true
-      try {
-        const params = {}
-        Object.entries(this.filters).forEach(([key, value]) => {
-          if (value !== '' && value !== null && value !== undefined) {
-            params[key] = value
-          }
-        })
+    buildFetchParams() {
+      const params = {}
+      Object.entries(this.filters).forEach(([key, value]) => {
+        if (value === '' || value === null || value === undefined) return
+        if (key === 'sort' && value === DEFAULT_SORT) return
+        params[key] = value
+      })
+      return params
+    },
 
-        const res = await axios.get(`${API_BASE}/shoes`, { params });
-        this.products = res.data.map(item => ({
-          id: item.productId,
-          name: item.name,
-          category: item.category,
-          productType: item.productType || '',
-          collection: item.collection || '',
-          color: item.color,
-          colors: item.colors || [],
-          stock: item.stock || 0,
-          rating: item.rating || 0,
-          reviewCount: item.reviewCount || 0,
-          price: item.price,
-          image: item.thumbnail || "https://via.placeholder.com/400"
-        }));
+    productCacheKey(params) {
+      const query = new URLSearchParams()
+      Object.keys(params)
+        .sort()
+        .forEach((key) => query.set(key, params[key]))
+      return `${PRODUCTS_CACHE_PREFIX}:${query.toString() || 'all'}`
+    },
+
+    readCachedProducts(cacheKey) {
+      try {
+        const raw = localStorage.getItem(cacheKey)
+        if (!raw) return null
+        const cached = JSON.parse(raw)
+        if (Date.now() - cached.savedAt > PRODUCTS_CACHE_TTL_MS) {
+          localStorage.removeItem(cacheKey)
+          return null
+        }
+        return Array.isArray(cached.products) ? cached.products : null
+      } catch {
+        localStorage.removeItem(cacheKey)
+        return null
+      }
+    },
+
+    writeCachedProducts(cacheKey, products) {
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({
+          savedAt: Date.now(),
+          products,
+        }))
+      } catch {
+        // Storage can be unavailable in private windows; the network result is still used.
+      }
+    },
+
+    normalizeProduct(item) {
+      return {
+        id: item.productId,
+        name: item.name,
+        category: item.category,
+        productType: item.productType || '',
+        collection: item.collection || '',
+        color: item.color,
+        colors: item.colors || [],
+        stock: item.stock || 0,
+        rating: item.rating || 0,
+        reviewCount: item.reviewCount || 0,
+        price: item.price,
+        image: item.thumbnail || 'https://via.placeholder.com/400',
+      }
+    },
+
+    async fetchProducts() {
+      const params = this.buildFetchParams()
+      const cacheKey = this.productCacheKey(params)
+      const cachedProducts = this.readCachedProducts(cacheKey)
+      const requestId = this.activeRequestId + 1
+      this.activeRequestId = requestId
+
+      if (cachedProducts) {
+        this.products = cachedProducts
+        this.loading = false
+      } else {
+        this.loading = true
+      }
+
+      try {
+        const res = await axios.get(`${API_BASE}/shoes`, { params })
+        if (requestId !== this.activeRequestId) return
+
+        const products = res.data
+          .map(this.normalizeProduct)
+          .filter((product) => product.stock > 0)
+        this.products = products
+        this.writeCachedProducts(cacheKey, products)
       } catch (error) {
         console.error("Failed to load products:", error);
       } finally {
-        this.loading = false
+        if (requestId === this.activeRequestId) {
+          this.loading = false
+        }
       }
     },
 
@@ -369,7 +444,7 @@ export default {
         color: '',
         minPrice: '',
         maxPrice: '',
-        sort: 'featured',
+        sort: DEFAULT_SORT,
       }
       this.fetchProducts()
     },
@@ -400,5 +475,10 @@ export default {
 .filter-input:focus {
   border-color: #111827;
   box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.15);
+}
+
+.product-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 420px 560px;
 }
 </style>

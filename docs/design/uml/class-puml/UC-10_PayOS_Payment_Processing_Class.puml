@@ -1,0 +1,29 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-10 PayOS Payment Processing
+
+class "Checkout / Payment UI" as UI <<boundary>>
+class "PaymentController" as Controller <<controller>>
+class "PaymentService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "Coupon" as Coupon <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : POST /payments
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> ShoeDetail : uses
+Service --> Coupon : uses
+Service --> OrderEmailService : uses
+Service --> "PayOS Gateway" : integrates
+
+note right of UI
+UC-10 - PayOS Payment Processing
+Actors: Guest, User, PayOS Gateway
+Pre: Bill đã tạo, payment link pending
+Post: Payment hoàn tất hoặc hủy
+end note
+@enduml

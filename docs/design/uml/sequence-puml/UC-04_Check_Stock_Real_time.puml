@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-04 - Check Stock Real-time
+
+actor "Guest" as Actor
+boundary "Product UI" as FE
+control "ShoesController / ReviewsController" as API
+control "ShoesService / ReviewsService" as Service
+database "MongoDB: shoes, shoesDetail, reviews" as DB
+
+Actor -> FE: Start UC-04
+FE -> API: GET /shoes/:productId/stock/:colorName/:size
+API -> Service: Execute Check Stock Real-time
+Service -> DB: Read/write shoes, shoesDetail, reviews
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Hiển thị số lượng tồn kho của size đã chọn
+
+alt Alternative / exception flow
+  note over FE,Service: Size hết hàng -> disable nút Add to Cart
+end
+
+note over Actor,DB
+Pre: Đang ở trang product detail
+Post: Hiển thị số lượng tồn kho của size đã chọn
+Main flow:
+1. User chọn color + size
+2. System gọi API GET /shoes/:productId/stock/:colorName/:size
+3. System trả về { stock: 5 }
+4. UI hiển thị \"Còn hàng\" (xanh) hoặc \"Hết hàng\" (đỏ)
+end note
+@enduml

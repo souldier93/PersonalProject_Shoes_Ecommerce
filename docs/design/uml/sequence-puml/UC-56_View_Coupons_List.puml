@@ -1,0 +1,30 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-56 - View Coupons List
+
+actor "Admin" as Actor
+boundary "Admin Settings UI" as FE
+control "CouponsController" as API
+control "CouponsService" as Service
+database "MongoDB: coupons" as DB
+
+Actor -> FE: Start UC-56
+FE -> API: GET /coupons
+API -> Service: Execute View Coupons List
+Service -> DB: Read/write coupons
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Danh sách coupons hiển thị
+
+note over Actor,DB
+Pre: Đã đăng nhập với role admin/manager
+Post: Danh sách coupons hiển thị
+Main flow:
+1. Admin vào /admin/coupons
+2. System gọi API GET /coupons
+3. System trả về: code, discount, validFrom, validTo, isActive, usageCount
+end note
+@enduml

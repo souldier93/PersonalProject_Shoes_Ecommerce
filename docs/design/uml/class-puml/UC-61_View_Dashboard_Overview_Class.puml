@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-61 View Dashboard Overview
+
+class "Admin Analytics UI" as UI <<boundary>>
+class "AnalyticsController" as Controller <<controller>>
+class "AnalyticsService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "AnalyticsSummary" as AnalyticsSummary <<domain>>
+
+UI --> Controller : GET /analytics/overview
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> ShoeDetail : uses
+Service --> AnalyticsSummary : uses
+
+note right of UI
+UC-61 - View Dashboard Overview
+Actors: Admin, Manager
+Pre: Đã đăng nhập với role admin/manager
+Post: Dashboard hiển thị metrics tổng quan
+end note
+@enduml

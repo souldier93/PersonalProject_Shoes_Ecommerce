@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-67 Export Analytics Report
+
+class "Admin Analytics UI" as UI <<boundary>>
+class "AnalyticsController" as Controller <<controller>>
+class "AnalyticsService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "AnalyticsSummary" as AnalyticsSummary <<domain>>
+
+UI --> Controller : Analytics export endpoint recommended
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> ShoeDetail : uses
+Service --> AnalyticsSummary : uses
+
+note right of UI
+UC-67 - Export Analytics Report
+Actors: Admin
+Pre: Đang ở dashboard
+Post: File báo cáo được tải xuống
+end note
+@enduml

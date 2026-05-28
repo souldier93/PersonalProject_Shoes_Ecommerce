@@ -1,0 +1,36 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-31 - Set Discount Price
+
+actor "Admin" as Actor
+boundary "Admin Products UI" as FE
+control "ShoesController" as API
+control "ShoesService" as Service
+database "MongoDB: shoes, shoesDetail, counters" as DB
+
+Actor -> FE: Start UC-31
+FE -> API: PUT /shoes/:styleCode
+API -> Service: Execute Set Discount Price
+Service -> DB: Read/write shoes, shoesDetail, counters
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Giá giảm được áp dụng
+
+alt Alternative / exception flow
+  note over FE,Service: discountPrice > base price -> lỗi
+end
+
+note over Actor,DB
+Pre: Sản phẩm tồn tại
+Post: Giá giảm được áp dụng
+Main flow:
+1. Admin chọn sản phẩm
+2. Admin nhập discountPrice (nhỏ hơn base price)
+3. Admin nhập ngày hết hạn discount (optional)
+4. System gọi API PATCH /shoes/product/:id
+5. Frontend hiển thị giá gốc gạch ngang + giá giảm
+end note
+@enduml

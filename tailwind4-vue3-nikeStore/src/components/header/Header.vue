@@ -258,10 +258,10 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
-      <div class="flex min-w-0 items-center gap-3">
+      <div class="flex min-w-0 flex-1 items-center gap-3">
         <button
           @click="toggleMobileMenu"
-          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 md:hidden"
+          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 lg:hidden"
           aria-label="Toggle navigation"
         >
           <svg v-if="!showMobileMenu" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -276,15 +276,15 @@ onBeforeUnmount(() => {
           <img src="/assets/img/ptt-style-logo.svg" alt="PTT Style" class="h-10 w-auto max-w-[132px] cursor-pointer transition hover:opacity-80" />
         </router-link>
 
-        <ul class="hidden items-center space-x-7 font-semibold text-gray-900 md:flex">
+        <ul class="hidden min-w-0 flex-1 items-center justify-center gap-4 font-semibold text-gray-900 lg:flex xl:gap-7">
           <li v-for="item in navItems" :key="item.label">
             <button type="button" @click="goToProducts(item.query)" class="whitespace-nowrap hover:text-gray-600">{{ item.label }}</button>
           </li>
         </ul>
       </div>
 
-      <div class="flex items-center gap-2 sm:gap-4 lg:gap-6">
-        <div class="hidden items-center rounded-full bg-gray-100 px-4 py-1.5 text-gray-500 sm:flex">
+      <div class="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-5">
+        <div class="hidden items-center rounded-full bg-gray-100 px-4 py-1.5 text-gray-500 xl:flex">
           <button type="button" @click="searchProducts" aria-label="Search products">
             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z" />
@@ -293,7 +293,7 @@ onBeforeUnmount(() => {
           <input
             v-model="searchTerm"
             @keyup.enter="searchProducts"
-            class="ml-2 w-24 bg-transparent text-sm font-medium text-gray-700 outline-none placeholder:text-gray-500 lg:w-40"
+            class="ml-2 w-32 bg-transparent text-sm font-medium text-gray-700 outline-none placeholder:text-gray-500 2xl:w-40"
             placeholder="Search"
             aria-label="Search products"
           />
@@ -398,7 +398,7 @@ onBeforeUnmount(() => {
     </div>
 
     <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
-      <div v-if="showMobileMenu" class="fixed left-0 right-0 top-[104px] z-40 border-b border-gray-200 bg-white px-4 py-4 shadow-lg md:hidden">
+      <div v-if="showMobileMenu" class="fixed left-0 right-0 top-[104px] z-40 border-b border-gray-200 bg-white px-4 py-4 shadow-lg md:top-[140px] lg:hidden">
         <div class="mb-3 flex items-center rounded-full bg-gray-100 px-4 py-2 text-gray-500">
           <button type="button" @click="searchProducts" aria-label="Search products">
             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

@@ -1,0 +1,36 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-28 - Manage Colors & Sizes
+
+actor "Admin" as Actor
+boundary "Admin Products UI" as FE
+control "ShoesController" as API
+control "ShoesService" as Service
+database "MongoDB: shoes, shoesDetail, counters" as DB
+
+Actor -> FE: Start UC-28
+FE -> API: POST /shoes/product or PUT /shoes/:styleCode
+API -> Service: Execute Manage Colors & Sizes
+Service -> DB: Read/write shoes, shoesDetail, counters
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Color/size variants được cập nhật
+
+alt Alternative / exception flow
+  note over FE,Service: Trùng colorName -> lỗi validation
+end
+
+note over Actor,DB
+Pre: Đang tạo/sửa sản phẩm
+Post: Color/size variants được cập nhật
+Main flow:
+1. Admin chọn color variant, nhập colorName, hex code
+2. Admin thêm sizes: size name + stock quantity cho mỗi size
+3. Admin có thể thêm/bớt colors và sizes
+4. System validate: không trùng colorName trong cùng product
+5. System lưu vào shoesDetail.colors[]
+end note
+@enduml

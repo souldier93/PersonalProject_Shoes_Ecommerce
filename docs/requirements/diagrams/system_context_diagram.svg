@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1580" height="650" viewBox="0 0 1580 650">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,8 L11,4 z" fill="#334155"/>
+    </marker>
+  </defs>
+  <style>
+    svg { background: #ffffff; font-family: Calibri, Arial, sans-serif; }
+    .page-title { font-size: 34px; font-weight: 700; fill: #0B2545; }
+    .page-subtitle { font-size: 18px; fill: #475467; }
+    .box { fill: #ffffff; stroke: #D0D7DE; stroke-width: 1.8; }
+    .box-alt { fill: #f8fbff; stroke: #2E74B5; stroke-width: 2; }
+    .box-good { fill: #f2fbf3; stroke: #2E7D32; stroke-width: 2; }
+    .box-risk { fill: #fff7f7; stroke: #9B1C1C; stroke-width: 2; }
+    .box-warn { fill: #fff9e7; stroke: #7A5A00; stroke-width: 2; }
+    .lane { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.4; }
+    .box-title { font-size: 16px; font-weight: 700; fill: #0B2545; }
+    .box-body { font-size: 14px; fill: #344054; }
+    .lane-title { font-size: 18px; font-weight: 700; fill: #1F4D78; }
+    .label { font-size: 15px; fill: #0B2545; }
+    .small { font-size: 13px; fill: #475467; }
+    .arrow { stroke: #334155; stroke-width: 2; fill: none; }
+    .arrow-soft { stroke: #64748b; stroke-width: 1.5; fill: none; stroke-dasharray: 8 7; }
+    .arrow-label { font-size: 12px; fill: #475467; paint-order: stroke; stroke: #fff; stroke-width: 5px; }
+  </style>
+  <rect width="1580" height="650" fill="#ffffff"/>
+  <text x="50" y="55" class="page-title">System Context Diagram</text>
+  <text x="50" y="86" class="page-subtitle">Các actor, hệ thống chính và dịch vụ tích hợp của Shoes Ecommerce.</text>
+  <g><rect x="630" y="270" width="300" height="130" rx="10" class="box-alt"/><text x="780" y="293" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="780" dy="0">NestJS Backend API</tspan></text><text x="780" y="320" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="780" dy="0">Auth, Shoes, Payments,</tspan><tspan x="780" dy="17">Orders, Inventory,</tspan><tspan x="780" dy="17">Returns, Reviews,</tspan><tspan x="780" dy="17">Wishlist, Chat,...</tspan></text></g>
+<g><rect x="260" y="270" width="260" height="130" rx="10" class="box"/><text x="390" y="293" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="390" dy="0">Vue Storefront</tspan></text><text x="390" y="328" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="390" dy="0">Home, listing, product</tspan><tspan x="390" dy="17">detail, bag, checkout,</tspan><tspan x="390" dy="17">account, order tracking</tspan></text></g>
+<g><rect x="1010" y="270" width="260" height="130" rx="10" class="box"/><text x="1140" y="293" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1140" dy="0">MongoDB</tspan></text><text x="1140" y="328" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1140" dy="0">Users, products,</tspan><tspan x="1140" dy="17">bills, stock, returns,</tspan><tspan x="1140" dy="17">chat, reviews</tspan></text></g>
+<g><rect x="65" y="165" width="190" height="95" rx="10" class="box-good"/><text x="160" y="188" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="160" dy="0">Guest / User</tspan></text><text x="160" y="214" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="160" dy="0">Browse, buy, track,</tspan><tspan x="160" dy="17">review, chat</tspan></text></g>
+<g><rect x="65" y="415" width="190" height="95" rx="10" class="box-good"/><text x="160" y="438" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="160" dy="0">Admin / Manager</tspan></text><text x="160" y="455" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="160" dy="0">Operate catalog,</tspan><tspan x="160" dy="17">orders, inventory,</tspan><tspan x="160" dy="17">coupons, support</tspan></text></g>
+<g><rect x="1010" y="105" width="240" height="90" rx="10" class="box-warn"/><text x="1130" y="128" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1130" dy="0">PayOS</tspan></text><text x="1130" y="160" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1130" dy="0">Bank transfer / QR</tspan></text></g>
+<g><rect x="1290" y="105" width="240" height="90" rx="10" class="box-warn"/><text x="1410" y="128" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1410" dy="0">Stripe</tspan></text><text x="1410" y="152" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1410" dy="0">Visa / Mastercard</tspan><tspan x="1410" dy="17">cards</tspan></text></g>
+<g><rect x="1010" y="465" width="240" height="90" rx="10" class="box"/><text x="1130" y="488" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1130" dy="0">Gmail SMTP</tspan></text><text x="1130" y="512" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1130" dy="0">Order, shipment,</tspan><tspan x="1130" dy="17">refund emails</tspan></text></g>
+<g><rect x="1290" y="465" width="240" height="90" rx="10" class="box"/><text x="1410" y="488" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1410" dy="0">Cloudflare R2</tspan></text><text x="1410" y="512" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1410" dy="0">Product images and</tspan><tspan x="1410" dy="17">review media</tspan></text></g>
+<line x1="255" y1="215" x2="260" y2="312" class="arrow" marker-end="url(#arrow)"/><text x="257" y="249" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="257" dy="0">uses</tspan></text>
+<line x1="255" y1="465" x2="260" y2="352" class="arrow" marker-end="url(#arrow)"/><text x="257" y="394" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="257" dy="0">admin</tspan></text>
+<line x1="520" y1="335" x2="630" y2="335" class="arrow" marker-end="url(#arrow)"/><text x="575" y="321" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="575" dy="0">REST</tspan></text>
+<line x1="930" y1="335" x2="1010" y2="335" class="arrow" marker-end="url(#arrow)"/><text x="970" y="321" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="970" dy="0">Mongoose</tspan></text>
+<line x1="930" y1="294" x2="1010" y2="150" class="arrow" marker-end="url(#arrow)"/><text x="970" y="208" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="970" dy="0">PayOS API</tspan></text>
+<line x1="930" y1="310" x2="1290" y2="150" class="arrow" marker-end="url(#arrow)"/><text x="1110" y="216" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="1110" dy="0">Stripe API</tspan></text>
+<line x1="930" y1="373" x2="1010" y2="510" class="arrow" marker-end="url(#arrow)"/><text x="970" y="427" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="970" dy="0">email</tspan></text>
+<line x1="930" y1="392" x2="1290" y2="510" class="arrow" marker-end="url(#arrow)"/><text x="1110" y="437" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="1110" dy="0">media</tspan></text>
+</svg>

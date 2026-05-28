@@ -1,0 +1,145 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+title Shoes Ecommerce - Domain Class Diagram
+
+package Frontend {
+  class VueSPA
+  class Router
+  class AxiosClient
+  class BagStorage
+  class ChatWidget
+}
+
+package Backend {
+  class AuthController
+  class UsersService
+  class ShoesController
+  class ShoesService
+  class PaymentController
+  class PaymentService
+  class CouponsController
+  class CouponsService
+  class InventoryController
+  class InventoryService
+  class ReturnsController
+  class ReturnsService
+  class ReviewsController
+  class ReviewsService
+  class WishlistController
+  class WishlistService
+  class ChatController
+  class ChatService
+  class AnalyticsController
+  class AnalyticsService
+  class R2Controller
+  class R2Service
+  class RedisCacheService {
+    get(key)
+    set(key, value, ttl)
+    delPattern(pattern)
+  }
+  class OrderEmailService
+}
+
+package Domain {
+  class User {
+    username
+    email
+    passwordHash
+    addresses[]
+  }
+  class Role {
+    name
+    permissions[]
+  }
+  class Shoe {
+    productId
+    name
+    category
+    price
+  }
+  class ShoeDetail {
+    productId
+    colors[]
+  }
+  class ColorVariant {
+    colorName
+    images[]
+    sizes[]
+  }
+  class SizeStock {
+    size
+    stock
+  }
+  class Bill {
+    orderCode
+    status
+    fulfillmentStatus
+    items[]
+  }
+  class Coupon {
+    code
+    type
+    value
+  }
+  class Review
+  class ReturnRequest
+  class WishlistItem
+  class StockMovement
+  class ChatConversation
+}
+
+VueSPA --> Router
+VueSPA --> AxiosClient
+VueSPA --> BagStorage
+VueSPA --> ChatWidget
+AxiosClient --> AuthController
+AxiosClient --> ShoesController
+AxiosClient --> PaymentController
+AxiosClient --> CouponsController
+AxiosClient --> InventoryController
+AxiosClient --> ReturnsController
+AxiosClient --> ReviewsController
+AxiosClient --> WishlistController
+AxiosClient --> ChatController
+AxiosClient --> AnalyticsController
+AxiosClient --> R2Controller
+
+AuthController --> UsersService
+ShoesController --> ShoesService
+PaymentController --> PaymentService
+CouponsController --> CouponsService
+InventoryController --> InventoryService
+ReturnsController --> ReturnsService
+ReviewsController --> ReviewsService
+WishlistController --> WishlistService
+ChatController --> ChatService
+AnalyticsController --> AnalyticsService
+R2Controller --> R2Service
+
+UsersService --> User
+User --> Role
+ShoesService --> Shoe
+ShoesService --> ShoeDetail
+ShoesService --> RedisCacheService
+ShoeDetail --> ColorVariant
+ColorVariant --> SizeStock
+PaymentService --> Bill
+PaymentService --> ShoeDetail
+PaymentService --> Coupon
+PaymentService --> OrderEmailService
+PaymentService --> RedisCacheService
+CouponsService --> Coupon
+InventoryService --> ShoeDetail
+InventoryService --> StockMovement
+InventoryService --> RedisCacheService
+ReviewsService --> Review
+ReviewsService --> Bill
+ReturnsService --> ReturnRequest
+ReturnsService --> Bill
+WishlistService --> WishlistItem
+ChatService --> ChatConversation
+AnalyticsService --> Bill
+AnalyticsService --> ShoeDetail
+@enduml

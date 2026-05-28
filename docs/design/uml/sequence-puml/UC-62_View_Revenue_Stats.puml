@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-62 - View Revenue Stats
+
+actor "Admin" as Actor
+boundary "Admin Analytics UI" as FE
+control "AnalyticsController" as API
+control "AnalyticsService" as Service
+database "MongoDB: bills, shoesDetail" as DB
+
+Actor -> FE: Start UC-62
+FE -> API: GET /analytics/overview
+API -> Service: Execute View Revenue Stats
+Service -> DB: Read/write bills, shoesDetail
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Biểu đồ doanh thu hiển thị
+
+note over Actor,DB
+Pre: Đang ở dashboard
+Post: Biểu đồ doanh thu hiển thị
+Main flow:
+1. Admin xem revenue section trên dashboard
+2. System gọi API GET /analytics/overview; date range endpoint recommended
+3. System trả về: revenue by day/week/month
+4. Hiển thị line chart / bar chart
+end note
+@enduml

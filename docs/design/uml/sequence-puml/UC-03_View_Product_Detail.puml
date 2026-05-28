@@ -1,0 +1,36 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-03 - View Product Detail
+
+actor "Guest" as Actor
+boundary "Product UI" as FE
+control "ShoesController / ReviewsController" as API
+control "ShoesService / ReviewsService" as Service
+database "MongoDB: shoes, shoesDetail, reviews" as DB
+
+Actor -> FE: Start UC-03
+FE -> API: GET /shoes/detail/:productId
+API -> Service: Execute View Product Detail
+Service -> DB: Read/write shoes, shoesDetail, reviews
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Trang chi tiết sản phẩm hiển thị
+
+alt Alternative / exception flow
+  note over FE,Service: productId không tồn tại -> 404 page
+end
+
+note over Actor,DB
+Pre: Có productId hợp lệ
+Post: Trang chi tiết sản phẩm hiển thị
+Main flow:
+1. User click vào 1 sản phẩm
+2. System gọi API GET /shoes/detail/:productId
+3. System trả về: name, category, price, colors[], images[], sizes[],\ndescription, materialNote, origin, rating, reviewCount
+4. Frontend hiển thị image gallery, color picker, size picker, stock\nindicator
+5. System đồng thời gọi GET /reviews/product/:productId
+end note
+@enduml

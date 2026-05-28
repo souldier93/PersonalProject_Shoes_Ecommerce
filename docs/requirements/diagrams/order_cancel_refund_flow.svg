@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="720" viewBox="0 0 1240 720">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,8 L11,4 z" fill="#334155"/>
+    </marker>
+  </defs>
+  <style>
+    svg { background: #ffffff; font-family: Calibri, Arial, sans-serif; }
+    .page-title { font-size: 34px; font-weight: 700; fill: #0B2545; }
+    .page-subtitle { font-size: 18px; fill: #475467; }
+    .box { fill: #ffffff; stroke: #D0D7DE; stroke-width: 1.8; }
+    .box-alt { fill: #f8fbff; stroke: #2E74B5; stroke-width: 2; }
+    .box-good { fill: #f2fbf3; stroke: #2E7D32; stroke-width: 2; }
+    .box-risk { fill: #fff7f7; stroke: #9B1C1C; stroke-width: 2; }
+    .box-warn { fill: #fff9e7; stroke: #7A5A00; stroke-width: 2; }
+    .lane { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.4; }
+    .box-title { font-size: 16px; font-weight: 700; fill: #0B2545; }
+    .box-body { font-size: 14px; fill: #344054; }
+    .lane-title { font-size: 18px; font-weight: 700; fill: #1F4D78; }
+    .label { font-size: 15px; fill: #0B2545; }
+    .small { font-size: 13px; fill: #475467; }
+    .arrow { stroke: #334155; stroke-width: 2; fill: none; }
+    .arrow-soft { stroke: #64748b; stroke-width: 1.5; fill: none; stroke-dasharray: 8 7; }
+    .arrow-label { font-size: 12px; fill: #475467; paint-order: stroke; stroke: #fff; stroke-width: 5px; }
+  </style>
+  <rect width="1240" height="720" fill="#ffffff"/>
+  <text x="50" y="55" class="page-title">Order Cancel &amp; Refund State Flow</text>
+  <text x="50" y="86" class="page-subtitle">Điều kiện nghiệp vụ: chỉ hủy/hoàn tiền khi đơn PAID còn ở CONFIRMED hoặc PACKING.</text>
+  <g><rect x="90" y="250" width="220" height="105" rx="10" class="box-good"/><text x="200" y="273" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="200" dy="0">PAID + CONFIRMED</tspan></text><text x="200" y="304" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="200" dy="0">Đã thanh toán, đơn vừa</tspan><tspan x="200" dy="17">xác nhận</tspan></text></g>
+<g><rect x="350" y="250" width="220" height="105" rx="10" class="box-good"/><text x="460" y="273" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="460" dy="0">PACKING</tspan></text><text x="460" y="312" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="460" dy="0">Đang chuẩn bị hàng</tspan></text></g>
+<g><rect x="640" y="155" width="220" height="105" rx="10" class="box-alt"/><text x="750" y="178" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="750" dy="0">Cancel &amp; refund allowed</tspan></text><text x="750" y="209" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="750" dy="0">Khách nhập lý do, hệ</tspan><tspan x="750" dy="17">thống hoàn stock</tspan></text></g>
+<g><rect x="930" y="155" width="220" height="105" rx="10" class="box-good"/><text x="1040" y="170" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1040" dy="0">REFUNDED /</tspan><tspan x="1040" dy="17">REFUND_PENDING</tspan></text><text x="1040" y="209" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1040" dy="0">Stripe hoàn tự động,</tspan><tspan x="1040" dy="17">PayOS chờ thủ công</tspan></text></g>
+<g><rect x="640" y="395" width="220" height="105" rx="10" class="box-warn"/><text x="750" y="418" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="750" dy="0">SHIPPING</tspan></text><text x="750" y="457" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="750" dy="0">Đã gửi đi, có vận đơn</tspan></text></g>
+<g><rect x="930" y="395" width="220" height="105" rx="10" class="box"/><text x="1040" y="418" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1040" dy="0">DELIVERED</tspan></text><text x="1040" y="457" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1040" dy="0">Đã giao thành công</tspan></text></g>
+<g><rect x="350" y="525" width="220" height="105" rx="10" class="box-risk"/><text x="460" y="548" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="460" dy="0">Blocked cancel/refund</tspan></text><text x="460" y="579" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="460" dy="0">Chỉ cho phép đổi trả</tspan><tspan x="460" dy="17">theo return policy</tspan></text></g>
+<line x1="330" y1="302" x2="350" y2="302" class="arrow" marker-end="url(#arrow)"/><text x="340" y="288" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="340" dy="0">admin updates</tspan></text>
+<line x1="535" y1="288" x2="640" y2="210" class="arrow" marker-end="url(#arrow)"/><text x="587" y="235" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="587" dy="0">customer cancels</tspan></text>
+<line x1="820" y1="210" x2="930" y2="210" class="arrow" marker-end="url(#arrow)"/><text x="875" y="196" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="875" dy="0">refund path</tspan></text>
+<line x1="535" y1="318" x2="640" y2="448" class="arrow" marker-end="url(#arrow)"/><text x="587" y="369" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="587" dy="0">ship order</tspan></text>
+<line x1="820" y1="448" x2="930" y2="448" class="arrow" marker-end="url(#arrow)"/><text x="875" y="434" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="875" dy="0">delivered</tspan></text>
+<line x1="640" y1="500" x2="535" y2="570" class="arrow-soft" marker-end="url(#arrow)"/><text x="587" y="521" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="587" dy="0">cancel not allowed</tspan></text>
+</svg>

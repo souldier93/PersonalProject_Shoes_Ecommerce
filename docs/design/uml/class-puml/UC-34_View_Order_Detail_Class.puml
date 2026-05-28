@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-34 View Order Detail
+
+class "My Orders / Admin Purchases UI" as UI <<boundary>>
+class "PaymentController" as Controller <<controller>>
+class "PaymentService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "StatusHistory" as StatusHistory <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : GET /payments/check-order/:orderCode
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> StatusHistory : uses
+Service --> OrderEmailService : uses
+
+note right of UI
+UC-34 - View Order Detail
+Actors: Admin, Manager
+Pre: Đơn hàng tồn tại
+Post: Chi tiết đơn hàng hiển thị
+end note
+@enduml

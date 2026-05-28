@@ -1,0 +1,34 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-33 - Filter/Search Orders
+
+actor "Admin" as Actor
+boundary "My Orders / Admin Purchases UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills" as DB
+
+Actor -> FE: Start UC-33
+FE -> API: GET /payments/orders?filters
+API -> Service: Execute Filter/Search Orders
+Service -> DB: Read/write bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Kết quả lọc orders hiển thị
+
+alt Alternative / exception flow
+  note over FE,Service: Không có kết quả -> empty state
+end
+
+note over Actor,DB
+Pre: Đang ở trang orders
+Post: Kết quả lọc orders hiển thị
+Main flow:
+1. Admin nhập từ khóa hoặc chọn filter (status, date range)
+2. System gọi API GET /payments/orders?status=CONFIRMED&from=...&to=...
+3. System trả về kết quả đã lọc
+end note
+@enduml

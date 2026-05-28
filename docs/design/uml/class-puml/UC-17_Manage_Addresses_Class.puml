@@ -1,0 +1,28 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-17 Manage Addresses
+
+class "Auth / Profile UI" as UI <<boundary>>
+class "AuthController" as Controller <<controller>>
+class "UsersService" as Service <<service>>
+class "User" as User <<domain>>
+class "Role" as Role <<domain>>
+class "JwtStrategy" as JwtStrategy <<domain>>
+class "EmailService" as EmailService <<domain>>
+
+UI --> Controller : POST/PATCH/DELETE /auth/users/:id/addresses
+Controller --> Service : delegates
+Service --> User : uses
+Service --> Role : uses
+Service --> JwtStrategy : uses
+Service --> EmailService : uses
+
+note right of UI
+UC-17 - Manage Addresses
+Actors: User
+Pre: Đã đăng nhập
+Post: Địa chỉ được lưu/cập nhật/xóa
+end note
+@enduml

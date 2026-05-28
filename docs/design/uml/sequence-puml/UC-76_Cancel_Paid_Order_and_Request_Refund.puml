@@ -1,0 +1,48 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-76 - Cancel Paid Order and Request Refund
+
+actor "Guest" as Actor
+boundary "Checkout / Payment UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills, shoesDetail, coupons" as DB
+participant "Stripe Gateway" as Stripe_Gateway
+participant "Gmail SMTP" as Gmail
+
+Actor -> FE: Trigger use case
+API -> Service: Execute Cancel Paid Order and Request Refund
+Service -> DB: Read/write bills, shoesDetail, coupons
+DB --> Service: Domain data
+Service -> Stripe_Gateway: Create/confirm/refund payment
+Stripe_Gateway --> Service: Stripe result
+Service -> Gmail: Send notification email when configured
+Gmail --> Service: Delivery accepted or warning logged
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Order is CANCELLED and refund is REFUNDED or REFUND_PENDING
+
+alt Alternative / exception flow
+  note over FE,Service: Order already SHIPPING or DELIVERED -> cancellation and refund are blocked
+  note over FE,Service: Order is not PAID -> cancellation refund is rejected
+  note over FE,Service: Stripe refund fails -> system returns error and keeps order unchanged
+end
+
+note over Actor,DB
+Pre: Order is PAID and fulfillment status is CONFIRMED or PACKING
+Post: Order is CANCELLED and refund is REFUNDED or REFUND_PENDING
+Main flow:
+1. Customer opens order detail from My Orders or guest order lookup
+2. System checks order ownership by userId or guest email
+3. System verifies payment status is PAID and fulfillment is still being\nprepared
+4. Customer enters cancellation reason and confirms Cancel & Refund
+5. System calls POST /payments/orders/:orderCode/cancel-refund
+6. System restores product stock for cancelled items
+7. For Stripe card payment, system creates a Stripe refund from the\nPaymentIntent
+8. For bank transfer payment, system marks refund as REFUND_PENDING for\nmanual processing
+9. System sets fulfillment status to CANCELLED
+10. System sends cancellation and refund email to customer
+end note
+@enduml

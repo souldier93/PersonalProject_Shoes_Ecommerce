@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-07 - Manage Shopping Cart
+
+actor "Guest" as Actor
+boundary "Cart UI" as FE
+control "Local cart utilities" as API
+control "bagStorage / bagHelper" as Service
+database "Browser localStorage" as DB
+
+Actor -> FE: Start UC-07
+FE -> API: Local cart storage
+FE -> FE: Update cart state and localStorage
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Cart được cập nhật
+
+alt Alternative / exception flow
+  note over FE,Service: Giảm quantity xuống 0 -> xóa item khỏi cart
+  note over FE,Service: Tăng quantity vượt stock -> giới hạn ở stock tối đa
+end
+
+note over Actor,DB
+Pre: Cart có ít nhất 1 item
+Post: Cart được cập nhật
+Main flow:
+1. User vào trang /bag
+2. System hiển thị danh sách items: ảnh, tên, color, size, quantity, unit\nprice, subtotal
+3. User có thể: tăng/giảm quantity, xóa item
+4. System tính lại tổng tiền (subtotal, discount, total)
+5. System lưu cart vào localStorage
+end note
+@enduml

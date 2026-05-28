@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-22 - Track Return Status
+
+actor "User" as Actor
+boundary "My Orders / Product Review UI" as FE
+control "ReturnsController" as API
+control "ReturnsService" as Service
+database "MongoDB: returnRequests, bills" as DB
+
+Actor -> FE: Start UC-22
+FE -> API: GET /returns/user/:userId
+API -> Service: Execute Track Return Status
+Service -> DB: Read/write returnRequests, bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Hiển thị trạng thái yêu cầu đổi trả
+
+alt Alternative / exception flow
+  note over FE,Service: Chưa có return request -> empty state
+end
+
+note over Actor,DB
+Pre: Đã tạo return request
+Post: Hiển thị trạng thái yêu cầu đổi trả
+Main flow:
+1. User vào trang /my-returns
+2. System gọi API GET /returns/user/:userId
+3. System trả về danh sách return requests (type, reason, status,\nadminNote, createdAt)
+4. User click vào để xem chi tiết
+end note
+@enduml

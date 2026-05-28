@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-24 Start Chat with Support
+
+class "Chat Widget / Admin Chat UI" as UI <<boundary>>
+class "ChatController" as Controller <<controller>>
+class "ChatService" as Service <<service>>
+class "ChatConversation" as ChatConversation <<domain>>
+class "ChatMessage" as ChatMessage <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+
+UI --> Controller : POST /chat/conversations + POST /chat/conversations/:id/messages
+Controller --> Service : delegates
+Service --> ChatConversation : uses
+Service --> ChatMessage : uses
+Service --> ShoeDetail : uses
+
+note right of UI
+UC-24 - Start Chat with Support
+Actors: User
+Pre: Đã đăng nhập
+Post: Chat conversation được tạo, tin nhắn được gửi
+end note
+@enduml

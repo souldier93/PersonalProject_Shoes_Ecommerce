@@ -1,0 +1,45 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-10 - PayOS Payment Processing
+
+actor "Guest" as Actor
+boundary "Checkout / Payment UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills, shoesDetail, coupons" as DB
+participant "PayOS Gateway" as PayOS_Gateway
+
+Actor -> FE: Start UC-10
+FE -> API: POST /payments
+API -> Service: Execute PayOS Payment Processing
+Service -> DB: Read/write bills, shoesDetail, coupons
+DB --> Service: Domain data
+Service -> PayOS_Gateway: Create/verify PayOS transaction
+PayOS_Gateway --> Service: PayOS result
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Payment hoàn tất hoặc hủy
+
+alt Alternative / exception flow
+  note over FE,Service: User hủy -> redirect về cancelUrl
+  note over FE,Service: Webhook timeout -> user query GET /payments/check/:paymentLinkId or GET\n/payments/check-order/:orderCode
+  note over FE,Service: Signature không hợp lệ -> 401
+end
+
+note over Actor,DB
+Pre: Bill đã tạo, payment link pending
+Post: Payment hoàn tất hoặc hủy
+Main flow:
+1. System tạo PayOS payment link với orderCode, amount, items, returnUrl,\ncancelUrl
+2. PayOS trả về { checkoutUrl, qrCode }
+3. System redirect user đến checkoutUrl
+4. User thanh toán trên trang PayOS (QR code / bank transfer)
+5. PayOS gửi webhook POST /payments/webhook
+6. System verify HMAC signature
+7. System cập nhật bill status = PAID
+8. System giảm stock trong shoesDetail
+9. System gửi email xác nhận
+end note
+@enduml

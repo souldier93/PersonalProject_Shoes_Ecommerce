@@ -1,0 +1,32 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-28 Manage Colors & Sizes
+
+class "Admin Products UI" as UI <<boundary>>
+class "ShoesController" as Controller <<controller>>
+class "ShoesService" as Service <<service>>
+class "Shoe" as Shoe <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "ColorVariant" as ColorVariant <<domain>>
+class "SizeStock" as SizeStock <<domain>>
+class "Counter" as Counter <<domain>>
+class "R2Service" as R2Service <<domain>>
+
+UI --> Controller : POST /shoes/product or PUT /shoes/:styleCode
+Controller --> Service : delegates
+Service --> Shoe : uses
+Service --> ShoeDetail : uses
+Service --> ColorVariant : uses
+Service --> SizeStock : uses
+Service --> Counter : uses
+Service --> R2Service : uses
+
+note right of UI
+UC-28 - Manage Colors & Sizes
+Actors: Admin
+Pre: Đang tạo/sửa sản phẩm
+Post: Color/size variants được cập nhật
+end note
+@enduml

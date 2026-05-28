@@ -1,0 +1,23 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Guest" as Guest
+actor "User" as User
+User --|> Guest
+
+rectangle "Live Chat" {
+  usecase "UC-24\nStart Chat with Support" as UC_24
+  usecase "UC-68\nOpen Chat Widget (Guest)" as UC_68
+  usecase "UC-69\nSend Chat Message" as UC_69
+  usecase "UC-70\nReceive Chat Reply" as UC_70
+}
+User --> UC_24
+Guest --> UC_68
+Guest --> UC_69
+User --> UC_69
+Guest --> UC_70
+User --> UC_70
+@enduml

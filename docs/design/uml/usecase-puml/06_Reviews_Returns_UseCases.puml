@@ -1,0 +1,18 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "User" as User
+
+rectangle "Reviews & Returns" {
+  usecase "UC-20\nWrite Product Review" as UC_20
+  usecase "UC-21\nCreate Return Request" as UC_21
+  usecase "UC-22\nTrack Return Status" as UC_22
+}
+User --> UC_20
+User --> UC_21
+User --> UC_22
+UC_22 ..> UC_21 : <<include>>
+@enduml

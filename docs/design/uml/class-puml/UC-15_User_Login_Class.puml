@@ -1,0 +1,28 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-15 User Login
+
+class "Auth / Profile UI" as UI <<boundary>>
+class "AuthController" as Controller <<controller>>
+class "UsersService" as Service <<service>>
+class "User" as User <<domain>>
+class "Role" as Role <<domain>>
+class "JwtStrategy" as JwtStrategy <<domain>>
+class "EmailService" as EmailService <<domain>>
+
+UI --> Controller : POST /auth/login
+Controller --> Service : delegates
+Service --> User : uses
+Service --> Role : uses
+Service --> JwtStrategy : uses
+Service --> EmailService : uses
+
+note right of UI
+UC-15 - User Login
+Actors: Guest
+Pre: Đã có tài khoản
+Post: Đăng nhập thành công, nhận JWT token
+end note
+@enduml

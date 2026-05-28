@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-71 - View Open Conversations
+
+actor "Admin" as Actor
+boundary "Chat Widget / Admin Chat UI" as FE
+control "ChatController" as API
+control "ChatService" as Service
+database "MongoDB: chatConversations" as DB
+
+Actor -> FE: Start UC-71
+FE -> API: GET /chat/conversations?status=open
+API -> Service: Execute View Open Conversations
+Service -> DB: Read/write chatConversations
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Danh sách conversations hiển thị
+
+note over Actor,DB
+Pre: Đã đăng nhập với role admin/manager
+Post: Danh sách conversations hiển thị
+Main flow:
+1. Admin vào /admin/chat
+2. System gọi API GET /chat/conversations?status=open
+3. System trả về danh sách: convId, userName, lastMessage,\nunreadForManager, updatedAt
+4. Highlight conversations có unread > 0
+end note
+@enduml

@@ -1,0 +1,28 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-18 User (Logged-in) Checkout
+
+class "Checkout / Payment UI" as UI <<boundary>>
+class "PaymentController" as Controller <<controller>>
+class "PaymentService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "Coupon" as Coupon <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : POST /payments or POST /payments/stripe/create-intent
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> ShoeDetail : uses
+Service --> Coupon : uses
+Service --> OrderEmailService : uses
+
+note right of UI
+UC-18 - User (Logged-in) Checkout
+Actors: User
+Pre: Đã đăng nhập, cart có items
+Post: Redirect đến thanh toán
+end note
+@enduml

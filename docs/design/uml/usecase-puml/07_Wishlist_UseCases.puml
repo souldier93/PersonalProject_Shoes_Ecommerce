@@ -1,0 +1,13 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "User" as User
+
+rectangle "Wishlist" {
+  usecase "UC-23\nManage Wishlist" as UC_23
+}
+User --> UC_23
+@enduml

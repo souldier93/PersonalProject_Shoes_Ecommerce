@@ -1,0 +1,29 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-11 Stripe Payment Processing
+
+class "Checkout / Payment UI" as UI <<boundary>>
+class "PaymentController" as Controller <<controller>>
+class "PaymentService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "Coupon" as Coupon <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : POST /payments/stripe/create-intent + POST /payments/stripe/confirm
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> ShoeDetail : uses
+Service --> Coupon : uses
+Service --> OrderEmailService : uses
+Service --> "Stripe Gateway" : integrates
+
+note right of UI
+UC-11 - Stripe Payment Processing
+Actors: Guest, User, Stripe Gateway
+Pre: Bill đã tạo
+Post: Payment hoàn tất
+end note
+@enduml

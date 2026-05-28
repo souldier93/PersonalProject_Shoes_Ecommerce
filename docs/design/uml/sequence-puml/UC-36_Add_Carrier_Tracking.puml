@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-36 - Add Carrier + Tracking
+
+actor "Admin" as Actor
+boundary "My Orders / Admin Purchases UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills" as DB
+
+Actor -> FE: Start UC-36
+FE -> API: PATCH /payments/orders/:orderCode/fulfillment
+API -> Service: Execute Add Carrier + Tracking
+Service -> DB: Read/write bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Carrier và tracking code được thêm
+
+note over Actor,DB
+Pre: Đơn hàng đang ở status PACKING hoặc SHIPPING
+Post: Carrier và tracking code được thêm
+Main flow:
+1. Admin nhập tên carrier (VD: Giao Hàng Nhanh, Viettel Post)
+2. Admin nhập tracking code
+3. System gọi API PATCH /payments/orders/:orderCode/fulfillment
+4. System lưu thông tin, gửi email cho khách
+end note
+@enduml

@@ -1,0 +1,38 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-39 - Cancel Order
+
+actor "Admin" as Actor
+boundary "Checkout / Payment UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills, shoesDetail, coupons" as DB
+
+Actor -> FE: Start UC-39
+FE -> API: POST /payments/orders/:orderCode/cancel-refund
+API -> Service: Execute Cancel Order
+Service -> DB: Read/write bills, shoesDetail, coupons
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Đơn hàng bị hủy
+
+alt Alternative / exception flow
+  note over FE,Service: Đơn hàng đã SHIPPING -> không thể hủy
+end
+
+note over Actor,DB
+Pre: Đơn hàng ở status CONFIRMED hoặc PENDING
+Post: Đơn hàng bị hủy
+Main flow:
+1. Admin chọn đơn hàng
+2. Admin bấm Cancel Order
+3. Admin nhập lý do hủy
+4. System gọi API POST /payments/orders/:orderCode/cancel-refund
+5. System cập nhật status = CANCELLED
+6. System hoàn stock (nếu đã trừ)
+7. System gửi email thông báo
+end note
+@enduml

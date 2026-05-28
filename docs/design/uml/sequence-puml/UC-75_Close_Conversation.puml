@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-75 - Close Conversation
+
+actor "Admin" as Actor
+boundary "Chat Widget / Admin Chat UI" as FE
+control "ChatController" as API
+control "ChatService" as Service
+database "MongoDB: chatConversations" as DB
+
+Actor -> FE: Start UC-75
+FE -> API: PATCH /chat/conversations/:id/status
+API -> Service: Execute Close Conversation
+Service -> DB: Read/write chatConversations
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Conversation status = CLOSED
+
+note over Actor,DB
+Pre: Conversation đang mở
+Post: Conversation status = CLOSED
+Main flow:
+1. Admin bấm Close Chat
+2. System gọi API PATCH /chat/conversations/:id/status
+3. System set status = CLOSED
+4. Conversation không còn xuất hiện trong danh sách mở
+end note
+@enduml

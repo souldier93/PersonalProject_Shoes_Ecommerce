@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shoes Ecommerce - Database Class Diagram</title>
+  <!-- Load Mermaid from CDN -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      securityLevel: 'loose',
+      class: {
+        useMaxWidth: false
+      }
+    });
+  </script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background-color: #f3f4f6;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-top: 0;
+      color: #111827;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 12px;
+    }
+    p {
+      color: #4b5563;
+      font-size: 0.95rem;
+    }
+    .mermaid-container {
+      overflow-x: auto;
+      background-color: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+    }
+    .info-box {
+      background-color: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Shoes Ecommerce - Database Class Diagram</h1>
+    <div class="info-box">
+      <strong>💡 Tip:</strong> You can zoom or pan this diagram using your browser's zoom functionality, or copy the code from the markdown file to import it into other UML software.
+    </div>
+    <p>This diagram shows your Mongoose models, data attributes, operations, and standard UML relationships (Associations, Aggregations, Generalization).</p>
+    
+    <div class="mermaid-container">
+      <div class="mermaid">
+classDiagram
+    %% Classes definitions
+    
+    class User {
+        +ObjectId roleId
+        +string username
+        +string password
+        +string email
+        +number age
+        +string phone
+        +string fullName
+        +Address[] addresses
+        +boolean isVerified
+        +string verificationToken
+        +Date verificationTokenExpires
+        +boolean active
+        +Date createdAt
+        +register()
+        +login()
+        +addAddress()
+    }
+
+    class Role {
+        +string name
+        +string description
+        +string[] permissions
+        +boolean active
+        +Date createdAt
+    }
+
+    class Bill {
+        +string orderId
+        +number orderCode
+        +string paymentLinkId
+        +string paymentProvider
+        +string stripePaymentIntentId
+        +number amount
+        +number subtotal
+        +number deliveryFee
+        +string couponCode
+        +number discountAmount
+        +string description
+        +ObjectId userId
+        +string customerEmail
+        +CustomerInfo customerInfo
+        +OrderItem[] items
+        +string status
+        +string fulfillmentStatus
+        +string carrier
+        +string trackingCode
+        +StatusHistory[] statusHistory
+        +Date createdAt
+        +Date paidAt
+        +Date deliveredAt
+        +calcSubTotal()
+        +calcTotal()
+        +updateStatus()
+    }
+
+    class OrderItem {
+        +string productId
+        +string name
+        +string colorName
+        +string size
+        +number quantity
+        +number price
+        +calcSubTotal()
+    }
+
+    class Shoe {
+        +string productId
+        +string name
+        +string category
+        +string productType
+        +string collection
+        +number price
+        +string color
+        +string thumbnail
+    }
+
+    class ShoeDetail {
+        +string productId
+        +string name
+        +string category
+        +string productType
+        +string collection
+        +number price
+        +ColorVariant[] colors
+    }
+
+    class ColorVariant {
+        +string colorName
+        +string hex
+        +string thumbnail
+        +string[] images
+        +SizeVariant[] sizes
+        +string styleCode
+        +string category
+        +string productType
+        +string collection
+        +string createdAt
+        +string description
+        +string materialNote
+        +string origin
+        +number rating
+        +number reviewCount
+        +string updatedAt
+        +number price
+    }
+
+    class SizeVariant {
+        +string size
+        +number stock
+    }
+
+    class Category {
+        +string _id
+        +string title
+        +string[] sections
+    }
+
+    class Coupon {
+        +string code
+        +string type
+        +number value
+        +number minOrder
+        +number maxDiscount
+        +number usageLimit
+        +number usedCount
+        +Date startsAt
+        +Date endsAt
+        +boolean active
+        +validate()
+        +apply()
+    }
+
+    class Review {
+        +string productId
+        +number orderCode
+        +string userId
+        +string username
+        +string colorName
+        +string size
+        +number rating
+        +string comment
+        +string[] images
+        +string status
+    }
+
+    class ReturnRequest {
+        +number orderCode
+        +ObjectId userId
+        +string customerEmail
+        +string productId
+        +string productName
+        +string colorName
+        +string size
+        +number quantity
+        +string type
+        +string reason
+        +string note
+        +string[] images
+        +string status
+        +string adminNote
+        +approve()
+        +reject()
+    }
+
+    class WishlistItem {
+        +string userId
+        +string productId
+        +string colorName
+        +string size
+        +boolean notifyOnRestock
+    }
+
+    class StockMovement {
+        +string productId
+        +string productName
+        +string colorName
+        +string size
+        +string type
+        +number quantity
+        +number beforeStock
+        +number afterStock
+        +string note
+        +string createdBy
+    }
+
+    class Payment {
+        <<abstract>>
+        +number amount
+        +string status
+        +Date createdAt
+        +process()
+    }
+
+    class PayOSPayment {
+        +string paymentLinkId
+        +any transactionData
+        +generateQR()
+    }
+
+    class StripePayment {
+        +string stripePaymentIntentId
+        +any transactionData
+        +chargeCard()
+    }
+
+    %% Relationships
+    
+    User "0..1" --> "0..*" Bill : places
+    User "1" --> "1" Role : has
+    
+    Bill "1" o-- "1..*" OrderItem : line items
+    OrderItem "0..*" --> "1" Shoe : references
+    
+    Bill "1" --> "1" Payment : paid by
+    Payment <|-- PayOSPayment : Generalization
+    Payment <|-- StripePayment : Generalization
+
+    ShoeDetail "1" o-- "1..*" ColorVariant : aggregates
+    ColorVariant "1" o-- "1..*" SizeVariant : aggregates
+    Shoe "0..*" --> "1" Category : belongs to
+    
+    User "1" --> "0..*" WishlistItem : owns
+    WishlistItem "0..*" --> "1" Shoe : saves
+    
+    User "1" --> "0..*" Review : writes
+    Review "0..*" --> "1" Shoe : reviews
+    Review "0..*" --> "1" Bill : verified purchase
+    
+    User "1" --> "0..*" ReturnRequest : requests
+    ReturnRequest "0..*" --> "1" Bill : relates to
+    ReturnRequest "0..*" --> "1" Shoe : targets
+    
+    StockMovement "0..*" --> "1" ShoeDetail : audit stock
+    Bill "0..*" --> "0..1" Coupon : applies
+      </div>
+    </div>
+  </div>
+</body>
+</html>

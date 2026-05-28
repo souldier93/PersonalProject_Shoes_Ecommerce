@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-42 - View Stock by Product
+
+actor "Admin" as Actor
+boundary "Admin Inventory UI" as FE
+control "InventoryController" as API
+control "InventoryService" as Service
+database "MongoDB: shoesDetail, stockMovements" as DB
+
+Actor -> FE: Start UC-42
+FE -> API: GET /inventory/overview
+API -> Service: Execute View Stock by Product
+Service -> DB: Read/write shoesDetail, stockMovements
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Hiển thị chi tiết stock theo color + size
+
+note over Actor,DB
+Pre: Đã chọn 1 sản phẩm
+Post: Hiển thị chi tiết stock theo color + size
+Main flow:
+1. Admin click vào sản phẩm
+2. System gọi API GET /inventory/:productId
+3. System trả về colors[] với sizes[] và stock cho mỗi size
+4. Hiển thị bảng chi tiết
+end note
+@enduml

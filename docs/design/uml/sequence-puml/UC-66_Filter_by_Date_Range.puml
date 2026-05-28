@@ -1,0 +1,30 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-66 - Filter by Date Range
+
+actor "Admin" as Actor
+boundary "Admin Analytics UI" as FE
+control "AnalyticsController" as API
+control "AnalyticsService" as Service
+database "MongoDB: bills, shoesDetail" as DB
+
+Actor -> FE: Start UC-66
+FE -> API: GET /analytics/overview?from=&to=
+API -> Service: Execute Filter by Date Range
+Service -> DB: Read/write bills, shoesDetail
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Dữ liệu được lọc theo khoảng thời gian
+
+note over Actor,DB
+Pre: Đang ở dashboard
+Post: Dữ liệu được lọc theo khoảng thời gian
+Main flow:
+1. Admin chọn date range (today, 7 days, 30 days, custom)
+2. System gọi API với query params from/to
+3. Tất cả charts cập nhật theo range đã chọn
+end note
+@enduml

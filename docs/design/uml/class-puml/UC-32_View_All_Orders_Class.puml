@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-32 View All Orders
+
+class "My Orders / Admin Purchases UI" as UI <<boundary>>
+class "PaymentController" as Controller <<controller>>
+class "PaymentService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "StatusHistory" as StatusHistory <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : GET /payments/orders
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> StatusHistory : uses
+Service --> OrderEmailService : uses
+
+note right of UI
+UC-32 - View All Orders
+Actors: Admin, Manager
+Pre: Đã đăng nhập với role admin/manager
+Post: Danh sách tất cả orders hiển thị
+end note
+@enduml

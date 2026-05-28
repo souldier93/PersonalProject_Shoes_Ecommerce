@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-33 Filter/Search Orders
+
+class "My Orders / Admin Purchases UI" as UI <<boundary>>
+class "PaymentController" as Controller <<controller>>
+class "PaymentService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "StatusHistory" as StatusHistory <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : GET /payments/orders?filters
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> StatusHistory : uses
+Service --> OrderEmailService : uses
+
+note right of UI
+UC-33 - Filter/Search Orders
+Actors: Admin, Manager
+Pre: Đang ở trang orders
+Post: Kết quả lọc orders hiển thị
+end note
+@enduml

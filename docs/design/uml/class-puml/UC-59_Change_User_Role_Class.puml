@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-59 Change User Role
+
+class "Admin Users UI" as UI <<boundary>>
+class "AuthController" as Controller <<controller>>
+class "UsersService" as Service <<service>>
+class "User" as User <<domain>>
+class "Role" as Role <<domain>>
+class "RolesGuard" as RolesGuard <<domain>>
+
+UI --> Controller : PATCH /auth/users/:id/role
+Controller --> Service : delegates
+Service --> User : uses
+Service --> Role : uses
+Service --> RolesGuard : uses
+
+note right of UI
+UC-59 - Change User Role
+Actors: Admin
+Pre: Target user không phải chính mình
+Post: Role của user được thay đổi
+end note
+@enduml

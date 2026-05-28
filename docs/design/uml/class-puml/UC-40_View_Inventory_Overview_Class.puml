@@ -1,0 +1,28 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-40 View Inventory Overview
+
+class "Admin Inventory UI" as UI <<boundary>>
+class "InventoryController" as Controller <<controller>>
+class "InventoryService" as Service <<service>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "StockMovement" as StockMovement <<domain>>
+class "ColorVariant" as ColorVariant <<domain>>
+class "SizeStock" as SizeStock <<domain>>
+
+UI --> Controller : GET /inventory/overview
+Controller --> Service : delegates
+Service --> ShoeDetail : uses
+Service --> StockMovement : uses
+Service --> ColorVariant : uses
+Service --> SizeStock : uses
+
+note right of UI
+UC-40 - View Inventory Overview
+Actors: Admin, Manager
+Pre: Đã đăng nhập với role admin/manager
+Post: Hiển thị bảng tồn kho
+end note
+@enduml

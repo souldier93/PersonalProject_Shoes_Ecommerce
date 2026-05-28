@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-60 Disable User
+
+class "Admin Users UI" as UI <<boundary>>
+class "AuthController" as Controller <<controller>>
+class "UsersService" as Service <<service>>
+class "User" as User <<domain>>
+class "Role" as Role <<domain>>
+class "RolesGuard" as RolesGuard <<domain>>
+
+UI --> Controller : Disable user endpoint recommended
+Controller --> Service : delegates
+Service --> User : uses
+Service --> Role : uses
+Service --> RolesGuard : uses
+
+note right of UI
+UC-60 - Disable User
+Actors: Admin
+Pre: User tồn tại
+Post: User bị vô hiệu hóa, không thể login
+end note
+@enduml

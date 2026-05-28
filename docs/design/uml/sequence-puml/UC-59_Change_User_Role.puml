@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-59 - Change User Role
+
+actor "Admin" as Actor
+boundary "Admin Users UI" as FE
+control "AuthController" as API
+control "UsersService" as Service
+database "MongoDB: users, role" as DB
+
+Actor -> FE: Start UC-59
+FE -> API: PATCH /auth/users/:id/role
+API -> Service: Execute Change User Role
+Service -> DB: Read/write users, role
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Role của user được thay đổi
+
+alt Alternative / exception flow
+  note over FE,Service: Admin cố gắng đổi role chính mình -> lỗi
+end
+
+note over Actor,DB
+Pre: Target user không phải chính mình
+Post: Role của user được thay đổi
+Main flow:
+1. Admin chọn user
+2. Admin chọn role mới từ dropdown
+3. System gọi API PATCH /auth/users/:userId/role
+4. System cập nhật role trong DB
+end note
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-20 - Write Product Review
+
+actor "User" as Actor
+boundary "My Orders / Product Review UI" as FE
+control "ReviewsController" as API
+control "ReviewsService" as Service
+database "MongoDB: reviews, bills, shoesDetail" as DB
+
+Actor -> FE: Start UC-20
+FE -> API: POST /reviews
+API -> Service: Execute Write Product Review
+Service -> DB: Read/write reviews, bills, shoesDetail
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Review được lưu, rating sản phẩm được cập nhật
+
+alt Alternative / exception flow
+  note over FE,Service: Ảnh quá lớn (>5MB) -> lỗi
+  note over FE,Service: User đã review sản phẩm này -> 409 Conflict
+end
+
+note over Actor,DB
+Pre: Đã đăng nhập, đã mua sản phẩm
+Post: Review được lưu, rating sản phẩm được cập nhật
+Main flow:
+1. User vào trang product detail
+2. User bấm Write Review
+3. User chọn rating (1-5 sao)
+4. User nhập comment
+5. User upload ảnh (optional, tối đa 5 ảnh)
+6. System gọi API POST /reviews
+7. System lưu review, cập nhật avg rating của sản phẩm
+end note
+@enduml

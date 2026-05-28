@@ -9,6 +9,7 @@ import { RedisCacheService } from '../redis/redis-cache.service';
 function queryMock<T>(value: T) {
   return {
     select: jest.fn().mockReturnThis(),
+    sort: jest.fn().mockReturnThis(),
     lean: jest.fn().mockReturnThis(),
     exec: jest.fn().mockResolvedValue(value),
   };
@@ -26,6 +27,7 @@ describe('ShoesService Redis cache', () => {
       findOneAndUpdate: jest.fn(),
     };
     shoeDetailModel = {
+      find: jest.fn(),
       findOne: jest.fn(),
       findOneAndUpdate: jest.fn(),
     };
@@ -75,11 +77,13 @@ describe('ShoesService Redis cache', () => {
         },
       ]),
     );
-    shoeDetailModel.findOne.mockReturnValue(
-      queryMock({
-        productId: '1',
-        colors: [{ sizes: [{ size: '42', stock: 3 }] }],
-      }),
+    shoeDetailModel.find.mockReturnValue(
+      queryMock([
+        {
+          productId: '1',
+          colors: [{ colorName: 'Black', sizes: [{ size: '42', stock: 3 }] }],
+        },
+      ]),
     );
     redisCache.getJson.mockResolvedValue(null);
 
@@ -92,6 +96,9 @@ describe('ShoesService Redis cache', () => {
       expect.any(Array),
       expect.any(Number),
     );
+    expect(shoeDetailModel.find).toHaveBeenCalledWith({
+      productId: { $in: ['1'] },
+    });
   });
 
   it('invalidates product cache after updating a shoe', async () => {

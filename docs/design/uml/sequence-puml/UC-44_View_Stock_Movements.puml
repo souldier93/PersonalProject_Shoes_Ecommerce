@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-44 - View Stock Movements
+
+actor "Admin" as Actor
+boundary "Admin Inventory UI" as FE
+control "InventoryController" as API
+control "InventoryService" as Service
+database "MongoDB: shoesDetail, stockMovements" as DB
+
+Actor -> FE: Start UC-44
+FE -> API: GET /inventory/overview
+API -> Service: Execute View Stock Movements
+Service -> DB: Read/write shoesDetail, stockMovements
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Lịch sử stock movements hiển thị
+
+note over Actor,DB
+Pre: Đã có stock adjustments
+Post: Lịch sử stock movements hiển thị
+Main flow:
+1. Admin vào tab Stock Movements
+2. System gọi API GET /inventory/movements/:productId
+3. System trả về: timestamp, type (IN/OUT/ADJUST), quantity, reason, userId
+4. Hiển thị audit trail
+end note
+@enduml

@@ -1,0 +1,24 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-23 Manage Wishlist
+
+class "Wishlist UI" as UI <<boundary>>
+class "WishlistController" as Controller <<controller>>
+class "WishlistService" as Service <<service>>
+class "WishlistItem" as WishlistItem <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+
+UI --> Controller : GET/POST/DELETE /wishlist
+Controller --> Service : delegates
+Service --> WishlistItem : uses
+Service --> ShoeDetail : uses
+
+note right of UI
+UC-23 - Manage Wishlist
+Actors: User
+Pre: Đã đăng nhập
+Post: Wishlist được cập nhật
+end note
+@enduml

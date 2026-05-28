@@ -1,0 +1,238 @@
+classDiagram
+    %% Classes definitions
+    
+    class User {
+        +ObjectId roleId
+        +string username
+        +string password
+        +string email
+        +number age
+        +string phone
+        +string fullName
+        +Address[] addresses
+        +boolean isVerified
+        +string verificationToken
+        +Date verificationTokenExpires
+        +boolean active
+        +Date createdAt
+        +register()
+        +login()
+        +addAddress()
+    }
+
+    class Role {
+        +string name
+        +string description
+        +string[] permissions
+        +boolean active
+        +Date createdAt
+    }
+
+    class Bill {
+        +string orderId
+        +number orderCode
+        +string paymentLinkId
+        +string paymentProvider
+        +string stripePaymentIntentId
+        +number amount
+        +number subtotal
+        +number deliveryFee
+        +string couponCode
+        +number discountAmount
+        +string description
+        +ObjectId userId
+        +string customerEmail
+        +CustomerInfo customerInfo
+        +OrderItem[] items
+        +string status
+        +string fulfillmentStatus
+        +string carrier
+        +string trackingCode
+        +StatusHistory[] statusHistory
+        +Date createdAt
+        +Date paidAt
+        +Date deliveredAt
+        +calcSubTotal()
+        +calcTotal()
+        +updateStatus()
+    }
+
+    class OrderItem {
+        +string productId
+        +string name
+        +string colorName
+        +string size
+        +number quantity
+        +number price
+        +calcSubTotal()
+    }
+
+    class Shoe {
+        +string productId
+        +string name
+        +string category
+        +string productType
+        +string collection
+        +number price
+        +string color
+        +string thumbnail
+    }
+
+    class ShoeDetail {
+        +string productId
+        +string name
+        +string category
+        +string productType
+        +string collection
+        +number price
+        +ColorVariant[] colors
+    }
+
+    class ColorVariant {
+        +string colorName
+        +string hex
+        +string thumbnail
+        +string[] images
+        +SizeVariant[] sizes
+        +string styleCode
+        +string category
+        +string productType
+        +string collection
+        +string createdAt
+        +string description
+        +string materialNote
+        +string origin
+        +number rating
+        +number reviewCount
+        +string updatedAt
+        +number price
+    }
+
+    class SizeVariant {
+        +string size
+        +number stock
+    }
+
+    class Category {
+        +string _id
+        +string title
+        +string[] sections
+    }
+
+    class Coupon {
+        +string code
+        +string type
+        +number value
+        +number minOrder
+        +number maxDiscount
+        +number usageLimit
+        +number usedCount
+        +Date startsAt
+        +Date endsAt
+        +boolean active
+        +validate()
+        +apply()
+    }
+
+    class Review {
+        +string productId
+        +number orderCode
+        +string userId
+        +string username
+        +string colorName
+        +string size
+        +number rating
+        +string comment
+        +string[] images
+        +string status
+    }
+
+    class ReturnRequest {
+        +number orderCode
+        +ObjectId userId
+        +string customerEmail
+        +string productId
+        +string productName
+        +string colorName
+        +string size
+        +number quantity
+        +string type
+        +string reason
+        +string note
+        +string[] images
+        +string status
+        +string adminNote
+        +approve()
+        +reject()
+    }
+
+    class WishlistItem {
+        +string userId
+        +string productId
+        +string colorName
+        +string size
+        +boolean notifyOnRestock
+    }
+
+    class StockMovement {
+        +string productId
+        +string productName
+        +string colorName
+        +string size
+        +string type
+        +number quantity
+        +number beforeStock
+        +number afterStock
+        +string note
+        +string createdBy
+    }
+
+    class Payment {
+        <<abstract>>
+        +number amount
+        +string status
+        +Date createdAt
+        +process()
+    }
+
+    class PayOSPayment {
+        +string paymentLinkId
+        +any transactionData
+        +generateQR()
+    }
+
+    class StripePayment {
+        +string stripePaymentIntentId
+        +any transactionData
+        +chargeCard()
+    }
+
+    %% Relationships
+    
+    User "0..1" --> "0..*" Bill : places
+    User "1" --> "1" Role : has
+    
+    Bill "1" o-- "1..*" OrderItem : line items
+    OrderItem "0..*" --> "1" Shoe : references
+    
+    Bill "1" --> "1" Payment : paid by
+    Payment <|-- PayOSPayment : Generalization
+    Payment <|-- StripePayment : Generalization
+
+    ShoeDetail "1" o-- "1..*" ColorVariant : aggregates
+    ColorVariant "1" o-- "1..*" SizeVariant : aggregates
+    Shoe "0..*" --> "1" Category : belongs to
+    
+    User "1" --> "0..*" WishlistItem : owns
+    WishlistItem "0..*" --> "1" Shoe : saves
+    
+    User "1" --> "0..*" Review : writes
+    Review "0..*" --> "1" Shoe : reviews
+    Review "0..*" --> "1" Bill : verified purchase
+    
+    User "1" --> "0..*" ReturnRequest : requests
+    ReturnRequest "0..*" --> "1" Bill : relates to
+    ReturnRequest "0..*" --> "1" Shoe : targets
+    
+    StockMovement "0..*" --> "1" ShoeDetail : audit stock
+    Bill "0..*" --> "0..1" Coupon : applies

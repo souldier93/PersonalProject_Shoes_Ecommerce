@@ -1,0 +1,22 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Guest" as Guest
+actor "User" as User
+User --|> Guest
+
+rectangle "Account Management" {
+  usecase "UC-14\nRegister New Account" as UC_14
+  usecase "UC-15\nUser Login" as UC_15
+  usecase "UC-16\nManage User Profile" as UC_16
+  usecase "UC-17\nManage Addresses" as UC_17
+}
+Guest --> UC_14
+Guest --> UC_15
+User --> UC_16
+User --> UC_17
+UC_14 ..> UC_15 : <<include>>
+@enduml

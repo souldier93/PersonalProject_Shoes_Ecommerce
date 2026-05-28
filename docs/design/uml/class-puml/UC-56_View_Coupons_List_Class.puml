@@ -1,0 +1,22 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-56 View Coupons List
+
+class "Admin Settings UI" as UI <<boundary>>
+class "CouponsController" as Controller <<controller>>
+class "CouponsService" as Service <<service>>
+class "Coupon" as Coupon <<domain>>
+
+UI --> Controller : GET /coupons
+Controller --> Service : delegates
+Service --> Coupon : uses
+
+note right of UI
+UC-56 - View Coupons List
+Actors: Admin, Manager
+Pre: Đã đăng nhập với role admin/manager
+Post: Danh sách coupons hiển thị
+end note
+@enduml

@@ -1,0 +1,43 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Admin" as Admin
+actor "Manager" as Manager
+actor "System" as SystemActor
+Admin --|> Manager
+
+rectangle "Admin - Order & Inventory" {
+  usecase "UC-32\nView All Orders" as UC_32
+  usecase "UC-33\nFilter/Search Orders" as UC_33
+  usecase "UC-34\nView Order Detail" as UC_34
+  usecase "UC-35\nUpdate Fulfillment Status" as UC_35
+  usecase "UC-36\nAdd Carrier + Tracking" as UC_36
+  usecase "UC-37\nAdd Order Note" as UC_37
+  usecase "UC-38\nSend Order Status Email" as UC_38
+  usecase "UC-39\nCancel Order" as UC_39
+}
+Admin --> UC_32
+Manager --> UC_32
+Admin --> UC_33
+Manager --> UC_33
+Admin --> UC_34
+Manager --> UC_34
+Admin --> UC_35
+Manager --> UC_35
+Admin --> UC_36
+Manager --> UC_36
+Admin --> UC_37
+Manager --> UC_37
+UC_38 --> SystemActor
+Admin --> UC_39
+Manager --> UC_39
+UC_32 ..> UC_33 : <<extend>>
+UC_34 ..> UC_35 : <<include>>
+UC_35 ..> UC_36 : <<extend>>
+UC_35 ..> UC_37 : <<extend>>
+UC_35 ..> UC_38 : <<include>>
+UC_39 ..> UC_38 : <<include>>
+@enduml

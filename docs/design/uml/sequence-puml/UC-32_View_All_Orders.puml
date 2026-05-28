@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-32 - View All Orders
+
+actor "Admin" as Actor
+boundary "My Orders / Admin Purchases UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills" as DB
+
+Actor -> FE: Start UC-32
+FE -> API: GET /payments/orders
+API -> Service: Execute View All Orders
+Service -> DB: Read/write bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Danh sách tất cả orders hiển thị
+
+alt Alternative / exception flow
+  note over FE,Service: Không có đơn hàng -> empty table
+end
+
+note over Actor,DB
+Pre: Đã đăng nhập với role admin/manager
+Post: Danh sách tất cả orders hiển thị
+Main flow:
+1. Admin vào /admin/purchases
+2. System gọi API GET /payments/orders
+3. System trả về tất cả bills (paginated)
+4. Admin có thể filter/sort theo status, date, amount
+end note
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-01 Browse Products
+
+class "Product UI" as UI <<boundary>>
+class "ShoesController / ReviewsController" as Controller <<controller>>
+class "ShoesService / ReviewsService" as Service <<service>>
+class "Shoe" as Shoe <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "Review" as Review <<domain>>
+
+UI --> Controller : GET /shoes
+Controller --> Service : delegates
+Service --> Shoe : uses
+Service --> ShoeDetail : uses
+Service --> Review : uses
+
+note right of UI
+UC-01 - Browse Products
+Actors: Guest, User, Manager, Admin
+Pre: Không có
+Post: Danh sách sản phẩm hiển thị
+end note
+@enduml

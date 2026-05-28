@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-40 - View Inventory Overview
+
+actor "Admin" as Actor
+boundary "Admin Inventory UI" as FE
+control "InventoryController" as API
+control "InventoryService" as Service
+database "MongoDB: shoesDetail, stockMovements" as DB
+
+Actor -> FE: Start UC-40
+FE -> API: GET /inventory/overview
+API -> Service: Execute View Inventory Overview
+Service -> DB: Read/write shoesDetail, stockMovements
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Hiển thị bảng tồn kho
+
+alt Alternative / exception flow
+  note over FE,Service: Lọc theo low-stock only
+end
+
+note over Actor,DB
+Pre: Đã đăng nhập với role admin/manager
+Post: Hiển thị bảng tồn kho
+Main flow:
+1. Admin vào /admin/inventory
+2. System gọi API GET /inventory
+3. System trả về danh sách products với stock tổng
+4. Highlight: low stock (<=5), out of stock (=0)
+end note
+@enduml

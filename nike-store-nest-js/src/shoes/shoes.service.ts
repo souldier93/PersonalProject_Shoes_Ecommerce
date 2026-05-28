@@ -20,6 +20,26 @@ export class ShoesService {
     process.env.REDIS_PRODUCTS_TTL_SECONDS || 300,
   );
 
+  private readonly shoeListFields =
+    'productId name category productType collection price color thumbnail';
+
+  private readonly shoeDetailListFields =
+    'productId name category productType collection price colors.colorName colors.thumbnail colors.sizes colors.productType colors.collection colors.rating colors.reviewCount colors.price';
+
+  private getColorStock(color: any): number {
+    return (color?.sizes || []).reduce(
+      (sum, size) => sum + Number(size.stock || 0),
+      0,
+    );
+  }
+
+  private getTotalStock(colors: any[] = []): number {
+    return colors.reduce(
+      (sum, color) => sum + this.getColorStock(color),
+      0,
+    );
+  }
+
   private buildCacheKey(scope: string, value?: unknown): string {
     if (value === undefined) return `shoes:${scope}`;
     if (typeof value === 'string') return `shoes:${scope}:${value}`;
@@ -48,39 +68,34 @@ async findAll() {
 
   const shoes = await this.shoeModel
     .find()
-    .select('productId name category productType collection price color thumbnail')
+    .select(this.shoeListFields)
+    .sort({ productId: 1 })
     .lean()
     .exec();
 
-  // ⭐ Tính stock và sold từ shoesDetail cho mỗi product
-  const shoesWithStock = await Promise.all(
-    shoes.map(async (shoe) => {
-      const detail = await this.shoeDetailModel
-        .findOne({ productId: shoe.productId })
-        .lean()
-        .exec();
+  // Batch stock lookup so the listing endpoint avoids one query per product.
+  const details = await this.shoeDetailModel
+    .find({ productId: { $in: shoes.map((shoe) => shoe.productId) } })
+    .select('productId colors.colorName colors.sizes colors.rating colors.reviewCount')
+    .lean()
+    .exec();
 
-      let totalStock = 0;
-      // let totalSold = 0;
-
-      if (detail?.colors) {
-        detail.colors.forEach((color) => {
-          if (color.sizes) {
-            color.sizes.forEach((size) => {
-              totalStock += Number(size.stock) || 0;
-              // totalSold += Number(size.sold) || 0;
-            });
-          }
-        });
-      }
-
-      return {
-        ...shoe,
-        stock: totalStock,
-        // sold: totalSold,
-      };
-    })
+  const detailsByProductId = new Map(
+    details.map((detail) => [detail.productId, detail]),
   );
+
+  const shoesWithStock = shoes.map((shoe) => {
+    const colors = detailsByProductId.get(shoe.productId)?.colors || [];
+    const primaryColor = colors[0] || {};
+
+    return {
+      ...shoe,
+      stock: this.getTotalStock(colors),
+      rating: Number(primaryColor.rating || 0),
+      reviewCount: Number(primaryColor.reviewCount || 0),
+      colors: colors.map((color) => color.colorName).filter(Boolean),
+    };
+  });
 
   await this.redisCache.setJson(cacheKey, shoesWithStock, this.shoesCacheTtlSeconds);
   return shoesWithStock;
@@ -101,7 +116,11 @@ async findWithFilters(query: {
   const cached = await this.redisCache.getJson<any[]>(cacheKey);
   if (cached) return cached;
 
-  const details = await this.shoeDetailModel.find().lean().exec();
+  const details = await this.shoeDetailModel
+    .find()
+    .select(this.shoeDetailListFields)
+    .lean()
+    .exec();
   const search = (query.search || '').trim().toLowerCase();
   const category = (query.category || '').trim().toLowerCase();
   const productType = (query.productType || '').trim().toLowerCase();
@@ -115,10 +134,7 @@ async findWithFilters(query: {
     .map(detail => {
       const matchingColors = (detail.colors || []).filter(color => {
         const price = Number(color.price || detail.price || 0);
-        const colorStock = (color.sizes || []).reduce(
-          (sum, size) => sum + Number(size.stock || 0),
-          0,
-        );
+        const colorStock = this.getColorStock(color);
         const hasSize = !sizeFilter || (color.sizes || []).some(size => size.size === sizeFilter && Number(size.stock || 0) > 0);
         const matchesColor = !colorFilter || color.colorName?.toLowerCase().includes(colorFilter);
 
@@ -126,12 +142,7 @@ async findWithFilters(query: {
       });
 
       const primaryColor = matchingColors[0] || detail.colors?.[0];
-      const totalStock = matchingColors.reduce((sum, color) => {
-        return sum + (color.sizes || []).reduce(
-          (sizeSum, size) => sizeSum + Number(size.stock || 0),
-          0,
-        );
-      }, 0);
+      const totalStock = this.getTotalStock(matchingColors);
 
       return {
         productId: detail.productId,
@@ -141,12 +152,11 @@ async findWithFilters(query: {
         collection: detail.collection || primaryColor?.collection || '',
         price: Number(primaryColor?.price || detail.price || 0),
         color: primaryColor?.colorName || '',
-        thumbnail: primaryColor?.thumbnail || primaryColor?.images?.[0] || '',
+        thumbnail: primaryColor?.thumbnail || '',
         stock: totalStock,
         rating: Number(primaryColor?.rating || 0),
         reviewCount: Number(primaryColor?.reviewCount || 0),
         colors: matchingColors.map(color => color.colorName),
-        sizes: matchingColors.flatMap(color => color.sizes || []),
       };
     })
     .filter(product => {

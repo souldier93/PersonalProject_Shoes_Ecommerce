@@ -1,0 +1,28 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-41 View Low Stock Alert
+
+class "Admin Inventory UI" as UI <<boundary>>
+class "InventoryController" as Controller <<controller>>
+class "InventoryService" as Service <<service>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "StockMovement" as StockMovement <<domain>>
+class "ColorVariant" as ColorVariant <<domain>>
+class "SizeStock" as SizeStock <<domain>>
+
+UI --> Controller : GET /inventory/overview
+Controller --> Service : delegates
+Service --> ShoeDetail : uses
+Service --> StockMovement : uses
+Service --> ColorVariant : uses
+Service --> SizeStock : uses
+
+note right of UI
+UC-41 - View Low Stock Alert
+Actors: Admin, Manager
+Pre: Đang xem inventory
+Post: Danh sách sản phẩm low stock hiển thị
+end note
+@enduml

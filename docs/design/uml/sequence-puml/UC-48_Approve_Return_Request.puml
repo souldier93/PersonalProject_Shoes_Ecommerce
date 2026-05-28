@@ -1,0 +1,37 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-48 - Approve Return Request
+
+actor "Admin" as Actor
+boundary "Admin Purchases / Returns UI" as FE
+control "ReturnsController" as API
+control "ReturnsService" as Service
+database "MongoDB: returnRequests, bills" as DB
+
+Actor -> FE: Start UC-48
+FE -> API: PATCH /returns/:id/status
+API -> Service: Execute Approve Return Request
+Service -> DB: Read/write returnRequests, bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Return status = APPROVED
+
+alt Alternative / exception flow
+  note over FE,Service: Status hiện tại không phải PENDING -> lỗi
+end
+
+note over Actor,DB
+Pre: Return request đang ở status PENDING
+Post: Return status = APPROVED
+Main flow:
+1. Admin xem chi tiết return request
+2. Admin bấm Approve
+3. Admin nhập adminNote (optional)
+4. System gọi API PATCH /returns/:id/status { status: APPROVED, adminNote }
+5. System cập nhật status + adminNote
+6. System gửi email thông báo cho user
+end note
+@enduml

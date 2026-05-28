@@ -75,3 +75,8 @@ export class ShoeDetail {
 }
 
 export const ShoeDetailSchema = SchemaFactory.createForClass(ShoeDetail);
+
+ShoeDetailSchema.index({ productId: 1 }, { unique: true });
+ShoeDetailSchema.index({ category: 1, productType: 1 });
+ShoeDetailSchema.index({ 'colors.colorName': 1 });
+ShoeDetailSchema.index({ 'colors.sizes.size': 1 });

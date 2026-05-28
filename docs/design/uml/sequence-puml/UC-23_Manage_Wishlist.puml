@@ -1,0 +1,37 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-23 - Manage Wishlist
+
+actor "User" as Actor
+boundary "Wishlist UI" as FE
+control "WishlistController" as API
+control "WishlistService" as Service
+database "MongoDB: wishlist, shoesDetail" as DB
+
+Actor -> FE: Start UC-23
+FE -> API: GET/POST/DELETE /wishlist
+API -> Service: Execute Manage Wishlist
+Service -> DB: Read/write wishlist, shoesDetail
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Wishlist được cập nhật
+
+alt Alternative / exception flow
+  note over FE,Service: Sản phẩm đã trong wishlist -> xóa khỏi wishlist (toggle)
+end
+
+note over Actor,DB
+Pre: Đã đăng nhập
+Post: Wishlist được cập nhật
+Main flow:
+1. User vào trang /wishlist
+2. System gọi API GET /wishlist
+3. System trả về danh sách sản phẩm yêu thích
+4. User có thể xóa khỏi wishlist hoặc thêm vào cart
+5. User có thể thêm sản phẩm từ product detail (bấm icon tim)
+6. System gọi API POST /wishlist
+end note
+@enduml

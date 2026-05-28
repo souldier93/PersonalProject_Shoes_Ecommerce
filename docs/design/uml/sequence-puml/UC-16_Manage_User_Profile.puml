@@ -1,0 +1,36 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-16 - Manage User Profile
+
+actor "User" as Actor
+boundary "Auth / Profile UI" as FE
+control "AuthController" as API
+control "UsersService" as Service
+database "MongoDB: users, role" as DB
+
+Actor -> FE: Start UC-16
+FE -> API: GET/PATCH /auth/users/:id/profile
+API -> Service: Execute Manage User Profile
+Service -> DB: Read/write users, role
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Profile được cập nhật
+
+alt Alternative / exception flow
+  note over FE,Service: Phone không hợp lệ -> validation error
+end
+
+note over Actor,DB
+Pre: Đã đăng nhập
+Post: Profile được cập nhật
+Main flow:
+1. User vào trang /profile
+2. System hiển thị thông tin: username, email, fullName, phone, avatar
+3. User chỉnh sửa fullName, phone
+4. System gọi API PUT /auth/profile
+5. System cập nhật DB
+end note
+@enduml

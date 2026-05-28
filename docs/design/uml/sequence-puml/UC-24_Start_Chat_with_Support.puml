@@ -1,0 +1,37 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-24 - Start Chat with Support
+
+actor "User" as Actor
+boundary "Chat Widget / Admin Chat UI" as FE
+control "ChatController" as API
+control "ChatService" as Service
+database "MongoDB: chatConversations" as DB
+
+Actor -> FE: Start UC-24
+FE -> API: POST /chat/conversations + POST /chat/conversations/:id/messages
+API -> Service: Execute Start Chat with Support
+Service -> DB: Read/write chatConversations
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Chat conversation được tạo, tin nhắn được gửi
+
+alt Alternative / exception flow
+  note over FE,Service: User không đăng nhập -> yêu cầu tên + email
+end
+
+note over Actor,DB
+Pre: Đã đăng nhập
+Post: Chat conversation được tạo, tin nhắn được gửi
+Main flow:
+1. User bấm vào chat widget (góc phải màn hình)
+2. System tạo conversation (nếu chưa có) hoặc mở conversation hiện tại
+3. User nhập tin nhắn và gửi
+4. System gọi API POST /chat/conversations + POST\n/chat/conversations/:id/messages
+5. System tăng unreadForManager counter
+6. Tin nhắn hiển thị real-time trên widget
+end note
+@enduml

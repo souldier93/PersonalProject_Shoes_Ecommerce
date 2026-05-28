@@ -1,0 +1,31 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Admin" as Admin
+actor "Manager" as Manager
+Admin --|> Manager
+
+rectangle "Admin - Chat" {
+  usecase "UC-71\nView Open Conversations" as UC_71
+  usecase "UC-72\nOpen Conversation (Admin)" as UC_72
+  usecase "UC-73\nReply to Customer Chat" as UC_73
+  usecase "UC-74\nMark Conversation Read" as UC_74
+  usecase "UC-75\nClose Conversation" as UC_75
+}
+Admin --> UC_71
+Manager --> UC_71
+Admin --> UC_72
+Manager --> UC_72
+Admin --> UC_73
+Manager --> UC_73
+Admin --> UC_74
+Manager --> UC_74
+Admin --> UC_75
+Manager --> UC_75
+UC_72 ..> UC_73 : <<include>>
+UC_72 ..> UC_74 : <<include>>
+UC_72 ..> UC_75 : <<extend>>
+@enduml

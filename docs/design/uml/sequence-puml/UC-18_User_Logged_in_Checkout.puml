@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-18 - User (Logged-in) Checkout
+
+actor "User" as Actor
+boundary "Checkout / Payment UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills, shoesDetail, coupons" as DB
+
+Actor -> FE: Start UC-18
+FE -> API: POST /payments or POST /payments/stripe/create-intent
+API -> Service: Execute User (Logged-in) Checkout
+Service -> DB: Read/write bills, shoesDetail, coupons
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Redirect đến thanh toán
+
+alt Alternative / exception flow
+  note over FE,Service: Chọn address mặc định -> tự động fill
+end
+
+note over Actor,DB
+Pre: Đã đăng nhập, cart có items
+Post: Redirect đến thanh toán
+Main flow:
+1. User vào checkout
+2. System pre-fill thông tin từ profile (name, email, phone)
+3. User chọn từ saved addresses hoặc nhập address mới
+4. Các bước còn lại giống UC-09 Guest Checkout
+end note
+@enduml

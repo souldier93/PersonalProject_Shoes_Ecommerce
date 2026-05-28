@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="840" viewBox="0 0 1320 840">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,8 L11,4 z" fill="#334155"/>
+    </marker>
+  </defs>
+  <style>
+    svg { background: #ffffff; font-family: Calibri, Arial, sans-serif; }
+    .page-title { font-size: 34px; font-weight: 700; fill: #0B2545; }
+    .page-subtitle { font-size: 18px; fill: #475467; }
+    .box { fill: #ffffff; stroke: #D0D7DE; stroke-width: 1.8; }
+    .box-alt { fill: #f8fbff; stroke: #2E74B5; stroke-width: 2; }
+    .box-good { fill: #f2fbf3; stroke: #2E7D32; stroke-width: 2; }
+    .box-risk { fill: #fff7f7; stroke: #9B1C1C; stroke-width: 2; }
+    .box-warn { fill: #fff9e7; stroke: #7A5A00; stroke-width: 2; }
+    .lane { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.4; }
+    .box-title { font-size: 16px; font-weight: 700; fill: #0B2545; }
+    .box-body { font-size: 14px; fill: #344054; }
+    .lane-title { font-size: 18px; font-weight: 700; fill: #1F4D78; }
+    .label { font-size: 15px; fill: #0B2545; }
+    .small { font-size: 13px; fill: #475467; }
+    .arrow { stroke: #334155; stroke-width: 2; fill: none; }
+    .arrow-soft { stroke: #64748b; stroke-width: 1.5; fill: none; stroke-dasharray: 8 7; }
+    .arrow-label { font-size: 12px; fill: #475467; paint-order: stroke; stroke: #fff; stroke-width: 5px; }
+  </style>
+  <rect width="1320" height="840" fill="#ffffff"/>
+  <text x="50" y="55" class="page-title">Checkout &amp; Payment Flow</text>
+  <text x="50" y="86" class="page-subtitle">Quy trình thanh toán guest/user với PayOS, Stripe/Visa, webhook, email và xử lý lỗi.</text>
+  <rect x="120" y="120" width="185" height="660" rx="12" class="lane"/>
+<text x="212" y="150" class="lane-title" text-anchor="middle" dominant-baseline="middle"><tspan x="212" dy="0">Customer</tspan></text>
+<rect x="360" y="120" width="185" height="660" rx="12" class="lane"/>
+<text x="452" y="150" class="lane-title" text-anchor="middle" dominant-baseline="middle"><tspan x="452" dy="0">Frontend</tspan></text>
+<rect x="600" y="120" width="185" height="660" rx="12" class="lane"/>
+<text x="692" y="150" class="lane-title" text-anchor="middle" dominant-baseline="middle"><tspan x="692" dy="0">Backend API</tspan></text>
+<rect x="840" y="120" width="185" height="660" rx="12" class="lane"/>
+<text x="932" y="150" class="lane-title" text-anchor="middle" dominant-baseline="middle"><tspan x="932" dy="0">Payment Provider</tspan></text>
+<rect x="1080" y="120" width="185" height="660" rx="12" class="lane"/>
+<text x="1172" y="150" class="lane-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1172" dy="0">Email / Order</tspan></text>
+<g><rect x="120" y="210" width="185" height="105" rx="10" class="box-good"/><text x="212" y="233" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="212" dy="0">Select items</tspan></text><text x="212" y="264" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="212" dy="0">Choose size/color,</tspan><tspan x="212" dy="17">add to bag</tspan></text></g>
+<g><rect x="360" y="210" width="185" height="105" rx="10" class="box"/><text x="452" y="233" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="452" dy="0">Cart &amp; checkout</tspan></text><text x="452" y="264" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="452" dy="0">Validate customer,</tspan><tspan x="452" dy="17">address, coupon</tspan></text></g>
+<g><rect x="600" y="210" width="185" height="105" rx="10" class="box-alt"/><text x="692" y="233" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="692" dy="0">Create order</tspan></text><text x="692" y="247" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="692" dy="0">Reserve order</tspan><tspan x="692" dy="17">data, verify</tspan><tspan x="692" dy="17">stock, compute</tspan><tspan x="692" dy="17">total</tspan></text></g>
+<g><rect x="840" y="210" width="185" height="105" rx="10" class="box-warn"/><text x="932" y="233" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="932" dy="0">PayOS or Stripe</tspan></text><text x="932" y="255" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="932" dy="0">Bank QR/transfer</tspan><tspan x="932" dy="17">or Visa card</tspan><tspan x="932" dy="17">intent</tspan></text></g>
+<g><rect x="600" y="390" width="185" height="105" rx="10" class="box-alt"/><text x="692" y="413" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="692" dy="0">Webhook</tspan></text><text x="692" y="444" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="692" dy="0">Verify signature</tspan><tspan x="692" dy="17">and idempotency</tspan></text></g>
+<g><rect x="1080" y="390" width="185" height="105" rx="10" class="box-good"/><text x="1172" y="413" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1172" dy="0">Paid order</tspan></text><text x="1172" y="444" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1172" dy="0">Mark PAID, reduce</tspan><tspan x="1172" dy="17">stock, clear bag</tspan></text></g>
+<g><rect x="1080" y="560" width="185" height="105" rx="10" class="box-good"/><text x="1172" y="583" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1172" dy="0">Notification</tspan></text><text x="1172" y="605" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1172" dy="0">Send confirmation</tspan><tspan x="1172" dy="17">email with secure</tspan><tspan x="1172" dy="17">order details</tspan></text></g>
+<g><rect x="360" y="560" width="185" height="105" rx="10" class="box-risk"/><text x="452" y="583" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="452" dy="0">Failure state</tspan></text><text x="452" y="614" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="452" dy="0">Keep bag, show</tspan><tspan x="452" dy="17">actionable error</tspan></text></g>
+<line x1="305" y1="262" x2="360" y2="262" class="arrow" marker-end="url(#arrow)"/>
+<line x1="545" y1="262" x2="600" y2="262" class="arrow" marker-end="url(#arrow)"/>
+<line x1="785" y1="262" x2="840" y2="262" class="arrow" marker-end="url(#arrow)"/>
+<line x1="932" y1="315" x2="692" y2="390" class="arrow" marker-end="url(#arrow)"/><text x="812" y="338" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="812" dy="0">webhook</tspan></text>
+<line x1="785" y1="442" x2="1080" y2="442" class="arrow" marker-end="url(#arrow)"/>
+<line x1="1172" y1="495" x2="1172" y2="560" class="arrow" marker-end="url(#arrow)"/>
+<line x1="600" y1="315" x2="452" y2="560" class="arrow-soft" marker-end="url(#arrow)"/><text x="526" y="423" class="arrow-label" text-anchor="middle" dominant-baseline="middle"><tspan x="526" dy="0">validation error</tspan></text>
+</svg>

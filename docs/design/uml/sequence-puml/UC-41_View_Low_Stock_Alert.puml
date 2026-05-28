@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-41 - View Low Stock Alert
+
+actor "Admin" as Actor
+boundary "Admin Inventory UI" as FE
+control "InventoryController" as API
+control "InventoryService" as Service
+database "MongoDB: shoesDetail, stockMovements" as DB
+
+Actor -> FE: Start UC-41
+FE -> API: GET /inventory/overview
+API -> Service: Execute View Low Stock Alert
+Service -> DB: Read/write shoesDetail, stockMovements
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Danh sách sản phẩm low stock hiển thị
+
+note over Actor,DB
+Pre: Đang xem inventory
+Post: Danh sách sản phẩm low stock hiển thị
+Main flow:
+1. System tự động highlight sản phẩm có stock <= 5 (vàng) hoặc = 0 (đỏ)
+2. Admin vào tab Low Stock
+3. System gọi API GET /inventory/overview; frontend filters low stock
+4. Hiển thị danh sách cần nhập hàng
+end note
+@enduml

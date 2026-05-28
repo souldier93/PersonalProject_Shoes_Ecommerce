@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-61 - View Dashboard Overview
+
+actor "Admin" as Actor
+boundary "Admin Analytics UI" as FE
+control "AnalyticsController" as API
+control "AnalyticsService" as Service
+database "MongoDB: bills, shoesDetail" as DB
+
+Actor -> FE: Start UC-61
+FE -> API: GET /analytics/overview
+API -> Service: Execute View Dashboard Overview
+Service -> DB: Read/write bills, shoesDetail
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Dashboard hiển thị metrics tổng quan
+
+note over Actor,DB
+Pre: Đã đăng nhập với role admin/manager
+Post: Dashboard hiển thị metrics tổng quan
+Main flow:
+1. Admin vào /admin/dashboard
+2. System gọi API GET /analytics/overview
+3. System trả về: totalRevenue, totalOrders, totalProducts, totalUsers,\nrecentOrders[], topProducts[]
+4. Frontend hiển thị summary cards + charts
+end note
+@enduml

@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-19 - View Order History
+
+actor "User" as Actor
+boundary "My Orders / Admin Purchases UI" as FE
+control "PaymentController" as API
+control "PaymentService" as Service
+database "MongoDB: bills" as DB
+
+Actor -> FE: Start UC-19
+FE -> API: GET /payments/user/:userId/orders
+API -> Service: Execute View Order History
+Service -> DB: Read/write bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Danh sách đơn hàng hiển thị
+
+alt Alternative / exception flow
+  note over FE,Service: Chưa có đơn hàng -> empty state
+end
+
+note over Actor,DB
+Pre: Đã đăng nhập
+Post: Danh sách đơn hàng hiển thị
+Main flow:
+1. User vào trang /my-orders
+2. System gọi API GET /payments/user/:userId/orders
+3. System trả về danh sách bills (orderCode, items, paymentStatus,\nfulfillmentStatus, total, createdAt)
+4. User click vào 1 đơn để xem chi tiết
+end note
+@enduml

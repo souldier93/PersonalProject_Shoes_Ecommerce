@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1550" height="720" viewBox="0 0 1550 720">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,8 L11,4 z" fill="#334155"/>
+    </marker>
+  </defs>
+  <style>
+    svg { background: #ffffff; font-family: Calibri, Arial, sans-serif; }
+    .page-title { font-size: 34px; font-weight: 700; fill: #0B2545; }
+    .page-subtitle { font-size: 18px; fill: #475467; }
+    .box { fill: #ffffff; stroke: #D0D7DE; stroke-width: 1.8; }
+    .box-alt { fill: #f8fbff; stroke: #2E74B5; stroke-width: 2; }
+    .box-good { fill: #f2fbf3; stroke: #2E7D32; stroke-width: 2; }
+    .box-risk { fill: #fff7f7; stroke: #9B1C1C; stroke-width: 2; }
+    .box-warn { fill: #fff9e7; stroke: #7A5A00; stroke-width: 2; }
+    .lane { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.4; }
+    .box-title { font-size: 16px; font-weight: 700; fill: #0B2545; }
+    .box-body { font-size: 14px; fill: #344054; }
+    .lane-title { font-size: 18px; font-weight: 700; fill: #1F4D78; }
+    .label { font-size: 15px; fill: #0B2545; }
+    .small { font-size: 13px; fill: #475467; }
+    .arrow { stroke: #334155; stroke-width: 2; fill: none; }
+    .arrow-soft { stroke: #64748b; stroke-width: 1.5; fill: none; stroke-dasharray: 8 7; }
+    .arrow-label { font-size: 12px; fill: #475467; paint-order: stroke; stroke: #fff; stroke-width: 5px; }
+  </style>
+  <rect width="1550" height="720" fill="#ffffff"/>
+  <text x="50" y="55" class="page-title">Admin Operations Map</text>
+  <text x="50" y="86" class="page-subtitle">Nhóm chức năng quản trị cho product, order, inventory, returns, users, coupons, chat và analytics.</text>
+  <g><rect x="650" y="315" width="260" height="110" rx="10" class="box-alt"/><text x="780" y="338" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="780" dy="0">Admin Dashboard</tspan></text><text x="780" y="372" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="780" dy="0">Revenue, orders,</tspan><tspan x="780" dy="17">users, product KPIs</tspan></text></g>
+<g><rect x="90" y="150" width="235" height="100" rx="10" class="box"/><text x="207" y="173" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="207" dy="0">Product</tspan></text><text x="207" y="202" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="207" dy="0">CRUD, variants,</tspan><tspan x="207" dy="17">images, discounts</tspan></text></g>
+<line x1="650" y1="370" x2="207" y2="250" class="arrow-soft" marker-end="url(#arrow)"/>
+<g><rect x="390" y="150" width="235" height="100" rx="10" class="box"/><text x="507" y="173" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="507" dy="0">Orders</tspan></text><text x="507" y="202" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="507" dy="0">View, detail,</tspan><tspan x="507" dy="17">fulfillment, tracking</tspan></text></g>
+<line x1="650" y1="370" x2="507" y2="250" class="arrow-soft" marker-end="url(#arrow)"/>
+<g><rect x="960" y="150" width="235" height="100" rx="10" class="box"/><text x="1077" y="173" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1077" dy="0">Inventory</tspan></text><text x="1077" y="202" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1077" dy="0">Stock overview,</tspan><tspan x="1077" dy="17">adjust, movement log</tspan></text></g>
+<line x1="910" y1="370" x2="1077" y2="250" class="arrow-soft" marker-end="url(#arrow)"/>
+<g><rect x="1260" y="150" width="235" height="100" rx="10" class="box"/><text x="1377" y="173" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1377" dy="0">Returns</tspan></text><text x="1377" y="202" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1377" dy="0">Approve, reject,</tspan><tspan x="1377" dy="17">process, complete</tspan></text></g>
+<line x1="910" y1="370" x2="1377" y2="250" class="arrow-soft" marker-end="url(#arrow)"/>
+<g><rect x="90" y="500" width="235" height="100" rx="10" class="box"/><text x="207" y="523" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="207" dy="0">Coupons &amp; Users</tspan></text><text x="207" y="552" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="207" dy="0">Promo rules, roles,</tspan><tspan x="207" dy="17">account status</tspan></text></g>
+<line x1="650" y1="370" x2="207" y2="500" class="arrow-soft" marker-end="url(#arrow)"/>
+<g><rect x="390" y="500" width="235" height="100" rx="10" class="box"/><text x="507" y="523" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="507" dy="0">Live Chat</tspan></text><text x="507" y="552" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="507" dy="0">Open, reply, read,</tspan><tspan x="507" dy="17">close</tspan></text></g>
+<line x1="650" y1="370" x2="507" y2="500" class="arrow-soft" marker-end="url(#arrow)"/>
+<g><rect x="960" y="500" width="235" height="100" rx="10" class="box"/><text x="1077" y="523" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1077" dy="0">Analytics</tspan></text><text x="1077" y="552" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1077" dy="0">Revenue, order,</tspan><tspan x="1077" dy="17">product, user stats</tspan></text></g>
+<line x1="910" y1="370" x2="1077" y2="500" class="arrow-soft" marker-end="url(#arrow)"/>
+<g><rect x="1260" y="500" width="235" height="100" rx="10" class="box"/><text x="1377" y="523" class="box-title" text-anchor="middle" dominant-baseline="middle"><tspan x="1377" dy="0">Media / R2</tspan></text><text x="1377" y="552" class="box-body" text-anchor="middle" dominant-baseline="middle"><tspan x="1377" dy="0">Upload and reuse</tspan><tspan x="1377" dy="17">images</tspan></text></g>
+<line x1="910" y1="370" x2="1377" y2="500" class="arrow-soft" marker-end="url(#arrow)"/>
+</svg>

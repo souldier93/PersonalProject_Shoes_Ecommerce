@@ -1,0 +1,24 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-22 Track Return Status
+
+class "My Orders / Product Review UI" as UI <<boundary>>
+class "ReturnsController" as Controller <<controller>>
+class "ReturnsService" as Service <<service>>
+class "ReturnRequest" as ReturnRequest <<domain>>
+class "Bill" as Bill <<domain>>
+
+UI --> Controller : GET /returns/user/:userId
+Controller --> Service : delegates
+Service --> ReturnRequest : uses
+Service --> Bill : uses
+
+note right of UI
+UC-22 - Track Return Status
+Actors: User
+Pre: Đã tạo return request
+Post: Hiển thị trạng thái yêu cầu đổi trả
+end note
+@enduml

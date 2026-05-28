@@ -1,0 +1,37 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-43 - Adjust Stock (IN/OUT/ADJUST)
+
+actor "Admin" as Actor
+boundary "Admin Inventory UI" as FE
+control "InventoryController" as API
+control "InventoryService" as Service
+database "MongoDB: shoesDetail, stockMovements" as DB
+
+Actor -> FE: Start UC-43
+FE -> API: POST /inventory/adjust
+API -> Service: Execute Adjust Stock (IN/OUT/ADJUST)
+Service -> DB: Read/write shoesDetail, stockMovements
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Stock được cập nhật, stock movement được ghi
+
+alt Alternative / exception flow
+  note over FE,Service: Stock sau điều chỉnh < 0 -> lỗi
+end
+
+note over Actor,DB
+Pre: Đang xem inventory
+Post: Stock được cập nhật, stock movement được ghi
+Main flow:
+1. Admin chọn sản phẩm, color, size
+2. Admin chọn type: IN (nhập hàng) / OUT (xuất hàng) / ADJUST (điều chỉnh)
+3. Admin nhập quantity và reason
+4. System gọi API POST /inventory/adjust
+5. System cập nhật stock trong shoesDetail
+6. System tạo stockMovements record
+end note
+@enduml

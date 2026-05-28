@@ -1,0 +1,40 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-21 - Create Return Request
+
+actor "User" as Actor
+boundary "My Orders / Product Review UI" as FE
+control "ReturnsController" as API
+control "ReturnsService" as Service
+database "MongoDB: returnRequests, bills" as DB
+
+Actor -> FE: Start UC-21
+FE -> API: POST /returns
+API -> Service: Execute Create Return Request
+Service -> DB: Read/write returnRequests, bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Return request PENDING
+
+alt Alternative / exception flow
+  note over FE,Service: Đã có return request cho sản phẩm này -> 409
+end
+
+note over Actor,DB
+Pre: Đã đăng nhập, có đơn hàng PAID
+Post: Return request PENDING
+Main flow:
+1. User vào My Orders
+2. User chọn đơn hàng, bấm Return/Exchange
+3. User chọn type: RETURN / EXCHANGE / REFUND
+4. User chọn sản phẩm, color, size cần trả
+5. User nhập lý do
+6. User thêm ghi chú (optional)
+7. User bấm Submit
+8. System gọi API POST /returns
+9. System lưu return request (status: PENDING)
+end note
+@enduml

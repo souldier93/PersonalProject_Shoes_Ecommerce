@@ -1,0 +1,32 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseFontSize 11
+skinparam shadowing false
+
+actor "Admin" as Admin
+actor "Manager" as Manager
+Admin --|> Manager
+
+rectangle "Admin - Analytics" {
+  usecase "UC-61\nView Dashboard Overview" as UC_61
+  usecase "UC-62\nView Revenue Stats" as UC_62
+  usecase "UC-63\nView Order Stats" as UC_63
+  usecase "UC-64\nView Product Stats" as UC_64
+  usecase "UC-65\nView User Stats" as UC_65
+  usecase "UC-66\nFilter by Date Range" as UC_66
+  usecase "UC-67\nExport Analytics Report" as UC_67
+}
+Admin --> UC_61
+Manager --> UC_61
+Admin --> UC_62
+Manager --> UC_62
+Admin --> UC_63
+Manager --> UC_63
+Admin --> UC_64
+Manager --> UC_64
+Admin --> UC_65
+Admin --> UC_66
+Manager --> UC_66
+Admin --> UC_67
+@enduml

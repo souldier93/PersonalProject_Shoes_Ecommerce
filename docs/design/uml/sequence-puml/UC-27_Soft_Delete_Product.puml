@@ -1,0 +1,32 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-27 - Soft Delete Product
+
+actor "Admin" as Actor
+boundary "Admin Products UI" as FE
+control "ShoesController" as API
+control "ShoesService" as Service
+database "MongoDB: shoes, shoesDetail, counters" as DB
+
+Actor -> FE: Start UC-27
+FE -> API: POST /shoes/soft-delete/:productId
+API -> Service: Execute Soft Delete Product
+Service -> DB: Read/write shoes, shoesDetail, counters
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Sản phẩm bị ẩn khỏi store (stock = 0)
+
+note over Actor,DB
+Pre: Sản phẩm tồn tại
+Post: Sản phẩm bị ẩn khỏi store (stock = 0)
+Main flow:
+1. Admin vào /admin/products
+2. Admin chọn sản phẩm
+3. Admin bấm Delete (soft delete)
+4. System gọi API DELETE /shoes/product/:id
+5. System set stock = 0 cho tất cả variants (giữ data)
+end note
+@enduml

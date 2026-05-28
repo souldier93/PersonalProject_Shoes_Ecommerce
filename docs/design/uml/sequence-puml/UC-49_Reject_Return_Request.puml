@@ -1,0 +1,32 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-49 - Reject Return Request
+
+actor "Admin" as Actor
+boundary "Admin Purchases / Returns UI" as FE
+control "ReturnsController" as API
+control "ReturnsService" as Service
+database "MongoDB: returnRequests, bills" as DB
+
+Actor -> FE: Start UC-49
+FE -> API: PATCH /returns/:id/status
+API -> Service: Execute Reject Return Request
+Service -> DB: Read/write returnRequests, bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Return status = REJECTED
+
+note over Actor,DB
+Pre: Return request đang ở status PENDING
+Post: Return status = REJECTED
+Main flow:
+1. Admin xem chi tiết
+2. Admin bấm Reject
+3. Admin nhập lý do reject (adminNote required)
+4. System gọi API PATCH /returns/:id/status { status: REJECTED, adminNote }
+5. System gửi email thông báo
+end note
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-04 Check Stock Real-time
+
+class "Product UI" as UI <<boundary>>
+class "ShoesController / ReviewsController" as Controller <<controller>>
+class "ShoesService / ReviewsService" as Service <<service>>
+class "Shoe" as Shoe <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "Review" as Review <<domain>>
+
+UI --> Controller : GET /shoes/:productId/stock/:colorName/:size
+Controller --> Service : delegates
+Service --> Shoe : uses
+Service --> ShoeDetail : uses
+Service --> Review : uses
+
+note right of UI
+UC-04 - Check Stock Real-time
+Actors: Guest, User, Manager, Admin
+Pre: Đang ở trang product detail
+Post: Hiển thị số lượng tồn kho của size đã chọn
+end note
+@enduml

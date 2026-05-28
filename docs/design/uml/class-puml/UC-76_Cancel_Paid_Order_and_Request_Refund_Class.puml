@@ -1,0 +1,30 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-76 Cancel Paid Order and Request Refund
+
+class "Checkout / Payment UI" as UI <<boundary>>
+class "PaymentController" as Controller <<controller>>
+class "PaymentService" as Service <<service>>
+class "Bill" as Bill <<domain>>
+class "ShoeDetail" as ShoeDetail <<domain>>
+class "Coupon" as Coupon <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : POST /payments/orders/:orderCode/cancel-refund
+Controller --> Service : delegates
+Service --> Bill : uses
+Service --> ShoeDetail : uses
+Service --> Coupon : uses
+Service --> OrderEmailService : uses
+Service --> "Stripe Gateway" : integrates
+Service --> "Gmail SMTP" : email notification
+
+note right of UI
+UC-76 - Cancel Paid Order and Request Refund
+Actors: Guest, User, Stripe Gateway, System
+Pre: Order is PAID and fulfillment status is CONFIRMED or PACKING
+Post: Order is CANCELLED and refund is REFUNDED or REFUND_PENDING
+end note
+@enduml

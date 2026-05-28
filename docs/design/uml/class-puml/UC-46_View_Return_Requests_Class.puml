@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-46 View Return Requests
+
+class "Admin Purchases / Returns UI" as UI <<boundary>>
+class "ReturnsController" as Controller <<controller>>
+class "ReturnsService" as Service <<service>>
+class "ReturnRequest" as ReturnRequest <<domain>>
+class "Bill" as Bill <<domain>>
+class "OrderEmailService" as OrderEmailService <<domain>>
+
+UI --> Controller : GET /returns
+Controller --> Service : delegates
+Service --> ReturnRequest : uses
+Service --> Bill : uses
+Service --> OrderEmailService : uses
+
+note right of UI
+UC-46 - View Return Requests
+Actors: Admin, Manager
+Pre: Đã đăng nhập với role admin/manager
+Post: Danh sách return requests hiển thị
+end note
+@enduml

@@ -1,0 +1,37 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-06 - Add Product to Cart
+
+actor "Guest" as Actor
+boundary "Cart UI" as FE
+control "Local cart utilities" as API
+control "bagStorage / bagHelper" as Service
+database "Browser localStorage" as DB
+
+Actor -> FE: Start UC-06
+FE -> API: Local cart + optional GET /shoes/:productId/stock/:colorName/:size
+API -> Service: Execute Add Product to Cart
+FE -> FE: Update cart state and localStorage
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Sản phẩm được thêm vào giỏ hàng
+
+alt Alternative / exception flow
+  note over FE,Service: Stock không đủ -> hiển thị lỗi
+  note over FE,Service: Sản phẩm đã có trong cart -> tăng quantity (nếu còn stock)
+end
+
+note over Actor,DB
+Pre: Đang ở trang product detail, đã chọn color + size, còn hàng
+Post: Sản phẩm được thêm vào giỏ hàng
+Main flow:
+1. User chọn quantity (mặc định: 1)
+2. User bấm \"Add to Bag\"
+3. System kiểm tra stock lần nữa
+4. System thêm item vào cart state (Pinia store)
+5. System lưu cart vào localStorage (cho guest)
+6. Toast notification: \"Added to bag\"
+end note
+@enduml

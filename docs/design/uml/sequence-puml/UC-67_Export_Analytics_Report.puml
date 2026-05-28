@@ -1,0 +1,30 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-67 - Export Analytics Report
+
+actor "Admin" as Actor
+boundary "Admin Analytics UI" as FE
+control "AnalyticsController" as API
+control "AnalyticsService" as Service
+database "MongoDB: bills, shoesDetail" as DB
+
+Actor -> FE: Start UC-67
+FE -> API: Analytics export endpoint recommended
+API -> Service: Execute Export Analytics Report
+Service -> DB: Read/write bills, shoesDetail
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: File báo cáo được tải xuống
+
+note over Actor,DB
+Pre: Đang ở dashboard
+Post: File báo cáo được tải xuống
+Main flow:
+1. Admin bấm Export
+2. System generate PDF/CSV report
+3. System trả về file download
+end note
+@enduml

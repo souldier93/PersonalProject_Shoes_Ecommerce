@@ -1,0 +1,36 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-17 - Manage Addresses
+
+actor "User" as Actor
+boundary "Auth / Profile UI" as FE
+control "AuthController" as API
+control "UsersService" as Service
+database "MongoDB: users, role" as DB
+
+Actor -> FE: Start UC-17
+FE -> API: POST/PATCH/DELETE /auth/users/:id/addresses
+API -> Service: Execute Manage Addresses
+Service -> DB: Read/write users, role
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Địa chỉ được lưu/cập nhật/xóa
+
+alt Alternative / exception flow
+  note over FE,Service: Địa chỉ không hợp lệ -> validation error
+end
+
+note over Actor,DB
+Pre: Đã đăng nhập
+Post: Địa chỉ được lưu/cập nhật/xóa
+Main flow:
+1. User vào trang /profile/addresses
+2. System gọi API GET /auth/users/:id/profile
+3. System hiển thị danh sách địa chỉ
+4. User có thể: thêm, sửa, xóa, đặt làm mặc định
+5. System gọi API POST/PATCH/DELETE /auth/users/:id/addresses
+end note
+@enduml

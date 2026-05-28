@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+title Class Diagram - UC-06 Add Product to Cart
+
+class "Cart UI" as UI <<boundary>>
+class "Local cart utilities" as Controller <<controller>>
+class "bagStorage / bagHelper" as Service <<service>>
+class "CartItem" as CartItem <<domain>>
+class "BagStorage" as BagStorage <<domain>>
+class "BagHelper" as BagHelper <<domain>>
+
+UI --> Controller : Local cart + optional GET /shoes/:productId/stock/:colorName/:size
+Controller --> Service : delegates
+Service --> CartItem : uses
+Service --> BagStorage : uses
+Service --> BagHelper : uses
+
+note right of UI
+UC-06 - Add Product to Cart
+Actors: Guest, User
+Pre: Đang ở trang product detail, đã chọn color + size, còn hàng
+Post: Sản phẩm được thêm vào giỏ hàng
+end note
+@enduml

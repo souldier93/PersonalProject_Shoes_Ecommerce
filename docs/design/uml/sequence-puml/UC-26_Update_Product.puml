@@ -1,0 +1,37 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-26 - Update Product
+
+actor "Admin" as Actor
+boundary "Admin Products UI" as FE
+control "ShoesController" as API
+control "ShoesService" as Service
+database "MongoDB: shoes, shoesDetail, counters" as DB
+
+Actor -> FE: Start UC-26
+FE -> API: PUT /shoes/:styleCode
+API -> Service: Execute Update Product
+Service -> DB: Read/write shoes, shoesDetail, counters
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Thông tin sản phẩm được cập nhật
+
+alt Alternative / exception flow
+  note over FE,Service: Dữ liệu không hợp lệ -> 400 Bad Request
+end
+
+note over Actor,DB
+Pre: Sản phẩm tồn tại
+Post: Thông tin sản phẩm được cập nhật
+Main flow:
+1. Admin vào /admin/products
+2. Admin chọn sản phẩm cần sửa
+3. Admin chỉnh sửa: giá, mô tả, hình ảnh, stock, colors
+4. Admin bấm Save
+5. System gọi API PUT/PATCH /shoes/product/:id
+6. System cập nhật DB
+end note
+@enduml

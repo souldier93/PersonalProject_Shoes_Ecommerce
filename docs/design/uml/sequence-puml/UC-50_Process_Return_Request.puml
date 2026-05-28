@@ -1,0 +1,32 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-50 - Process Return Request
+
+actor "Admin" as Actor
+boundary "Admin Purchases / Returns UI" as FE
+control "ReturnsController" as API
+control "ReturnsService" as Service
+database "MongoDB: returnRequests, bills" as DB
+
+Actor -> FE: Start UC-50
+FE -> API: PATCH /returns/:id/status
+API -> Service: Execute Process Return Request
+Service -> DB: Read/write returnRequests, bills
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Return status = PROCESSING
+
+note over Actor,DB
+Pre: Return status = APPROVED
+Post: Return status = PROCESSING
+Main flow:
+1. Admin chọn return status APPROVED
+2. Admin bấm Process
+3. System gọi API PATCH /returns/:id/status { status: PROCESSING }
+4. System cập nhật status
+5. Có thể hoàn stock nếu là RETURN/EXCHANGE
+end note
+@enduml

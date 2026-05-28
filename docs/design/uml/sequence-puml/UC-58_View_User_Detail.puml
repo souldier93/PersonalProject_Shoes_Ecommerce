@@ -1,0 +1,30 @@
+@startuml
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+title UC-58 - View User Detail
+
+actor "Admin" as Actor
+boundary "Admin Users UI" as FE
+control "AuthController" as API
+control "UsersService" as Service
+database "MongoDB: users, role" as DB
+
+Actor -> FE: Start UC-58
+FE -> API: GET /auth/users/:id
+API -> Service: Execute View User Detail
+Service -> DB: Read/write users, role
+DB --> Service: Domain data
+Service --> API: Result
+API --> FE: Response
+FE --> Actor: Chi tiết user hiển thị
+
+note over Actor,DB
+Pre: User tồn tại
+Post: Chi tiết user hiển thị
+Main flow:
+1. Admin click vào user
+2. System gọi API GET /auth/users/:userId
+3. System trả về: username, email, fullName, phone, role, addresses,\ncreatedAt, orderCount
+end note
+@enduml
