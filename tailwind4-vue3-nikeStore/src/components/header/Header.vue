@@ -301,7 +301,7 @@ onBeforeUnmount(() => {
           <input
             v-model="searchTerm"
             @keyup.enter="searchProducts"
-            class="ml-2 w-40 bg-transparent text-sm font-medium text-gray-700 outline-none placeholder:text-gray-500"
+            class="ml-2 w-24 bg-transparent text-sm font-medium text-gray-700 outline-none placeholder:text-gray-500"
             placeholder="Search"
             aria-label="Search products"
           />
