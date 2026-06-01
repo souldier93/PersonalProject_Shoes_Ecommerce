@@ -15,6 +15,7 @@ const lastAddedItem = ref(null)
 const showProfileMenu = ref(false)
 const showHelpMenu = ref(false)
 const showMobileMenu = ref(false)
+const showSearchPanel = ref(false)
 const profileRef = ref(null)
 const helpRef = ref(null)
 const searchTerm = ref('')
@@ -51,6 +52,7 @@ const closeMenus = () => {
   showMobileMenu.value = false
   showProfileMenu.value = false
   showHelpMenu.value = false
+  showSearchPanel.value = false
 }
 
 const goToLogin = () => {
@@ -85,6 +87,12 @@ const toggleHelpMenu = () => {
 
 const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value
+  showSearchPanel.value = false
+}
+
+const toggleSearchPanel = () => {
+  showSearchPanel.value = !showSearchPanel.value
+  showMobileMenu.value = false
 }
 
 const goToMyOrders = () => {
@@ -261,7 +269,7 @@ onBeforeUnmount(() => {
       <div class="flex min-w-0 flex-1 items-center gap-3">
         <button
           @click="toggleMobileMenu"
-          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 lg:hidden"
+          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 xl:hidden"
           aria-label="Toggle navigation"
         >
           <svg v-if="!showMobileMenu" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -276,7 +284,7 @@ onBeforeUnmount(() => {
           <img src="/assets/img/ptt-style-logo.svg" alt="PTT Style" class="h-10 w-auto max-w-[132px] cursor-pointer transition hover:opacity-80" />
         </router-link>
 
-        <ul class="hidden min-w-0 flex-1 items-center justify-center gap-4 font-semibold text-gray-900 lg:flex xl:gap-7">
+        <ul class="hidden min-w-0 flex-1 items-center justify-center gap-4 font-semibold text-gray-900 xl:flex 2xl:gap-7">
           <li v-for="item in navItems" :key="item.label">
             <button type="button" @click="goToProducts(item.query)" class="whitespace-nowrap hover:text-gray-600">{{ item.label }}</button>
           </li>
@@ -284,7 +292,7 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-5">
-        <div class="hidden items-center rounded-full bg-gray-100 px-4 py-1.5 text-gray-500 xl:flex">
+        <div class="hidden items-center rounded-full bg-gray-100 px-4 py-1.5 text-gray-500 2xl:flex">
           <button type="button" @click="searchProducts" aria-label="Search products">
             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z" />
@@ -293,11 +301,23 @@ onBeforeUnmount(() => {
           <input
             v-model="searchTerm"
             @keyup.enter="searchProducts"
-            class="ml-2 w-32 bg-transparent text-sm font-medium text-gray-700 outline-none placeholder:text-gray-500 2xl:w-40"
+            class="ml-2 w-40 bg-transparent text-sm font-medium text-gray-700 outline-none placeholder:text-gray-500"
             placeholder="Search"
             aria-label="Search products"
           />
         </div>
+
+        <button
+          type="button"
+          @click="toggleSearchPanel"
+          class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700 transition hover:bg-gray-200 xl:inline-flex 2xl:hidden"
+          aria-label="Search products"
+          :aria-expanded="showSearchPanel"
+        >
+          <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z" />
+          </svg>
+        </button>
 
         <router-link to="/wishlist" class="relative hidden transition hover:scale-110 sm:block" @click="closeMenus" aria-label="Wishlist">
           <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -398,7 +418,29 @@ onBeforeUnmount(() => {
     </div>
 
     <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
-      <div v-if="showMobileMenu" class="fixed left-0 right-0 top-[104px] z-40 border-b border-gray-200 bg-white px-4 py-4 shadow-lg md:top-[140px] lg:hidden">
+      <div v-if="showSearchPanel" class="hidden border-t border-gray-100 bg-white px-4 py-3 shadow-sm xl:block 2xl:hidden">
+        <div class="mx-auto flex max-w-7xl justify-end px-0 sm:px-2 lg:px-6">
+          <div class="flex w-full max-w-md items-center rounded-full bg-gray-100 px-4 py-2 text-gray-500">
+            <button type="button" @click="searchProducts" aria-label="Search products">
+              <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z" />
+              </svg>
+            </button>
+            <input
+              v-model="searchTerm"
+              @keyup.enter="searchProducts"
+              @keyup.esc="showSearchPanel = false"
+              class="ml-2 w-full bg-transparent text-sm font-medium text-gray-700 outline-none placeholder:text-gray-500"
+              placeholder="Search products"
+              aria-label="Search products"
+            />
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
+      <div v-if="showMobileMenu" class="fixed left-0 right-0 top-[104px] z-40 border-b border-gray-200 bg-white px-4 py-4 shadow-lg md:top-[140px] xl:hidden">
         <div class="mb-3 flex items-center rounded-full bg-gray-100 px-4 py-2 text-gray-500">
           <button type="button" @click="searchProducts" aria-label="Search products">
             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
