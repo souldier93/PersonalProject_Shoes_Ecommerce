@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { readProductScrollRestore } from "../utils/productScrollRestore";
 
 // ✅ Import components
 
@@ -144,12 +145,18 @@ const router = createRouter({
   routes,
   // ✅ Scroll to top khi chuyển trang
   scrollBehavior(to, from, savedPosition) {
+    const pendingProductRestore = from.name === 'ShoesDetail'
+      ? readProductScrollRestore(to.fullPath, { removeInvalid: false })
+      : null;
+
     if (to.name === 'Products' && from.name === 'ShoesDetail') {
       return false;
     }
 
     if (savedPosition) {
       return savedPosition;
+    } else if (to.name === 'Home' && from.name === 'ShoesDetail' && pendingProductRestore) {
+      return { top: Math.max(0, Number(pendingProductRestore.scrollY || 0)) };
     } else {
       return { top: 0 };
     }

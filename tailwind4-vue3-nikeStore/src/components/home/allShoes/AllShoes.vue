@@ -185,14 +185,17 @@ import {
   productTypeLabel,
 } from '../../../utils/productMeta'
 import { API_BASE } from '../../../utils/apiBase'
+import {
+  PRODUCT_SCROLL_RESTORE_KEY,
+  readProductScrollRestore,
+  removeProductScrollRestore,
+} from '../../../utils/productScrollRestore'
 
 const PRODUCTS_CACHE_PREFIX = 'ptt-products'
 const PRODUCTS_CACHE_TTL_MS = 60 * 1000
-const PRODUCT_SCROLL_RESTORE_KEY = 'ptt-product-scroll-restore'
-const PRODUCT_SCROLL_RESTORE_MAX_AGE_MS = 10 * 60 * 1000
-const PRODUCT_SCROLL_RESTORE_MIN_DURATION_MS = 1200
-const PRODUCT_SCROLL_RESTORE_MAX_DURATION_MS = 3200
-const PRODUCT_SCROLL_RESTORE_FRAME_LIMIT = 240
+const PRODUCT_SCROLL_RESTORE_MIN_DURATION_MS = 4200
+const PRODUCT_SCROLL_RESTORE_MAX_DURATION_MS = 8000
+const PRODUCT_SCROLL_RESTORE_FRAME_LIMIT = 520
 const PRODUCT_SCROLL_RESTORE_STABLE_FRAMES = 10
 const PRODUCT_SCROLL_RESTORE_TOLERANCE_PX = 2
 const PRODUCT_SCROLL_RESTORE_MOBILE_HEADER_OFFSET_PX = 112
@@ -207,6 +210,7 @@ export default {
       products: [],
       activeRequestId: 0,
       productScrollRestoreFrameId: null,
+      productScrollRestoreCancelListeners: [],
       eagerImageCount: 6,
       categoryOptions: CATEGORY_OPTIONS,
       productTypeOptions: PRODUCT_TYPE_OPTIONS,
@@ -491,30 +495,14 @@ export default {
     },
 
     readProductScrollPosition() {
-      try {
-        const raw = sessionStorage.getItem(PRODUCT_SCROLL_RESTORE_KEY)
-        if (!raw) return null
-
-        const saved = JSON.parse(raw)
-        const isExpired = Date.now() - Number(saved.savedAt || 0) > PRODUCT_SCROLL_RESTORE_MAX_AGE_MS
-        const isSameRoute = saved.route === (this.$route?.fullPath || '')
-
-        if (isExpired || !isSameRoute) {
-          sessionStorage.removeItem(PRODUCT_SCROLL_RESTORE_KEY)
-          return null
-        }
-
-        return saved
-      } catch {
-        sessionStorage.removeItem(PRODUCT_SCROLL_RESTORE_KEY)
-        return null
-      }
+      return readProductScrollRestore(this.$route?.fullPath || '')
     },
 
     restoreProductScrollPosition() {
       const saved = this.readProductScrollPosition()
       if (!saved) return
       this.clearProductScrollRestoreLoop()
+      this.startProductScrollRestoreUserCancel()
 
       this.$nextTick(() => {
         const startedAt = window.performance?.now?.() || Date.now()
@@ -541,7 +529,7 @@ export default {
             || frameCount >= PRODUCT_SCROLL_RESTORE_FRAME_LIMIT
 
           if (hasSettled || hasTimedOut) {
-            sessionStorage.removeItem(PRODUCT_SCROLL_RESTORE_KEY)
+            removeProductScrollRestore()
             this.clearProductScrollRestoreLoop()
             return
           }
@@ -597,6 +585,24 @@ export default {
         window.cancelAnimationFrame(this.productScrollRestoreFrameId)
         this.productScrollRestoreFrameId = null
       }
+
+      this.productScrollRestoreCancelListeners.forEach(({ eventName, cancel }) => {
+        window.removeEventListener(eventName, cancel)
+      })
+      this.productScrollRestoreCancelListeners = []
+    },
+
+    startProductScrollRestoreUserCancel() {
+      const cancel = () => {
+        removeProductScrollRestore()
+        this.clearProductScrollRestoreLoop()
+      }
+      const eventNames = ['wheel', 'touchstart', 'keydown']
+
+      eventNames.forEach((eventName) => {
+        window.addEventListener(eventName, cancel, { passive: true, once: true })
+        this.productScrollRestoreCancelListeners.push({ eventName, cancel })
+      })
     },
 
     formatPrice(price) {

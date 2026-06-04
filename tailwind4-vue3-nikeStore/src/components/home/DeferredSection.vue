@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps({
   minHeight: {
@@ -10,10 +10,14 @@ const props = defineProps({
     type: String,
     default: '320px 0px',
   },
+  eager: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const containerRef = ref(null)
-const shouldRender = ref(false)
+const shouldRender = ref(props.eager)
 let observer = null
 
 const placeholderStyle = computed(() => ({
@@ -21,6 +25,11 @@ const placeholderStyle = computed(() => ({
 }))
 
 onMounted(() => {
+  if (props.eager) {
+    shouldRender.value = true
+    return
+  }
+
   if (!('IntersectionObserver' in window)) {
     shouldRender.value = true
     return
@@ -41,6 +50,16 @@ onMounted(() => {
 onUnmounted(() => {
   observer?.disconnect()
 })
+
+watch(
+  () => props.eager,
+  (eager) => {
+    if (!eager) return
+    shouldRender.value = true
+    observer?.disconnect()
+    observer = null
+  },
+)
 </script>
 
 <template>

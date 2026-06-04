@@ -24,6 +24,16 @@ assert.match(
 assert.match(app, /defineAsyncComponent/, 'Non-critical shell components should load asynchronously')
 
 assert.match(home, /DeferredSection/, 'Below-the-fold home sections should be mounted on demand')
+assert.match(
+  home,
+  /hasPendingProductScrollRestore/,
+  'Home should detect pending product scroll restoration before deferring the product list',
+)
+assert.match(
+  home,
+  /:eager="hasPendingProductScrollRestore"/,
+  'Home should eagerly mount deferred product sections when a tapped product restore is pending',
+)
 assert.match(allShoes, /PRODUCTS_CACHE_TTL_MS/, 'Product listing should reuse a short-lived client cache')
 assert.match(
   allShoes,
