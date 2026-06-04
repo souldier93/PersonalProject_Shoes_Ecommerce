@@ -18,6 +18,9 @@
 
                         <!-- Image Thumbnail -->
                         <img v-else :src="img" class="w-full h-full object-contain transition-opacity duration-200"
+                            :loading="i === selectedImgIndex ? 'eager' : 'lazy'"
+                            :fetchpriority="i === selectedImgIndex ? 'high' : 'auto'"
+                            decoding="async"
                             :class="isMediaLoading(img) ? 'opacity-0' : 'opacity-100'"
                             @load="markMediaLoaded(img)" @error="markMediaLoaded(img)" />
 
@@ -45,6 +48,10 @@
                     <!-- Image Display -->
                     <img v-else-if="currentImages[selectedImgIndex]" :src="currentImages[selectedImgIndex]"
                         class="h-full w-full object-contain transition-opacity duration-200"
+                        :alt="`${productName} ${selectedColorName || ''}`"
+                        loading="eager"
+                        fetchpriority="high"
+                        decoding="async"
                         :class="isMediaLoading(currentImages[selectedImgIndex]) ? 'opacity-0' : 'opacity-100'"
                         @load="markMediaLoaded(currentImages[selectedImgIndex])"
                         @error="markMediaLoaded(currentImages[selectedImgIndex])" />
@@ -87,6 +94,9 @@
                                 !isColorAvailable(color) && 'opacity-50'
                             ]">
                             <img :src="color.thumbnail || color.images?.[0]"
+                                :alt="color.colorName || productName"
+                                loading="lazy"
+                                decoding="async"
                                 class="w-full h-full object-cover rounded-lg" />
 
                             <!-- Sold Out Overlay -->
@@ -302,7 +312,7 @@
                 <button v-for="item in relatedProducts" :key="item.productId" type="button" @click="goToRelatedProduct(item)"
                     class="w-56 shrink-0 text-left">
                     <div class="mb-3 flex aspect-square items-center justify-center rounded-md bg-gray-100">
-                        <img :src="item.thumbnail" :alt="item.name" class="h-full w-full object-contain" />
+                        <img :src="item.thumbnail" :alt="item.name" loading="lazy" decoding="async" class="h-full w-full object-contain" />
                     </div>
                     <p class="font-semibold">{{ item.name }}</p>
                     <p class="text-sm text-gray-500">{{ productTypeLabel(item.productType) }}</p>
@@ -572,9 +582,11 @@ export default {
             const id = this.$route.params.id;
             const res = await axios.get(`${API_BASE}/shoes/detail/${id}`);
             this.product = res.data;
-            await this.fetchReviews();
-            await this.fetchRelatedProducts();
-            await this.fetchWishlistState();
+            await Promise.allSettled([
+                this.fetchReviews(),
+                this.fetchRelatedProducts(),
+                this.fetchWishlistState(),
+            ]);
 
             console.log('✅ Product loaded:', {
                 id: this.product._id,
@@ -600,9 +612,11 @@ export default {
                     this.relatedProducts = [];
                     const res = await axios.get(`${API_BASE}/shoes/detail/${id}`);
                     this.product = res.data;
-                    await this.fetchReviews();
-                    await this.fetchRelatedProducts();
-                    await this.fetchWishlistState();
+                    await Promise.allSettled([
+                        this.fetchReviews(),
+                        this.fetchRelatedProducts(),
+                        this.fetchWishlistState(),
+                    ]);
                 } catch (error) {
                     console.error('Error loading product:', error);
                 }
@@ -710,7 +724,9 @@ export default {
             if (!this.product) return;
 
             try {
-                const res = await axios.get(`${API_BASE}/shoes`, { params: { sort: 'rating' } });
+                const res = await axios.get(`${API_BASE}/shoes/related/${this.product.productId}`, {
+                    params: { limit: 8 },
+                });
                 const products = res.data || [];
                 const sameType = products.filter(item =>
                     item.productId !== this.product.productId &&

@@ -3,6 +3,9 @@ backend:
   image: <acr-name>.azurecr.io/shoes-backend:latest
   targetPort: 3000
   ingress: external
+  scale:
+    minReplicas: 1
+    maxReplicas: 3
   env:
     NODE_ENV: production
     PORT: "3000"
@@ -26,6 +29,9 @@ frontend:
   image: <acr-name>.azurecr.io/shoes-frontend:latest
   targetPort: 80
   ingress: external
+  scale:
+    minReplicas: 1
+    maxReplicas: 3
   buildArgs:
     VITE_API_BASE_URL: https://<backend-container-app-fqdn>
     VITE_STRIPE_PUBLISHABLE_KEY: <stripe-publishable-key>

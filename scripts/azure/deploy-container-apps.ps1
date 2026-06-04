@@ -6,7 +6,9 @@ param(
   [string]$BackendAppName = "shoes-backend",
   [string]$FrontendAppName = "shoes-frontend",
   [string]$BackendEnvPath = ".\nike-store-nest-js\.env",
-  [string]$FrontendEnvPath = ".\tailwind4-vue3-nikeStore\.env"
+  [string]$FrontendEnvPath = ".\tailwind4-vue3-nikeStore\.env",
+  [int]$BackendMinReplicas = 1,
+  [int]$FrontendMinReplicas = 1
 )
 
 $ErrorActionPreference = "Stop"
@@ -199,6 +201,7 @@ if ($backendExists) {
     --name $BackendAppName `
     --resource-group $ResourceGroup `
     --image "$registryServer/shoes-backend:latest" `
+    --min-replicas $BackendMinReplicas `
     --replace-env-vars @envArgs | Out-Null
 } else {
   Invoke-Az containerapp create `
@@ -208,6 +211,7 @@ if ($backendExists) {
     --image "$registryServer/shoes-backend:latest" `
     --target-port 3000 `
     --ingress external `
+    --min-replicas $BackendMinReplicas `
     --registry-server $registryServer `
     --registry-username $RegistryName `
     --registry-password $acrPassword `
@@ -244,7 +248,8 @@ if ($frontendExists) {
   Invoke-Az containerapp update `
     --name $FrontendAppName `
     --resource-group $ResourceGroup `
-    --image "$registryServer/shoes-frontend:latest" | Out-Null
+    --image "$registryServer/shoes-frontend:latest" `
+    --min-replicas $FrontendMinReplicas | Out-Null
 } else {
   Invoke-Az containerapp create `
     --name $FrontendAppName `
@@ -253,6 +258,7 @@ if ($frontendExists) {
     --image "$registryServer/shoes-frontend:latest" `
     --target-port 80 `
     --ingress external `
+    --min-replicas $FrontendMinReplicas `
     --registry-server $registryServer `
     --registry-username $RegistryName `
     --registry-password $acrPassword | Out-Null

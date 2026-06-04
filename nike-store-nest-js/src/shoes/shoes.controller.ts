@@ -30,6 +30,15 @@ export class ShoesController {
     return this.shoesService.findDetailByProductId(productId);
   }
 
+  // GET /shoes/related/:productId - related cards without the filtered catalog path
+  @Get('related/:productId')
+  async getRelatedByProductId(
+    @Param('productId') productId: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.shoesService.findRelatedByProductId(productId, Number(limit) || 8);
+  }
+
   // GET /shoes/details - Láº¥y táº¥t cáº£ tá»« shoesDetail (náº¿u cáº§n)
   @Get('details')
   async getAllDetails(@Query('category') category?: string) {

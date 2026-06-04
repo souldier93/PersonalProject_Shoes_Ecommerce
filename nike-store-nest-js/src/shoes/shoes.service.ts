@@ -189,6 +189,85 @@ async findWithFilters(query: {
   return products;
 }
 
+async findRelatedByProductId(productId: string, limit = 8) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 8, 1), 24);
+  const cacheKey = this.buildCacheKey('related', `${productId}:${safeLimit}`);
+  const cached = await this.redisCache.getJson<any[]>(cacheKey);
+  if (cached) return cached;
+
+  const detail = await this.shoeDetailModel
+    .findOne({ productId })
+    .select('productId category productType')
+    .lean()
+    .exec();
+
+  if (!detail) {
+    throw new NotFoundException(
+      `Shoe detail with productId "${productId}" not found`,
+    );
+  }
+
+  const relatedByProductId = new Map<string, any>();
+  const addUniqueProducts = (items: any[] = []) => {
+    for (const item of items) {
+      if (!item?.productId || item.productId === productId) continue;
+      if (relatedByProductId.has(item.productId)) continue;
+      relatedByProductId.set(item.productId, item);
+    }
+  };
+
+  if (detail.category && detail.productType) {
+    addUniqueProducts(
+      await this.shoeModel
+        .find({
+          productId: { $ne: productId },
+          category: detail.category,
+          productType: detail.productType,
+        })
+        .select(this.shoeListFields)
+        .sort({ productId: 1 })
+        .limit(safeLimit)
+        .lean()
+        .exec(),
+    );
+  }
+
+  if (relatedByProductId.size < safeLimit && detail.category) {
+    addUniqueProducts(
+      await this.shoeModel
+        .find({
+          productId: { $ne: productId },
+          category: detail.category,
+        })
+        .select(this.shoeListFields)
+        .sort({ productId: 1 })
+        .limit(safeLimit)
+        .lean()
+        .exec(),
+    );
+  }
+
+  if (relatedByProductId.size < safeLimit) {
+    addUniqueProducts(
+      await this.shoeModel
+        .find({ productId: { $ne: productId } })
+        .select(this.shoeListFields)
+        .sort({ productId: 1 })
+        .limit(safeLimit)
+        .lean()
+        .exec(),
+    );
+  }
+
+  const relatedProducts = Array.from(relatedByProductId.values()).slice(0, safeLimit);
+  await this.redisCache.setJson(
+    cacheKey,
+    relatedProducts,
+    this.shoesCacheTtlSeconds,
+  );
+  return relatedProducts;
+}
+
 
   async findByCategory(category: string) {
     const shoes = await this.shoeModel

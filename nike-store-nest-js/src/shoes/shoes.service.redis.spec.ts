@@ -10,6 +10,7 @@ function queryMock<T>(value: T) {
   return {
     select: jest.fn().mockReturnThis(),
     sort: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
     lean: jest.fn().mockReturnThis(),
     exec: jest.fn().mockResolvedValue(value),
   };
@@ -110,5 +111,49 @@ describe('ShoesService Redis cache', () => {
     await service.updateShoe('1', { name: 'Updated Nike' });
 
     expect(redisCache.delPattern).toHaveBeenCalledWith('shoes:*');
+  });
+
+  it('builds related products from the listing collection without loading filtered details', async () => {
+    redisCache.getJson.mockResolvedValue(null);
+    shoeDetailModel.findOne.mockReturnValue(
+      queryMock({
+        productId: '1',
+        category: 'men',
+        productType: 'running',
+      }),
+    );
+    shoeModel.find
+      .mockReturnValueOnce(
+        queryMock([
+          {
+            productId: '2',
+            name: 'Related Runner',
+            category: 'men',
+            productType: 'running',
+            collection: 'Pegasus',
+            price: 120,
+            color: 'Black',
+            thumbnail: 'runner.jpg',
+          },
+        ]),
+      )
+      .mockReturnValueOnce(queryMock([]))
+      .mockReturnValueOnce(queryMock([]));
+
+    await expect(service.findRelatedByProductId('1', 8)).resolves.toMatchObject([
+      { productId: '2', name: 'Related Runner' },
+    ]);
+
+    expect(shoeDetailModel.find).not.toHaveBeenCalled();
+    expect(shoeModel.find).toHaveBeenCalledWith({
+      productId: { $ne: '1' },
+      category: 'men',
+      productType: 'running',
+    });
+    expect(redisCache.setJson).toHaveBeenCalledWith(
+      'shoes:related:1:8',
+      expect.any(Array),
+      expect.any(Number),
+    );
   });
 });

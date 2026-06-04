@@ -3,14 +3,16 @@ import { readFile } from 'node:fs/promises'
 
 const readSource = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')
 
-const [router, app, home, allShoes, slide, chat, nginx] = await Promise.all([
+const [router, app, home, allShoes, productDetail, slide, chat, nginx, azureDeploy] = await Promise.all([
   readSource('src/router/index.js'),
   readSource('src/App.vue'),
   readSource('src/components/home/Home.vue'),
   readSource('src/components/home/allShoes/AllShoes.vue'),
+  readSource('src/components/shoesDetail/ShoesDetail.vue'),
   readSource('src/components/home/slide/Slide.vue'),
   readSource('src/components/chat/ChatWidget.vue'),
   readSource('nginx.conf'),
+  readFile(new URL('../../scripts/azure/deploy-container-apps.ps1', import.meta.url), 'utf8'),
 ])
 
 assert.doesNotMatch(router, /import\s+Home\s+from/, 'Home route should not be in the initial route bundle')
@@ -33,6 +35,11 @@ assert.match(
   /:loading="index < eagerImageCount \? 'eager' : 'lazy'"/,
   'Above-the-fold product images should be requested eagerly',
 )
+assert.doesNotMatch(
+  productDetail,
+  /params:\s*\{\s*sort:\s*['"]rating['"]\s*\}/,
+  'Product detail related-products fetch should not force the heavier filtered API path',
+)
 assert.match(slide, /preload="none"/, 'Hero video should not download during initial navigation')
 assert.match(slide, /loading="eager"/, 'The first hero image should remain discoverable for LCP')
 
@@ -49,5 +56,17 @@ assert.match(
 
 assert.match(nginx, /gzip\s+on;/, 'Production static responses should use gzip compression')
 assert.match(nginx, /immutable/, 'Hashed Vite bundles should use immutable caching')
+assert.match(azureDeploy, /\$BackendMinReplicas\s+=\s+1/, 'Backend should keep one warm replica by default')
+assert.match(azureDeploy, /\$FrontendMinReplicas\s+=\s+1/, 'Frontend should keep one warm replica by default')
+assert.match(
+  azureDeploy,
+  /--min-replicas\s+\$BackendMinReplicas/,
+  'Backend deploy should apply the configured minimum replica count',
+)
+assert.match(
+  azureDeploy,
+  /--min-replicas\s+\$FrontendMinReplicas/,
+  'Frontend deploy should apply the configured minimum replica count',
+)
 
 console.log('Initial-load performance guard passed.')
