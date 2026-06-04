@@ -61,6 +61,26 @@ assert.match(
   'Product listing should retry scroll restoration while mobile layout settles',
 )
 assert.match(
+  allShoes,
+  /PRODUCT_SCROLL_RESTORE_FRAME_LIMIT/,
+  'Product listing should keep restoring across animation frames until mobile layout settles',
+)
+assert.match(
+  allShoes,
+  /PRODUCT_SCROLL_RESTORE_STABLE_FRAMES/,
+  'Product listing should wait for the clicked card to stay in place before clearing restore data',
+)
+assert.match(
+  allShoes,
+  /\.product-card\s*\{[\s\S]*?content-visibility:\s*visible;[\s\S]*?\}/,
+  'Mobile product cards should render with real heights so back navigation can anchor correctly',
+)
+assert.match(
+  allShoes,
+  /@media\s*\(min-width:\s*640px\)\s*\{[\s\S]*?\.product-card\s*\{[\s\S]*?content-visibility:\s*auto;/,
+  'Product card content-visibility optimization should only apply from tablet widths upward',
+)
+assert.match(
   router,
   /to\.name\s*===\s*["']Products["'][\s\S]*from\.name\s*===\s*["']ShoesDetail["']/,
   'Products route should let the listing component handle back-navigation scroll from detail pages',
