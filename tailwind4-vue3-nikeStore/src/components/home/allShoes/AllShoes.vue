@@ -190,7 +190,12 @@ const PRODUCTS_CACHE_PREFIX = 'ptt-products'
 const PRODUCTS_CACHE_TTL_MS = 60 * 1000
 const PRODUCT_SCROLL_RESTORE_KEY = 'ptt-product-scroll-restore'
 const PRODUCT_SCROLL_RESTORE_MAX_AGE_MS = 10 * 60 * 1000
-const PRODUCT_SCROLL_RESTORE_DELAYS_MS = [0, 100, 300, 700]
+const PRODUCT_SCROLL_RESTORE_MIN_DURATION_MS = 1200
+const PRODUCT_SCROLL_RESTORE_MAX_DURATION_MS = 3200
+const PRODUCT_SCROLL_RESTORE_FRAME_LIMIT = 240
+const PRODUCT_SCROLL_RESTORE_STABLE_FRAMES = 10
+const PRODUCT_SCROLL_RESTORE_TOLERANCE_PX = 2
+const PRODUCT_SCROLL_RESTORE_MOBILE_HEADER_OFFSET_PX = 112
 const DEFAULT_SORT = 'featured'
 
 export default {
@@ -201,7 +206,7 @@ export default {
       showFilters: true,
       products: [],
       activeRequestId: 0,
-      productScrollRestoreTimerIds: [],
+      productScrollRestoreFrameId: null,
       eagerImageCount: 6,
       categoryOptions: CATEGORY_OPTIONS,
       productTypeOptions: PRODUCT_TYPE_OPTIONS,
@@ -278,7 +283,7 @@ export default {
   },
 
   beforeUnmount() {
-    this.clearProductScrollRestoreTimers()
+    this.clearProductScrollRestoreLoop()
   },
 
   methods: {
@@ -470,7 +475,7 @@ export default {
         const productCard = event?.currentTarget
         const productRect = productCard?.getBoundingClientRect?.()
         const viewportOffset = productRect
-          ? Math.max(0, Math.round(productRect.top))
+          ? Math.max(this.productScrollRestoreMinViewportOffset(), Math.round(productRect.top))
           : Math.round(window.innerHeight * 0.35)
 
         sessionStorage.setItem(PRODUCT_SCROLL_RESTORE_KEY, JSON.stringify({
@@ -509,50 +514,89 @@ export default {
     restoreProductScrollPosition() {
       const saved = this.readProductScrollPosition()
       if (!saved) return
-      this.clearProductScrollRestoreTimers()
+      this.clearProductScrollRestoreLoop()
 
       this.$nextTick(() => {
-        const restore = () => {
-          const escapedProductId = window.CSS?.escape
-            ? window.CSS.escape(String(saved.productId))
-            : String(saved.productId).replace(/"/g, '\\"')
-          const productCard = document.querySelector(`[data-product-id="${escapedProductId}"]`)
+        const startedAt = window.performance?.now?.() || Date.now()
+        let frameCount = 0
+        let stableFrameCount = 0
+        let previousCardTop = null
 
-          if (productCard) {
-            const viewportOffset = Number.isFinite(Number(saved.viewportOffset))
-              ? Number(saved.viewportOffset)
-              : Math.round(window.innerHeight * 0.35)
-            const targetTop = Math.max(
-              0,
-              window.scrollY + productCard.getBoundingClientRect().top - viewportOffset,
-            )
-            window.scrollTo({ top: targetTop, behavior: 'auto' })
-          } else {
-            window.scrollTo({ top: Number(saved.scrollY || 0), behavior: 'auto' })
+        const tick = () => {
+          frameCount += 1
+          const now = window.performance?.now?.() || Date.now()
+          const result = this.alignProductScrollToSavedPosition(saved)
+          const cardTop = result.cardTop
+          const isCardStable = result.isTargetAligned
+            && previousCardTop !== null
+            && Math.abs(cardTop - previousCardTop) <= PRODUCT_SCROLL_RESTORE_TOLERANCE_PX
+
+          stableFrameCount = isCardStable ? stableFrameCount + 1 : 0
+          previousCardTop = cardTop
+
+          const elapsed = now - startedAt
+          const hasSettled = elapsed >= PRODUCT_SCROLL_RESTORE_MIN_DURATION_MS
+            && stableFrameCount >= PRODUCT_SCROLL_RESTORE_STABLE_FRAMES
+          const hasTimedOut = elapsed >= PRODUCT_SCROLL_RESTORE_MAX_DURATION_MS
+            || frameCount >= PRODUCT_SCROLL_RESTORE_FRAME_LIMIT
+
+          if (hasSettled || hasTimedOut) {
+            sessionStorage.removeItem(PRODUCT_SCROLL_RESTORE_KEY)
+            this.clearProductScrollRestoreLoop()
+            return
           }
+
+          this.productScrollRestoreFrameId = window.requestAnimationFrame(tick)
         }
 
-        PRODUCT_SCROLL_RESTORE_DELAYS_MS.forEach((delay, index) => {
-          const timerId = window.setTimeout(() => {
-            window.requestAnimationFrame(() => {
-              restore()
-
-              if (index === PRODUCT_SCROLL_RESTORE_DELAYS_MS.length - 1) {
-                sessionStorage.removeItem(PRODUCT_SCROLL_RESTORE_KEY)
-                this.clearProductScrollRestoreTimers()
-              }
-            })
-          }, delay)
-          this.productScrollRestoreTimerIds.push(timerId)
-        })
+        this.productScrollRestoreFrameId = window.requestAnimationFrame(tick)
       })
     },
 
-    clearProductScrollRestoreTimers() {
-      this.productScrollRestoreTimerIds.forEach((timerId) => {
-        window.clearTimeout(timerId)
-      })
-      this.productScrollRestoreTimerIds = []
+    alignProductScrollToSavedPosition(saved) {
+      const escapedProductId = window.CSS?.escape
+        ? window.CSS.escape(String(saved.productId))
+        : String(saved.productId).replace(/"/g, '\\"')
+      const productCard = document.querySelector(`[data-product-id="${escapedProductId}"]`)
+
+      if (!productCard) {
+        const fallbackTop = Math.max(0, Number(saved.scrollY || 0))
+        window.scrollTo({ top: fallbackTop, behavior: 'auto' })
+        return {
+          cardTop: null,
+          isTargetAligned: false,
+        }
+      }
+
+      const viewportOffset = Number.isFinite(Number(saved.viewportOffset))
+        ? Math.max(this.productScrollRestoreMinViewportOffset(), Number(saved.viewportOffset))
+        : Math.round(window.innerHeight * 0.35)
+      const cardTop = productCard.getBoundingClientRect().top
+      const targetTop = Math.max(0, window.scrollY + cardTop - viewportOffset)
+
+      if (Math.abs(cardTop - viewportOffset) > PRODUCT_SCROLL_RESTORE_TOLERANCE_PX) {
+        window.scrollTo({ top: targetTop, behavior: 'auto' })
+      }
+
+      const settledTop = productCard.getBoundingClientRect().top
+
+      return {
+        cardTop: settledTop,
+        isTargetAligned: Math.abs(settledTop - viewportOffset) <= PRODUCT_SCROLL_RESTORE_TOLERANCE_PX,
+      }
+    },
+
+    productScrollRestoreMinViewportOffset() {
+      return window.matchMedia?.('(max-width: 639px)')?.matches
+        ? PRODUCT_SCROLL_RESTORE_MOBILE_HEADER_OFFSET_PX
+        : 0
+    },
+
+    clearProductScrollRestoreLoop() {
+      if (this.productScrollRestoreFrameId !== null) {
+        window.cancelAnimationFrame(this.productScrollRestoreFrameId)
+        this.productScrollRestoreFrameId = null
+      }
     },
 
     formatPrice(price) {
@@ -580,7 +624,13 @@ export default {
 }
 
 .product-card {
-  content-visibility: auto;
-  contain-intrinsic-size: 420px 560px;
+  content-visibility: visible;
+}
+
+@media (min-width: 640px) {
+  .product-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 420px 560px;
+  }
 }
 </style>

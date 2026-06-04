@@ -57,8 +57,8 @@ assert.match(
 )
 assert.match(
   allShoes,
-  /PRODUCT_SCROLL_RESTORE_DELAYS_MS/,
-  'Product listing should retry scroll restoration while mobile layout settles',
+  /PRODUCT_SCROLL_RESTORE_MIN_DURATION_MS/,
+  'Product listing should keep the clicked card anchored through late mobile layout shifts',
 )
 assert.match(
   allShoes,
@@ -69,6 +69,11 @@ assert.match(
   allShoes,
   /PRODUCT_SCROLL_RESTORE_STABLE_FRAMES/,
   'Product listing should wait for the clicked card to stay in place before clearing restore data',
+)
+assert.match(
+  allShoes,
+  /PRODUCT_SCROLL_RESTORE_MOBILE_HEADER_OFFSET_PX/,
+  'Mobile scroll restore should keep the clicked product below the fixed header',
 )
 assert.match(
   allShoes,
