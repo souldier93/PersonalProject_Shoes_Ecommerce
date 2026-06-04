@@ -144,6 +144,7 @@
             :key="product.id"
             @click="goToDetail(product)"
             class="product-card group text-left"
+            :data-product-id="product.id"
           >
             <div class="mb-4 flex aspect-square items-center justify-center overflow-hidden rounded-md bg-gray-100">
               <img
@@ -187,6 +188,8 @@ import { API_BASE } from '../../../utils/apiBase'
 
 const PRODUCTS_CACHE_PREFIX = 'ptt-products'
 const PRODUCTS_CACHE_TTL_MS = 60 * 1000
+const PRODUCT_SCROLL_RESTORE_KEY = 'ptt-product-scroll-restore'
+const PRODUCT_SCROLL_RESTORE_MAX_AGE_MS = 10 * 60 * 1000
 const DEFAULT_SORT = 'featured'
 
 export default {
@@ -413,6 +416,7 @@ export default {
       if (cachedProducts) {
         this.products = cachedProducts
         this.loading = false
+        this.restoreProductScrollPosition()
       } else {
         this.loading = true
       }
@@ -426,6 +430,7 @@ export default {
           .filter((product) => product.stock > 0)
         this.products = products
         this.writeCachedProducts(cacheKey, products)
+        this.restoreProductScrollPosition()
       } catch (error) {
         console.error("Failed to load products:", error);
       } finally {
@@ -450,7 +455,68 @@ export default {
     },
 
     goToDetail(product) {
+      this.saveProductScrollPosition(product)
       this.$router.push(`/shoes/${product.id}`);
+    },
+
+    saveProductScrollPosition(product) {
+      try {
+        sessionStorage.setItem(PRODUCT_SCROLL_RESTORE_KEY, JSON.stringify({
+          productId: product.id,
+          route: this.$route?.fullPath || '',
+          scrollY: window.scrollY || 0,
+          savedAt: Date.now(),
+        }))
+      } catch {
+        // Scroll restoration is a convenience; navigation should continue if storage is unavailable.
+      }
+    },
+
+    readProductScrollPosition() {
+      try {
+        const raw = sessionStorage.getItem(PRODUCT_SCROLL_RESTORE_KEY)
+        if (!raw) return null
+
+        const saved = JSON.parse(raw)
+        const isExpired = Date.now() - Number(saved.savedAt || 0) > PRODUCT_SCROLL_RESTORE_MAX_AGE_MS
+        const isSameRoute = saved.route === (this.$route?.fullPath || '')
+
+        if (isExpired || !isSameRoute) {
+          sessionStorage.removeItem(PRODUCT_SCROLL_RESTORE_KEY)
+          return null
+        }
+
+        return saved
+      } catch {
+        sessionStorage.removeItem(PRODUCT_SCROLL_RESTORE_KEY)
+        return null
+      }
+    },
+
+    restoreProductScrollPosition() {
+      const saved = this.readProductScrollPosition()
+      if (!saved) return
+
+      this.$nextTick(() => {
+        const restore = () => {
+          const escapedProductId = window.CSS?.escape
+            ? window.CSS.escape(String(saved.productId))
+            : String(saved.productId).replace(/"/g, '\\"')
+          const productCard = document.querySelector(`[data-product-id="${escapedProductId}"]`)
+
+          if (productCard) {
+            productCard.scrollIntoView({ block: 'center', inline: 'nearest' })
+          } else {
+            window.scrollTo({ top: Number(saved.scrollY || 0), behavior: 'auto' })
+          }
+
+          sessionStorage.removeItem(PRODUCT_SCROLL_RESTORE_KEY)
+        }
+
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(restore)
+        })
+      })
     },
 
     formatPrice(price) {

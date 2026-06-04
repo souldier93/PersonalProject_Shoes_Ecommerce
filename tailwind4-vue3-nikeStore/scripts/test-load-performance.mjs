@@ -35,6 +35,21 @@ assert.match(
   /:loading="index < eagerImageCount \? 'eager' : 'lazy'"/,
   'Above-the-fold product images should be requested eagerly',
 )
+assert.match(
+  allShoes,
+  /PRODUCT_SCROLL_RESTORE_KEY/,
+  'Product listing should persist the clicked product for back navigation restoration',
+)
+assert.match(
+  allShoes,
+  /data-product-id/,
+  'Product cards should expose a stable product id target for scroll restoration',
+)
+assert.match(
+  allShoes,
+  /restoreProductScrollPosition/,
+  'Product listing should restore scroll after products render',
+)
 assert.doesNotMatch(
   productDetail,
   /params:\s*\{\s*sort:\s*['"]rating['"]\s*\}/,
