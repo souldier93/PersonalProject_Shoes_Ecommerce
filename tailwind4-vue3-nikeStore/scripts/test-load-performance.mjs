@@ -50,6 +50,21 @@ assert.match(
   /restoreProductScrollPosition/,
   'Product listing should restore scroll after products render',
 )
+assert.match(
+  allShoes,
+  /viewportOffset/,
+  'Product listing should restore the clicked card to its mobile viewport position',
+)
+assert.match(
+  allShoes,
+  /PRODUCT_SCROLL_RESTORE_DELAYS_MS/,
+  'Product listing should retry scroll restoration while mobile layout settles',
+)
+assert.match(
+  router,
+  /to\.name\s*===\s*["']Products["'][\s\S]*from\.name\s*===\s*["']ShoesDetail["']/,
+  'Products route should let the listing component handle back-navigation scroll from detail pages',
+)
 assert.doesNotMatch(
   productDetail,
   /params:\s*\{\s*sort:\s*['"]rating['"]\s*\}/,

@@ -142,7 +142,7 @@
           <button
             v-for="(product, index) in products"
             :key="product.id"
-            @click="goToDetail(product)"
+            @click="goToDetail(product, $event)"
             class="product-card group text-left"
             :data-product-id="product.id"
           >
@@ -190,6 +190,7 @@ const PRODUCTS_CACHE_PREFIX = 'ptt-products'
 const PRODUCTS_CACHE_TTL_MS = 60 * 1000
 const PRODUCT_SCROLL_RESTORE_KEY = 'ptt-product-scroll-restore'
 const PRODUCT_SCROLL_RESTORE_MAX_AGE_MS = 10 * 60 * 1000
+const PRODUCT_SCROLL_RESTORE_DELAYS_MS = [0, 100, 300, 700]
 const DEFAULT_SORT = 'featured'
 
 export default {
@@ -200,6 +201,7 @@ export default {
       showFilters: true,
       products: [],
       activeRequestId: 0,
+      productScrollRestoreTimerIds: [],
       eagerImageCount: 6,
       categoryOptions: CATEGORY_OPTIONS,
       productTypeOptions: PRODUCT_TYPE_OPTIONS,
@@ -273,6 +275,10 @@ export default {
       }
       return filters
     },
+  },
+
+  beforeUnmount() {
+    this.clearProductScrollRestoreTimers()
   },
 
   methods: {
@@ -454,17 +460,24 @@ export default {
       this.fetchProducts()
     },
 
-    goToDetail(product) {
-      this.saveProductScrollPosition(product)
+    goToDetail(product, event) {
+      this.saveProductScrollPosition(product, event)
       this.$router.push(`/shoes/${product.id}`);
     },
 
-    saveProductScrollPosition(product) {
+    saveProductScrollPosition(product, event) {
       try {
+        const productCard = event?.currentTarget
+        const productRect = productCard?.getBoundingClientRect?.()
+        const viewportOffset = productRect
+          ? Math.max(0, Math.round(productRect.top))
+          : Math.round(window.innerHeight * 0.35)
+
         sessionStorage.setItem(PRODUCT_SCROLL_RESTORE_KEY, JSON.stringify({
           productId: product.id,
           route: this.$route?.fullPath || '',
           scrollY: window.scrollY || 0,
+          viewportOffset,
           savedAt: Date.now(),
         }))
       } catch {
@@ -496,6 +509,7 @@ export default {
     restoreProductScrollPosition() {
       const saved = this.readProductScrollPosition()
       if (!saved) return
+      this.clearProductScrollRestoreTimers()
 
       this.$nextTick(() => {
         const restore = () => {
@@ -505,18 +519,40 @@ export default {
           const productCard = document.querySelector(`[data-product-id="${escapedProductId}"]`)
 
           if (productCard) {
-            productCard.scrollIntoView({ block: 'center', inline: 'nearest' })
+            const viewportOffset = Number.isFinite(Number(saved.viewportOffset))
+              ? Number(saved.viewportOffset)
+              : Math.round(window.innerHeight * 0.35)
+            const targetTop = Math.max(
+              0,
+              window.scrollY + productCard.getBoundingClientRect().top - viewportOffset,
+            )
+            window.scrollTo({ top: targetTop, behavior: 'auto' })
           } else {
             window.scrollTo({ top: Number(saved.scrollY || 0), behavior: 'auto' })
           }
-
-          sessionStorage.removeItem(PRODUCT_SCROLL_RESTORE_KEY)
         }
 
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(restore)
+        PRODUCT_SCROLL_RESTORE_DELAYS_MS.forEach((delay, index) => {
+          const timerId = window.setTimeout(() => {
+            window.requestAnimationFrame(() => {
+              restore()
+
+              if (index === PRODUCT_SCROLL_RESTORE_DELAYS_MS.length - 1) {
+                sessionStorage.removeItem(PRODUCT_SCROLL_RESTORE_KEY)
+                this.clearProductScrollRestoreTimers()
+              }
+            })
+          }, delay)
+          this.productScrollRestoreTimerIds.push(timerId)
         })
       })
+    },
+
+    clearProductScrollRestoreTimers() {
+      this.productScrollRestoreTimerIds.forEach((timerId) => {
+        window.clearTimeout(timerId)
+      })
+      this.productScrollRestoreTimerIds = []
     },
 
     formatPrice(price) {

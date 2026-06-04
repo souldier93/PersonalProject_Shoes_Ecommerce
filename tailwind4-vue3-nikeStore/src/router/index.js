@@ -144,6 +144,10 @@ const router = createRouter({
   routes,
   // ✅ Scroll to top khi chuyển trang
   scrollBehavior(to, from, savedPosition) {
+    if (to.name === 'Products' && from.name === 'ShoesDetail') {
+      return false;
+    }
+
     if (savedPosition) {
       return savedPosition;
     } else {
