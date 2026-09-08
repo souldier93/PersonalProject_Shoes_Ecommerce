@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Nike: Start MongoDB and Redis",
+      "type": "shell",
+      "command": "docker compose up -d mongo redis",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Nike: Frontend",
+      "type": "shell",
+      "command": "npm.cmd run dev -- --host 127.0.0.1 --port 5173 --strictPort",
+      "options": { "cwd": "${workspaceFolder}/tailwind4-vue3-nikeStore" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated" }
+    },
+    {
+      "label": "Nike: Backend",
+      "type": "shell",
+      "command": "npm.cmd run start:dev",
+      "options": { "cwd": "${workspaceFolder}/nike-store-nest-js" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated" }
+    }
+  ]
+}

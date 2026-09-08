@@ -14,7 +14,8 @@ export default defineConfig({
   },
   use: {
     baseURL: 'http://127.0.0.1:5179',
-    channel: 'chrome',
+    // Use Playwright's bundled Chromium unless a browser channel is requested.
+    channel: process.env.PLAYWRIGHT_CHANNEL,
     trace: 'retain-on-failure',
   },
   projects: [

@@ -134,6 +134,11 @@
       <main>
         <div v-if="loading" class="py-20 text-center text-gray-500">Loading products...</div>
 
+        <div v-else-if="loadError" role="alert" class="py-20 text-center text-gray-500">
+          <p>{{ loadError }}</p>
+          <button class="mt-4 rounded-full bg-black px-6 py-2 text-white" @click="fetchProducts">Try again</button>
+        </div>
+
         <div v-else-if="products.length === 0" class="py-20 text-center text-gray-500">
           No products match your filters.
         </div>
@@ -206,6 +211,7 @@ export default {
   data() {
     return {
       loading: true,
+      loadError: '',
       showFilters: true,
       products: [],
       activeRequestId: 0,
@@ -427,12 +433,14 @@ export default {
       const cachedProducts = this.readCachedProducts(cacheKey)
       const requestId = this.activeRequestId + 1
       this.activeRequestId = requestId
+      this.loadError = ''
 
       if (cachedProducts) {
         this.products = cachedProducts
         this.loading = false
         this.restoreProductScrollPosition()
       } else {
+        this.products = []
         this.loading = true
       }
 
@@ -447,6 +455,10 @@ export default {
         this.writeCachedProducts(cacheKey, products)
         this.restoreProductScrollPosition()
       } catch (error) {
+        if (requestId !== this.activeRequestId) return
+        if (!cachedProducts) {
+          this.loadError = 'Unable to load products. Please check your connection and try again.'
+        }
         console.error("Failed to load products:", error);
       } finally {
         if (requestId === this.activeRequestId) {

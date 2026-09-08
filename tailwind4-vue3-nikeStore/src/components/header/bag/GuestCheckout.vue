@@ -149,43 +149,64 @@
           <div class="space-y-3 rounded-lg border border-gray-200 p-4">
             <p class="text-sm font-semibold">Payment method</p>
             <label
-              class="flex cursor-pointer items-center justify-between rounded-md border p-3 transition"
-              :class="selectedPaymentMethod === 'payos' ? 'border-black bg-gray-50' : 'border-gray-200'"
+              class="flex items-center justify-between rounded-md border p-3 transition"
+              :class="[
+                selectedPaymentMethod === 'payos' ? 'border-black bg-gray-50' : 'border-gray-200',
+                paymentProviders.payos ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+              ]"
             >
               <span>
                 <span class="block text-sm font-medium">QR / Bank transfer</span>
-                <span class="block text-xs text-gray-500">Pay with PayOS banking QR.</span>
+                <span class="block text-xs text-gray-500">
+                  {{ paymentProviders.payos ? 'Pay with PayOS banking QR.' : 'PayOS is not configured.' }}
+                </span>
               </span>
               <input
                 v-model="selectedPaymentMethod"
                 type="radio"
                 value="payos"
+                :disabled="!paymentProviders.payos"
                 class="h-4 w-4"
               />
             </label>
             <label
-              class="flex cursor-pointer items-center justify-between rounded-md border p-3 transition"
-              :class="selectedPaymentMethod === 'stripe' ? 'border-black bg-gray-50' : 'border-gray-200'"
+              class="flex items-center justify-between rounded-md border p-3 transition"
+              :class="[
+                selectedPaymentMethod === 'stripe' ? 'border-black bg-gray-50' : 'border-gray-200',
+                paymentProviders.stripe ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+              ]"
             >
               <span>
                 <span class="block text-sm font-medium">Visa card / Apple Pay</span>
-                <span class="block text-xs text-gray-500">Secure card checkout powered by Stripe.</span>
+                <span class="block text-xs text-gray-500">
+                  {{ paymentProviders.stripe ? 'Secure card checkout powered by Stripe.' : 'Stripe is not configured.' }}
+                </span>
               </span>
               <input
                 v-model="selectedPaymentMethod"
                 type="radio"
                 value="stripe"
+                :disabled="!paymentProviders.stripe"
                 class="h-4 w-4"
               />
             </label>
+            <p v-if="paymentProvidersLoading" class="text-sm text-gray-500">Loading payment methods...</p>
+            <div v-else-if="!hasAvailablePaymentProvider" class="rounded-md bg-amber-50 p-3 text-sm text-amber-800" role="alert">
+              <p>No payment method is available. Configure PayOS or Stripe in the backend environment.</p>
+              <button type="button" class="mt-2 underline" @click="loadPaymentProviders">Retry</button>
+            </div>
           </div>
+
+          <p v-if="paymentError" role="alert" class="rounded-md bg-red-50 p-3 text-sm text-red-700">
+            {{ paymentError }}
+          </p>
 
           <button
             type="submit"
-            :disabled="isCheckingStock || hasStockIssues"
+            :disabled="isCheckingStock || hasStockIssues || paymentProvidersLoading || !selectedPaymentMethod || isSubmitting"
             class="w-full bg-black text-white py-4 rounded-full font-semibold hover:bg-gray-800 transition mt-6 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {{ isCheckingStock ? 'Checking stock...' : 'Continue to Payment' }}
+            {{ isSubmitting ? 'Creating payment...' : isCheckingStock ? 'Checking stock...' : 'Continue to Payment' }}
           </button>
 
           <div v-if="hasStockIssues" class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
@@ -334,6 +355,7 @@ import { API_BASE } from '../../../utils/apiBase'
 import { saveGuestOrderAccess } from '../../../utils/guestOrders'
 
 const router = useRouter()
+const hasStripePublishableKey = Boolean(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.trim())
 
 const currentUser = ref(null)
 const isLoggedIn = computed(() => !!currentUser.value)
@@ -360,7 +382,14 @@ const couponCode = ref('')
 const appliedCoupon = ref(null)
 const couponError = ref('')
 const applyingCoupon = ref(false)
-const selectedPaymentMethod = ref('payos')
+const selectedPaymentMethod = ref('')
+const paymentProviders = ref({ payos: false, stripe: false })
+const paymentProvidersLoading = ref(true)
+const paymentError = ref('')
+const isSubmitting = ref(false)
+const hasAvailablePaymentProvider = computed(() =>
+  paymentProviders.value.payos || paymentProviders.value.stripe
+)
 
 const getCurrentUserId = () => {
   const userId = currentUser.value?._id
@@ -418,8 +447,46 @@ onMounted(async () => {
     return
   }
 
-  await checkAllStock()
+  await Promise.all([checkAllStock(), loadPaymentProviders()])
 })
+
+const apiErrorMessage = (data, fallback) => {
+  if (Array.isArray(data?.message)) return data.message.join(' ')
+  if (typeof data?.message === 'string') return data.message
+  return fallback
+}
+
+const loadPaymentProviders = async () => {
+  paymentProvidersLoading.value = true
+  paymentError.value = ''
+
+  try {
+    const response = await fetch(`${API_BASE}/payments/providers`, {
+      headers: { 'ngrok-skip-browser-warning': 'true' },
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(apiErrorMessage(data, 'Could not load payment methods.'))
+
+    paymentProviders.value = {
+      payos: data.payos === true,
+      stripe: data.stripe === true && hasStripePublishableKey,
+    }
+
+    if (!paymentProviders.value[selectedPaymentMethod.value]) {
+      selectedPaymentMethod.value = paymentProviders.value.payos
+        ? 'payos'
+        : paymentProviders.value.stripe
+          ? 'stripe'
+          : ''
+    }
+  } catch (error) {
+    paymentProviders.value = { payos: false, stripe: false }
+    selectedPaymentMethod.value = ''
+    paymentError.value = error.message || 'Could not load payment methods.'
+  } finally {
+    paymentProvidersLoading.value = false
+  }
+}
 
 const checkAllStock = async () => {
   isCheckingStock.value = true
@@ -594,10 +661,18 @@ const removePurchasedItemsFromBag = () => {
 }
 
 const handleSubmit = async () => {
+  paymentError.value = ''
+  if (!selectedPaymentMethod.value) {
+    paymentError.value = 'No payment method is available.'
+    return
+  }
+
+  isSubmitting.value = true
   await checkAllStock()
 
   if (hasStockIssues.value) {
-    alert('Some items are out of stock. Please update your cart.')
+    paymentError.value = 'Some items are out of stock. Please update your cart.'
+    isSubmitting.value = false
     return
   }
 
@@ -657,7 +732,11 @@ const handleSubmit = async () => {
       body: JSON.stringify(orderData)
     })
 
-    const paymentData = await response.json()
+    const paymentData = await response.json().catch(() => ({}))
+
+    if (!response.ok) {
+      throw new Error(apiErrorMessage(paymentData, 'Cannot create payment. Please try again.'))
+    }
 
     if (paymentData.code === '00') {
       const completeOrderData = {
@@ -686,11 +765,13 @@ const handleSubmit = async () => {
       localStorage.setItem('checkoutItems', JSON.stringify(bagItems.value))
       router.push('/payment')
     } else {
-      alert('Cannot create payment. Please try again!')
+      paymentError.value = apiErrorMessage(paymentData, 'Cannot create payment. Please try again.')
     }
   } catch (error) {
     console.error('Payment error:', error)
-    alert('Connection error. Please try again!')
+    paymentError.value = error.message || 'Connection error. Please try again.'
+  } finally {
+    isSubmitting.value = false
   }
 }
 

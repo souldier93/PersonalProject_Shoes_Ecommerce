@@ -25,7 +25,7 @@ onMounted(() => {
     <DeferredSection min-height="720px" :eager="hasPendingProductScrollRestore">
       <Feature />
     </DeferredSection>
-    <DeferredSection min-height="900px" :eager="hasPendingProductScrollRestore">
+    <DeferredSection data-testid="catalog-section" min-height="900px" :eager="hasPendingProductScrollRestore">
       <AllShoes />
     </DeferredSection>
     <DeferredSection min-height="520px">

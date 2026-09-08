@@ -1,0 +1,50 @@
+{
+  "workbench.iconTheme": "material-icon-theme",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "editor.stickyScroll.enabled": true,
+  "breadcrumbs.enabled": true,
+  "terminal.integrated.env.windows": {
+    "PATH": "${env:ProgramFiles}\\nodejs;${env:ProgramFiles}\\Git\\cmd;${env:LOCALAPPDATA}\\Programs\\DockerDesktop\\resources\\bin;${env:PATH}"
+  },
+  "terminal.integrated.defaultProfile.windows": "Command Prompt",
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[tailwindcss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "files.associations": {
+    "**/tailwind4-vue3-nikeStore/src/style.css": "tailwindcss",
+    ".env": "dotenv",
+    ".env.*": "dotenv"
+  },
+  "eslint.workingDirectories": [
+    "./nike-store-nest-js"
+  ],
+  "eslint.validate": ["typescript"],
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/playwright-report": true,
+    "**/test-results": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/coverage/**": true
+  }
+}

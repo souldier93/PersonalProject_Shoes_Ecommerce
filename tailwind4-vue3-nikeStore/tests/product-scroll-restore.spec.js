@@ -92,6 +92,23 @@ const mockApi = async (page) => {
   })
 }
 
+test('catalog reports an API failure and recovers on retry', async ({ page }) => {
+  await mockApi(page)
+  let unavailable = true
+  await page.route('http://localhost:3000/shoes', async (route) => {
+    if (unavailable) await route.abort('failed')
+    else await route.fulfill({ json: products })
+  })
+  await page.goto('/')
+  await page.getByTestId('catalog-section').scrollIntoViewIfNeeded()
+  await expect(page.getByRole('alert')).toContainText('Unable to load products')
+  await expect(page.getByText('No products match your filters.')).toHaveCount(0)
+  unavailable = false
+  await page.getByRole('button', { name: 'Try again', exact: true }).click()
+  await expect(page.locator('[data-product-id="9001"]')).toBeVisible()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+})
+
 test('mobile back navigation restores the tapped home product after delayed sections settle', async ({ page }) => {
   await mockApi(page)
 
@@ -154,7 +171,7 @@ test('mobile home return restores the tapped product without native saved scroll
   await mockApi(page)
 
   await page.goto('/')
-  await page.evaluate(() => window.scrollTo(0, 1250))
+  await page.getByTestId('catalog-section').scrollIntoViewIfNeeded()
 
   const selectedProductId = products[15].productId
   const selectedProduct = page.locator(`[data-product-id="${selectedProductId}"]`)

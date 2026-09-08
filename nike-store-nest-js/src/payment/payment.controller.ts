@@ -21,6 +21,11 @@ import { PaymentService } from './payment.service.js';
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
+  @Get('providers')
+  getPaymentProviders() {
+    return this.paymentService.getPaymentProviders();
+  }
+
   @Post()
   async createPayment(@Body() body: CreatePaymentDto): Promise<any> {
     console.log('Payment request received:', {

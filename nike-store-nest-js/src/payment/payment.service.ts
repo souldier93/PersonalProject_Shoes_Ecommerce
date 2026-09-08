@@ -1,6 +1,6 @@
 // payment.service.ts
 
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import type { CreatePaymentDto } from './dto/CreatePaymentDto';
@@ -41,10 +41,35 @@ export class PaymentService {
     await this.redisCache.delPattern('shoes:*');
   }
 
+  private getConfiguredValue(key: string) {
+    return String(this.configService.get<string>(key) || '').trim();
+  }
+
+  getPaymentProviders() {
+    return {
+      payos: Boolean(
+        this.getConfiguredValue('PAYOS_CLIENT_ID') &&
+        this.getConfiguredValue('PAYOS_API_KEY') &&
+        this.getConfiguredValue('PAYOS_CHECKSUM_KEY'),
+      ),
+      stripe: Boolean(this.getConfiguredValue('STRIPE_SECRET_KEY')),
+    };
+  }
+
+  private assertPaymentProviderConfigured(provider: 'payos' | 'stripe') {
+    if (!this.getPaymentProviders()[provider]) {
+      const name = provider === 'payos' ? 'PayOS' : 'Stripe';
+      throw new ServiceUnavailableException(
+        `${name} payment is not configured. Add the required environment keys and restart the backend.`,
+      );
+    }
+  }
+
   private getStripeClient() {
+    this.assertPaymentProviderConfigured('stripe');
     if (!this.stripeClient) {
       this.stripeClient = new Stripe(
-        this.configService.getOrThrow<string>('STRIPE_SECRET_KEY'),
+        this.getConfiguredValue('STRIPE_SECRET_KEY'),
       );
     }
 
@@ -134,6 +159,9 @@ export class PaymentService {
       throw new Error('❌ Customer info is required!');
     }
 
+    this.assertPaymentProviderConfigured('payos');
+    await this.ensureItemsStockAvailable(body.items);
+
     const normalizedUserId = this.normalizeUserId(body.userId);
     const isGuest = !normalizedUserId;
     const orderCode = Number(body.orderId);
@@ -169,8 +197,8 @@ export class PaymentService {
     const url = `https://api-merchant.payos.vn/v2/payment-requests`;
     const config = {
       headers: {
-        'x-client-id': this.configService.getOrThrow('PAYOS_CLIENT_ID'),
-        'x-api-key': this.configService.getOrThrow('PAYOS_API_KEY'),
+        'x-client-id': this.getConfiguredValue('PAYOS_CLIENT_ID'),
+        'x-api-key': this.getConfiguredValue('PAYOS_API_KEY'),
       },
     };
 
@@ -194,7 +222,7 @@ export class PaymentService {
 
     const signature = generateSignature(
       dataForSignature,
-      this.configService.getOrThrow('PAYOS_CHECKSUM_KEY'),
+      this.getConfiguredValue('PAYOS_CHECKSUM_KEY'),
     );
 
     const payload: PayosRequestPaymentPayload = {
@@ -202,9 +230,16 @@ export class PaymentService {
       signature,
     };
 
-    const response = await firstValueFrom(
-      this.httpService.post(url, payload, config),
-    );
+    let response;
+    try {
+      response = await firstValueFrom(
+        this.httpService.post(url, payload, config),
+      );
+    } catch {
+      throw new BadGatewayException(
+        'PayOS could not create the payment link. Please try again later.',
+      );
+    }
 
     const paymentData = response.data.data;
 
@@ -255,6 +290,8 @@ export class PaymentService {
     if (!customerEmail || !body.customerInfo) {
       throw new BadRequestException('Customer information is required');
     }
+
+    this.assertPaymentProviderConfigured('stripe');
 
     const orderCode = Number(body.orderId);
     this.assertValidOrderCode(orderCode);
