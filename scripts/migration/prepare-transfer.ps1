@@ -170,7 +170,9 @@ try {
         '',
         "Database coverage: $databaseCoverage"
     )
-    Set-Content -LiteralPath (Join-Path $stagingRoot 'PRIVATE-BUNDLE-CONTENTS.txt') -Value $privateReadme -Encoding UTF8
+    $privateReadmePath = Join-Path $stagingRoot 'migration-data\PRIVATE-BUNDLE-CONTENTS.txt'
+    New-Item -ItemType Directory -Path (Split-Path $privateReadmePath -Parent) -Force | Out-Null
+    Set-Content -LiteralPath $privateReadmePath -Value $privateReadme -Encoding UTF8
 
     Push-Location $stagingRoot
     try {
