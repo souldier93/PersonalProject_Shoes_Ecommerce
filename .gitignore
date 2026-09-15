@@ -21,3 +21,6 @@ npm-debug.log*
 
 # Local Codex/frontend preview metadata
 .last-frontend-*
+
+# New-PC migration data extracted from the encrypted transfer bundle
+migration-data/
