@@ -27,7 +27,7 @@ Script sẽ tự thực hiện:
 - khôi phục các file `.env` từ gói mã hóa;
 - cài package bằng `npm ci` cho backend và frontend;
 - build backend, chạy unit test backend và build frontend;
-- chạy MongoDB/Redis, khôi phục dữ liệu có trong gói và mở project bằng VS Code.
+- chạy MongoDB/Redis, khôi phục dữ liệu có trong gói, tạo lại role/tài khoản admin ban đầu khi database mới còn trống và mở project bằng VS Code.
 
 ## Đăng nhập GitHub để tiếp tục sửa và push code
 

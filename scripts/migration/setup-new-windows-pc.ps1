@@ -227,6 +227,9 @@ if ($StartServices) {
                     }
                 }
             }
+
+            Invoke-InDirectory -Path (Join-Path $ProjectPath 'nike-store-nest-js') -Command { & npm.cmd run seed:initial-user }
+            Write-Host 'Created the initial roles and verified admin account from the restored .env file.'
         }
     }
 }
